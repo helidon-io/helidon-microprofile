@@ -1,0 +1,179 @@
+#
+# Copyright (c) 2025 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: "Release"
+
+on:
+  push:
+    branches: [ 'release-*' ]
+
+env:
+  MVN_VERSION: 3.9.9
+  JAVA_VERSION: 21
+  JAVA_DISTRO: oracle
+  MVN_ARGS: |
+    -B -e
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-22.04
+    environment: release
+    outputs:
+      version: ${{ steps.create-tag.outputs.version }}
+      tag: ${{ steps.create-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - id: create-tag
+        run: ./etc/scripts/release.sh create_tag >> "${GITHUB_OUTPUT}"
+  validate:
+    needs: create-tag
+    uses: ./.github/workflows/validate.yml
+    with:
+      ref: ${{ needs.create-tag.outputs.tag }}
+  stage:
+    needs: [ create-tag, validate ]
+    strategy:
+      matrix:
+        moduleSet: [ core, integrations, others ]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "{javadoc-jars-${{ matrix.moduleSet }},docs}"
+          merge-multiple: true
+      - shell: bash
+        env:
+          GPG_PASSPHRASE: ${{ secrets.HELIDON_GPG_PASSPHRASE }}
+          GPG_PRIVATE_KEY: ${{ secrets.HELIDON_GPG_PRIVATE_KEY }}
+        run: etc/scripts/setup-gpg.sh
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          artifact-name: io-helidon-artifacts-part-${{ matrix.moduleSet }}
+          artifact-path: staging
+          run: |
+            mvn ${MVN_ARGS} \
+              -DreactorRule=default \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -Dcache.loadSuffixes=javadoc,docs \
+              -Prelease,no-snapshots \
+              -DskipTests \
+              -DaltDeploymentRepository=":::file://${PWD}/staging" \
+              deploy
+  deploy:
+    needs: [ create-tag, stage ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: io-helidon-artifacts-part-*
+          path: staging
+          merge-multiple: true
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          etc/scripts/upload.sh upload_release \
+            --dir="staging" \
+            --description="Helidon MP v%{version}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: io-helidon-artifacts-${{ needs.create-tag.outputs.version }}
+          path: staging
+  resolve-all:
+    needs: [ create-tag, deploy ]
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/setup-central-settings.sh
+      - uses: ./.github/actions/common
+        with:
+          build-cache: write-only
+          build-cache-id: resolve-all
+          run: |
+            mvn ${MVN_ARGS} -N \
+              -Pcentral.manual.testing \
+              -Dartifact=io.helidon.mp:helidon-mp-all:${{ needs.create-tag.outputs.version }}:pom \
+              dependency:get
+  smoketest:
+    needs: [ resolve-all, create-tag, deploy ]
+    timeout-minutes: 30
+    environment: release
+    strategy:
+      matrix:
+        archetype:
+          - bare-se
+          - bare-mp
+          - quickstart-se
+          - quickstart-mp
+          - database-se
+          - database-mp
+    runs-on: ubuntu-22.04
+    name: smoketest/${{ matrix.archetype }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - shell: bash
+        env:
+          CENTRAL_USER: ${{ secrets.CENTRAL_USER }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: |
+          ./etc/scripts/setup-central-settings.sh
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          build-cache-id: resolve-all
+          maven-cache: read-only
+          run: |
+            ./etc/scripts/smoketest.sh \
+              --staged \
+              --version=${{ needs.create-tag.outputs.version }} \
+              --archetype=${{ matrix.archetype }}
