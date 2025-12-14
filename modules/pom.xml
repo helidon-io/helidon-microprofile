@@ -29,9 +29,41 @@
     <packaging>pom</packaging>
 
     <artifactId>helidon-microprofile-modules-project</artifactId>
-    <name>Helidon Microprofile Modules</name>
+    <name>Helidon MicroProfile Modules</name>
 
     <description>
-        All feature modules of Helidon MP
+        All feature modules of Helidon MP. This directory is only structure separator, this module is not used as a parent.
     </description>
+
+    <modules>
+        <module>config</module>
+        <module>health</module>
+        <module>metrics</module>
+        <module>oidc</module>
+        <module>server</module>
+        <module>security</module>
+        <module>fault-tolerance</module>
+        <module>jwt-auth</module>
+        <module>tracing</module>
+        <module>openapi</module>
+        <module>rest-client</module>
+        <module>access-log</module>
+        <module>cdi</module>
+        <module>weld</module>
+        <module>websocket</module>
+        <module>reactive-streams</module>
+        <module>messaging</module>
+        <module>cors</module>
+        <module>graphql</module>
+        <module>grpc</module>
+        <module>scheduling</module>
+        <module>lra</module>
+        <module>bean-validation</module>
+        <module>service-common</module>
+        <module>telemetry</module>
+        <module>testing</module>
+        <module>rest-client-metrics</module>
+        <module>jpa</module>
+    </modules>
+
 </project>

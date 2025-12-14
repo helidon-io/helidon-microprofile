@@ -29,9 +29,11 @@
 
     <groupId>io.helidon.microprofile.applications</groupId>
     <artifactId>helidon-mp</artifactId>
+    <version>5.0.0-SNAPSHOT</version>
+
     <packaging>pom</packaging>
-    <name>Helidon MP applications parent pom</name>
-    <description>Parent pom for Helidon MP applications</description>
+    <name>Helidon MicroProfile applications parent pom</name>
+    <description>Parent pom for Helidon MicroProfile applications</description>
 
     <properties>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>

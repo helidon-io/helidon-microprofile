@@ -30,8 +30,8 @@
     <groupId>io.helidon.nicroprofile.applications</groupId>
     <artifactId>helidon-microprofile-applications-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon MP Applications Project</name>
-    <description>Maven boilerplate for Helidon MP applications</description>
+    <name>Helidon MicroProfile Applications Project</name>
+    <description>Maven boilerplate for Helidon MicroProfile applications</description>
 
     <modules>
         <module>mp</module>

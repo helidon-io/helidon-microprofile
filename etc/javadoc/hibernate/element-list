@@ -330,7 +330,6 @@ org.hibernate.spatial.dialect.cockroachdb
 org.hibernate.spatial.dialect.db2
 org.hibernate.spatial.dialect.h2gis
 org.hibernate.spatial.dialect.hana
-org.hibernate.spatial.dialect.mariadb
 org.hibernate.spatial.dialect.mysql
 org.hibernate.spatial.dialect.oracle
 org.hibernate.spatial.dialect.postgis

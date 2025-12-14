@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>helidon-microprofile-tests-project</artifactId>
+        <version>5.0.0-SNAPSHOT</version>
+    </parent>
+    <groupId>io.helidon.microprofile.tests.integration</groupId>
+    <artifactId>helidon-microprofile-tests-integration-project</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Helidon MicroProfile Tests Integration Project</name>
+
+    <properties>
+        <version.lib.testcontainers.keycloak>2.3.0</version.lib.testcontainers.keycloak>
+    </properties>
+
+    <modules>
+        <module>config</module>
+        <module>harness</module>
+        <module>health</module>
+        <module>jms</module>
+        <module>kafka</module>
+        <module>mp-bean-validation</module>
+        <module>mp-gh-2421</module>
+        <module>mp-gh-2461</module>
+        <module>mp-gh-3246</module>
+        <module>mp-gh-3974</module>
+        <module>mp-gh-4123</module>
+        <module>mp-gh-4654</module>
+        <module>mp-gh-5328</module>
+        <module>mp-gh-8349</module>
+        <module>mp-gh-8478</module>
+        <module>mp-gh-8495</module>
+        <module>mp-gh-8493</module>
+        <module>mp-graphql</module>
+        <module>mp-security-client</module>
+        <module>mp-ws-services</module>
+        <module>packaging</module>
+        <module>oidc</module>
+        <module>restclient</module>
+        <module>restclient-connector</module>
+        <module>security</module>
+        <module>zipkin-mp-2.2</module>
+        <module>mp-telemetry</module>
+        <module>mp-jaxrs-preserve-headers</module>
+        <module>crac</module>
+        <module>mp-metrics-gh-9995</module>
+    </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <!-- testcontainers should only be used in integration tests -->
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${version.lib.testcontainers}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.dasniko</groupId>
+                <artifactId>testcontainers-keycloak</artifactId>
+                <version>${version.lib.testcontainers.keycloak}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

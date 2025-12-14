@@ -29,7 +29,7 @@
     <artifactId>helidon-microprofile-dependencies</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon Dependencies</name>
+    <name>Helidon MicroProfile Dependencies</name>
     <description>Maven dependency management for Helidon applications</description>
 
     <properties>
@@ -40,7 +40,6 @@
         -->
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.antlr>4.13.1</version.lib.antlr>
-        <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.17.5</version.lib.bytebuddy>
         <version.lib.coherence>25.03.1</version.lib.coherence>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
@@ -48,16 +47,13 @@
         <version.lib.commons-io>2.16.1</version.lib.commons-io>
         <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
-        <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
         <!-- el-impl has been replaced by expressly. But we still manage version to not break existing application poms -->
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.expressly>5.0.0</version.lib.expressly>
-        <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
-        <version.lib.google-api-client>2.7.2</version.lib.google-api-client>
         <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
         <version.lib.google-http-client>1.45.2</version.lib.google-http-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
@@ -70,7 +66,6 @@
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.handlebars>4.4.0</version.lib.handlebars>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
@@ -104,7 +99,6 @@
         <version.lib.jersey>3.1.10</version.lib.jersey>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
-        <version.lib.jgit>7.3.0.202506031305-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.9.1</version.lib.kafka>
@@ -113,17 +107,11 @@
         <version.lib.langchain4j>1.6.0</version.lib.langchain4j>
         <version.lib.langchain4j-community>1.6.0-beta12</version.lib.langchain4j-community>
         <version.lib.log4j>2.21.1</version.lib.log4j>
-        <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.15.2</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.15.2</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>4.2.2</version.lib.micronaut>
-        <version.lib.micronaut.validation>4.2.0</version.lib.micronaut.validation>
-        <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>5.4.0</version.lib.micronaut.sql>
         <version.lib.microprofile-config>3.1</version.lib.microprofile-config>
-        <!-- FIXME upgrade to 4.1 when it is released in Maven -->
-        <version.lib.microprofile-fault-tolerance-api>4.0.2</version.lib.microprofile-fault-tolerance-api>
+        <version.lib.microprofile-fault-tolerance-api>4.1.2</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0.1</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
@@ -136,12 +124,8 @@
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
-        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
-        <version.lib.mongodb>4.10.2</version.lib.mongodb>
-        <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
-        <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.126.Final</version.lib.netty>
         <version.lib.oci>3.73.1</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
@@ -164,7 +148,6 @@
         <version.lib.slf4j>2.0.16</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
-        <version.lib.testcontainers>1.19.8</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
@@ -214,6 +197,413 @@
             </dependency>
 
             <!-- Section 1: direct third party dependencies -->
+
+            <!-- Helidon SE dependencies, cannot use bom for now, as it contains MP -->
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-context</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health-checks</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-configurable</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-yaml</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-encryption</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.config</groupId>
+                <artifactId>helidon-config-object-mapping</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.health</groupId>
+                <artifactId>helidon-health</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-system-meters</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-oidc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-jwt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-static-content</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-resumable</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-jsonp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-context</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-connector</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-media-jsonp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.bundles</groupId>
+                <artifactId>helidon-bundles-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-http-auth</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security</groupId>
+                <artifactId>helidon-security-jwt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security</groupId>
+                <artifactId>helidon-security</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.providers</groupId>
+                <artifactId>helidon-security-providers-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-opentracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-jaeger</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-jersey</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing-tracer-resolver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-access-log</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.features</groupId>
+                <artifactId>helidon-common-features</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-registry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metadata</groupId>
+                <artifactId>helidon-metadata-reflection</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-websocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.concurrency</groupId>
+                <artifactId>helidon-common-concurrency-limits</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.jms</groupId>
+                <artifactId>helidon-messaging-jms</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging</groupId>
+                <artifactId>helidon-messaging-jms-shim</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.kafka</groupId>
+                <artifactId>helidon-messaging-kafka</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.messaging.mock</groupId>
+                <artifactId>helidon-messaging-mock</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-cors</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.testing</groupId>
+                <artifactId>helidon-common-testing-http-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-graphql</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-http2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-http1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-tls</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.scheduling</groupId>
+                <artifactId>helidon-scheduling</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-reactive</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-client-spi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-service-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing</groupId>
+                <artifactId>helidon-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.logging</groupId>
+                <artifactId>helidon-logging-jul</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.testing</groupId>
+                <artifactId>helidon-common-testing-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.testing</groupId>
+                <artifactId>helidon-testing-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common.testing</groupId>
+                <artifactId>helidon-common-testing-virtual-threads</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.security.abac</groupId>
+                <artifactId>helidon-security-abac-policy-el</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics.providers</groupId>
+                <artifactId>helidon-metrics-providers-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
@@ -409,11 +799,6 @@
                 <version>${version.lib.jakarta.activation-api}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit</artifactId>
-                <version>${version.lib.jgit}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.jms</groupId>
                 <artifactId>jakarta.jms-api</artifactId>
                 <version>${version.lib.jakarta.jms-api}</version>
@@ -433,11 +818,6 @@
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
             </dependency>
-            <dependency>
-                <groupId>com.github.jknack</groupId>
-                <artifactId>handlebars</artifactId>
-                <version>${version.lib.handlebars}</version>
-            </dependency>
 
             <!-- Config related -->
             <dependency>
@@ -449,11 +829,6 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.lib.snakeyaml}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mousio</groupId>
-                <artifactId>etcd4j</artifactId>
-                <version>${version.lib.etcd4j}</version>
             </dependency>
 
             <!-- Dependency convergence. Should align with version used by io.grpc -->
@@ -474,27 +849,10 @@
                 <artifactId>opentracing-grpc</artifactId>
                 <version>${version.lib.opentracing.grpc}</version>
             </dependency>
-
-            <!-- Webserver related -->
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.lib.guava}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient</artifactId>
-                <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient_common</artifactId>
-                <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>simpleclient_tracer_common</artifactId>
-                <version>${version.lib.prometheus}</version>
             </dependency>
             <dependency>
                 <groupId>io.zipkin.zipkin2</groupId>
@@ -505,26 +863,6 @@
                 <groupId>io.zipkin.reporter2</groupId>
                 <artifactId>zipkin-sender-urlconnection</artifactId>
                 <version>${version.lib.zipkin.sender-urlconnection}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing.brave</groupId>
-                <artifactId>brave-opentracing</artifactId>
-                <version>${version.lib.brave-opentracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- failure in dependency convergence -->
-                        <groupId>io.zipkin.reporter2</groupId>
-                        <artifactId>zipkin-reporter</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.zipkin.brave</groupId>
-                        <artifactId>brave-tests</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.zipkin.zipkin2</groupId>
-                        <artifactId>zipkin</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -578,33 +916,6 @@
                 </exclusions>
             </dependency>
 
-            <!-- Security related -->
-            <dependency>
-                <!-- Google APIs -->
-                <groupId>com.google.api-client</groupId>
-                <artifactId>google-api-client</artifactId>
-                <version>${version.lib.google-api-client}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- should be optional -->
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <!-- DB Client related -->
-            <dependency>
-                <groupId>org.mongodb</groupId>
-                <artifactId>mongodb-driver-sync</artifactId>
-                <version>${version.lib.mongodb}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.database.messaging</groupId>
-                <artifactId>aqapi</artifactId>
-                <version>${version.lib.database.messaging}</version>
-            </dependency>
-
             <!-- Micrometer related -->
             <dependency>
                 <groupId>io.micrometer</groupId>
@@ -622,7 +933,7 @@
                 <version>${version.lib.micrometer-prometheus}</version>
             </dependency>
 
-            <!-- Microprofile related -->
+            <!-- MicroProfile related -->
             <dependency>
                 <groupId>org.eclipse.microprofile.config</groupId>
                 <artifactId>microprofile-config-api</artifactId>
@@ -777,33 +1088,6 @@
                 <version>${version.lib.smallrye-openapi}</version>
             </dependency>
 
-            <!-- Microstream related -->
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-cache</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-persistence-binary-jdk17</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-
             <!-- Integrations related -->
             <dependency>
                 <groupId>jakarta.persistence</groupId>
@@ -938,16 +1222,6 @@
                 <version>${version.lib.jboss.logging}</version>
             </dependency>
             <dependency>
-                <groupId>org.graalvm.sdk</groupId>
-                <artifactId>nativeimage</artifactId>
-                <version>${version.lib.graalvm}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.graalvm.nativeimage</groupId>
-                <artifactId>svm</artifactId>
-                <version>${version.lib.graalvm}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
                 <version>${version.lib.graphql-java}</version>
@@ -1053,44 +1327,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- Micronaut integrations -->
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject-java</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-aop</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core-processor</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <!-- Neo4j -->
-            <dependency>
-                <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver</artifactId>
-                <version>${version.lib.neo4j}</version>
-            </dependency>
-            <!-- Cron utils -->
-            <dependency>
-                <groupId>com.cronutils</groupId>
-                <artifactId>cron-utils</artifactId>
-                <version>${version.lib.cron-utils}</version>
-            </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
                 <artifactId>reactive-streams</artifactId>
@@ -1107,71 +1343,6 @@
                 <version>${version.lib.crac}</version>
             </dependency>
             <!-- END OF Section 1: direct third party dependencies -->
-
-            <!-- Section 2: third party dependencies used by examples -->
-            <dependency>
-                <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-client</artifactId>
-                <version>${version.lib.activemq}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.validation</groupId>
-                <artifactId>micronaut-validation</artifactId>
-                <version>${version.lib.micronaut.validation}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.validation</groupId>
-                <artifactId>micronaut-validation-processor</artifactId>
-                <version>${version.lib.micronaut.validation}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-runtime</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc-hikari</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc-ucp</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.sql</groupId>
-                <artifactId>micronaut-jdbc</artifactId>
-                <version>${version.lib.micronaut.sql}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-tx</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-jdbc</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-processor</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-            </dependency>
-            <!-- END OF Section 2: third party dependencies used by examples -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
             <dependency>
@@ -1217,33 +1388,6 @@
                 <version>${version.lib.commons-io}</version>
             </dependency>
             <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http</artifactId>
-                <version>${version.lib.micronaut}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-model</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.data</groupId>
-                <artifactId>micronaut-data-runtime</artifactId>
-                <version>${version.lib.micronaut.data}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <!-- Force upgrade okhttp3 for dependency convergence -->
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
@@ -1283,34 +1427,9 @@
                 <version>${version.lib.junit-platform-testkit}</version>
             </dependency>
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>junit-jupiter</artifactId>
-                <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers</artifactId>
-                <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>mongodb</artifactId>
-                <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>mysql</artifactId>
-                <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>jdbc</artifactId>
-                <version>${version.lib.testcontainers}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>oracle-xe</artifactId>
-                <version>${version.lib.testcontainers}</version>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-client</artifactId>
+                <version>${version.lib.activemq}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
@@ -1370,26 +1489,17 @@
                 <artifactId>slf4j-simple</artifactId>
                 <version>${version.lib.slf4j}</version>
             </dependency>
-            <dependency>
-                <groupId>org.mariadb.jdbc</groupId>
-                <artifactId>mariadb-java-client</artifactId>
-                <version>${version.lib.mariadb-java-client}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.microsoft.sqlserver</groupId>
-                <artifactId>mssql-jdbc</artifactId>
-                <version>${version.lib.mssql-jdbc}</version>
-            </dependency>
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
-            <dependency>
-                <groupId>io.helidon</groupId>
-                <artifactId>helidon-bom</artifactId>
-                <version>${helidon.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- Helidon BOM cannot be imported, as it contains also MP modules, and our tests run against them -->
+            <!--            <dependency>-->
+            <!--                <groupId>io.helidon</groupId>-->
+            <!--                <artifactId>helidon-bom</artifactId>-->
+            <!--                <version>${helidon.version}</version>-->
+            <!--                <type>pom</type>-->
+            <!--                <scope>import</scope>-->
+            <!--            </dependency>-->
             <dependency>
                 <groupId>com.oracle.coherence.ce</groupId>
                 <artifactId>coherence-bom</artifactId>

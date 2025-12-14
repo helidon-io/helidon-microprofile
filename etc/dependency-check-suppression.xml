@@ -30,16 +30,6 @@
         <cve>CVE-2024-9329</cve>
     </suppress>
 
-    <!-- This CVE is against the etcd server. We use the Java client
-    -->
-    <suppress>
-        <notes><![CDATA[
-   file name: etcd4j-2.17.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.mousio/etcd4j@.*$</packageUrl>
-        <cpe>cpe:/a:etcd:etcd</cpe>
-    </suppress>
-
     <!-- False positive.
          This CVE is against the H2 web admin console which we do not use
     -->
@@ -105,19 +95,6 @@
     </suppress>
 
     <!--
-        This is a FP. We have upgrade jgit to a fixed version, but it is still getting flagged.
-        Probably due to the funky version string used by jgit. See
-        https://github.com/jeremylong/DependencyCheck/issues/5943
-    -->
-    <suppress>
-        <notes><![CDATA[
-   file name: org.eclipse.jgit-6.7.0.202309050840-r.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jgit/org\.eclipse\.jgit@.*$</packageUrl>
-        <cve>CVE-2023-4759</cve>
-    </suppress>
-
-    <!--
         These are FPs.
         See https://github.com/jeremylong/DependencyCheck/issues/5973
     -->
@@ -127,62 +104,6 @@
         </packageUrl>
         <cve>CVE-2022-4244</cve>
         <cve>CVE-2022-4245</cve>
-    </suppress>
-
-    <!--
-        False Positives. These CVEs are against the Brave web browser, not brave-opentracing.
-    -->
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2022-47932</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2022-47933</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2022-47934</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2021-22929</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2022-30334</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: brave-opentracing-1.0.0.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
-        <cve>CVE-2023-28360</cve>
-    </suppress>
-
-    <!-- False Positives. This was identifying Helidon's dbclient mongodb support artifact with MongoDB itself
-    -->
-    <suppress>
-        <notes><![CDATA[
-   file name: io.helidon.dbclient:helidon-dbclient-mongodb:4.0.0-SNAPSHOT
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.helidon\.dbclient/helidon\-dbclient\-mongodb@.*$</packageUrl>
-        <cpe>cpe:/a:mongodb:mongodb</cpe>
     </suppress>
 
     <!-- False Positives. This was identifying Helidon's mysql support artifact with MySQL itself

@@ -28,10 +28,21 @@
         <version>5.0.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
+
     <artifactId>helidon-microprofile-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon MP Project</name>
+    <name>Helidon MicroProfile Project</name>
+
+    <modules>
+        <module>parent</module>
+        <module>bom</module>
+        <module>dependencies</module>
+        <module>all</module>
+        <module>applications</module>
+        <module>modules</module>
+        <module>bundles</module>
+    </modules>
 
     <properties>
         <version.java>21</version.java>
@@ -101,7 +112,6 @@
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.commons-text>1.11.0</version.lib.commons-text>
-        <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
         <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
         <version.lib.maven.plugin.annotations>3.9.0</version.lib.maven.plugin.annotations>
@@ -109,6 +119,8 @@
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
         <version.lib.groovy>2.4.16</version.lib.groovy>
+        <version.lib.testcontainers>1.19.8</version.lib.testcontainers>
+
         <!--
         !Version statement! - end
         -->
@@ -238,22 +250,11 @@
         </javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}
         </javadoc.link.opentracing>
-        <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}
-        </javadoc.link.prometheus>
         <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
 
         <!--suppress UnresolvedMavenProperty -->
         <javadoc.pkg.dir>${top.parent.basedir}/etc/javadoc</javadoc.pkg.dir>
     </properties>
-
-    <modules>
-        <module>all</module>
-        <module>applications</module>
-        <module>bom</module>
-        <module>dependencies</module>
-        <module>parent</module>
-        <module>modules</module>
-    </modules>
 
     <build>
         <extensions>
@@ -1147,11 +1148,6 @@
                 <version>${version.lib.mockserver}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jgit</groupId>
-                <artifactId>org.eclipse.jgit.junit</artifactId>
-                <version>${version.lib.jgit}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-porting-package-tck</artifactId>
                 <version>${version.lib.weld}</version>
@@ -1382,12 +1378,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <!-- used for classpath scanning in native image extension -->
-                <groupId>io.github.classgraph</groupId>
-                <artifactId>classgraph</artifactId>
-                <version>${version.lib.classgraph}</version>
-            </dependency>
             <!-- Used for OIDC integration tests -->
             <dependency>
                 <groupId>org.jsoup</groupId>
@@ -1553,10 +1543,6 @@
         </profile>
         <profile>
             <id>release</id>
-            <modules>
-                <module>archetypes</module>
-                <module>docs</module>
-            </modules>
             <build>
                 <plugins>
                     <plugin>

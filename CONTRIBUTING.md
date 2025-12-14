@@ -1,0 +1,42 @@
+# Contributing to Project Helidon MicroProfile
+
+We welcome your contributions! There are multiple ways to contribute.
+
+## Discussion
+
+Join us at [#helidon-users](http://slack.helidon.io) and participate in discussions.
+
+## Opening Issues
+
+If you hit a bug or have an enhancement request then file a [GitHub issue](https://github.com/oracle/helidon-microprofile/issues).
+When filing a bug remember that the better written the bug is, the more likely it is
+to be fixed. Please include:
+
+1. Version of Helidon MicroProfile
+2. OS
+3. Version of Docker or Kubernetes or other software if it's relevant to your issue
+4. Steps to reproduce
+
+## Contributing Code
+
+We welcome code contributions, but we need the contributor to sign the
+[Oracle Contributor Agreement (OCA)](https://oca.opensource.oracle.com)
+first.
+
+## Pull Request Process
+
+1. Sign the [OCA](https://oca.opensource.oracle.com)
+2. Ensure there is an issue created to track and discuss the fix or enhancement you intend to submit.
+3. Fork this repository.
+4. Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, e.g. 1234-fixes. Follow [DEV-GUIDELINES](DEV-GUIDELINES.md) for a list of rules and best practices followed by project Helidon.
+5. Ensure that any documentation is updated with the changes that are required by your change.
+6. Ensure that any samples are updated if the base image has been changed.
+7. Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate. your changes. Ensure that you reference the issue you created as well.
+8. We will assign the pull request to 2-3 people for review before it is merged
+
+## Code of Conduct
+
+Follow the [Golden Rule](https://en.wikipedia.org/wiki/Golden_Rule). If
+you'd like more specific guidelines see the
+[Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html)
+
