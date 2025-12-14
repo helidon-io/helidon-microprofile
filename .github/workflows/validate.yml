@@ -31,7 +31,6 @@ on:
 env:
   MVN_VERSION: 3.9.9
   JAVA_VERSION: 21
-  GRAALVM_VERSION: 21.0.3
   JAVA_DISTRO: oracle
   MVN_ARGS: |
     -B -fae -e
@@ -45,10 +44,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  prime-build:
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Free disk space
+        shell: bash
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4.7.1
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Helidon Priming build
+        run: |
+          mkdir -p ~/.m2/repository/io/helidon/
+          echo "empty file" > ~/.m2/repository/io/helidon/empty.txt
+          etc/scripts/prime-build.sh
+      - name: Upload Maven Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: io-helidon-maven-artifacts
+          path: ~/.m2/repository/io/helidon
+          retention-days: 1
   copyright:
+    needs: prime-build
     timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
+      - name: Download Maven Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: io-helidon-maven-artifacts
+          path: ~/.m2/repository/io/helidon
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
@@ -57,9 +91,15 @@ jobs:
         with:
           run: etc/scripts/copyright.sh
   checkstyle:
+    needs: prime-build
     timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
+      - name: Download Maven Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: io-helidon-maven-artifacts
+          path: ~/.m2/repository/io/helidon
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
@@ -78,9 +118,15 @@ jobs:
           maven-cache: none
           run: etc/scripts/shellcheck.sh
   build:
+    needs: prime-build
     timeout-minutes: 15
     runs-on: ubuntu-22.04
     steps:
+      - name: Download Maven Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: io-helidon-maven-artifacts
+          path: ~/.m2/repository/io/helidon
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
