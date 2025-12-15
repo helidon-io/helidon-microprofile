@@ -108,7 +108,7 @@ jobs:
           run: |
             mvn --version
             mvn ${MVN_ARGS} build-cache:go-offline
-            mvn ${MVN_ARGS} -T8 \
+            mvn ${MVN_ARGS} \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
               -Ptests \
