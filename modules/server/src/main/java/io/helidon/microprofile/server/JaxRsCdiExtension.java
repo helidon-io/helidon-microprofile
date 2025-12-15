@@ -26,8 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.jersey.webserver.JaxRsService;
+import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
 import jakarta.annotation.Priority;

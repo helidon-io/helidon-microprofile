@@ -16,13 +16,13 @@
 
 package io.helidon.tests.functional.context.hello;
 
+import java.io.IOException;
+
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.ReaderInterceptor;
 import jakarta.ws.rs.ext.ReaderInterceptorContext;
-
-import java.io.IOException;
 
 /**
  * A reader interceptor in request scope.

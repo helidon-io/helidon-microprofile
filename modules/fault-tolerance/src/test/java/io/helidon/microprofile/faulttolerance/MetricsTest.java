@@ -18,28 +18,47 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsWaiting;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadRunningDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadWaitingDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerOpenedTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerState;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryResult;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetried;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetriesTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutCallsTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutExecutionDuration;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.enabled;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getMetricRegistry;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.*;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationFallback.NOT_DEFINED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.enabled;
-import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.getMetricRegistry;
 
 /**
  * Tests for bean metrics.

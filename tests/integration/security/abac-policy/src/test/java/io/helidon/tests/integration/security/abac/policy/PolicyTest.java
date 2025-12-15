@@ -17,7 +17,6 @@
 package io.helidon.tests.integration.security.abac.policy;
 
 import io.helidon.http.Status;
-import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.ws.rs.client.WebTarget;

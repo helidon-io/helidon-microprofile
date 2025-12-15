@@ -25,8 +25,8 @@ import java.util.Objects;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.cdi.HelidonContainer;
+import io.helidon.microprofile.config.core.MpConfigSources;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;

@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.http.HttpRouting;
 

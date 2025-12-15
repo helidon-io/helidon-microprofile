@@ -35,9 +35,9 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.config.core.MpConfigProviderResolver;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.spi.HelidonShutdownHandler;
 
 import jakarta.enterprise.context.BeforeDestroyed;

@@ -36,14 +36,4 @@ record here.
     - File exclusions (exceptions)
     - FileLength cannot be excluded using a @SuppressWarnings
     -->
-    <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
-            checks="FileLength"/>
-
-    <!--
-    - Module exclusions
-    -->
-
-    <suppress files="integrations/oci/sdk/tests/"
-            checks=".*"/>
-
 </suppressions>

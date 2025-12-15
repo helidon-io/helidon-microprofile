@@ -15,7 +15,6 @@
  */
 package io.helidon.tests.integration.mp.metrics.gh9995;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;

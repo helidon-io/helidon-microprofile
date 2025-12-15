@@ -16,12 +16,12 @@
 
 package io.helidon.tests.functional.context.hello;
 
+import java.io.IOException;
+
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.WriterInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
-
-import java.io.IOException;
 
 /**
  * Presence of this interceptor in request scope tests that a request scope is

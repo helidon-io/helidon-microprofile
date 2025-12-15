@@ -125,7 +125,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
 
         if (stage != null) {
             boolean once = false;
-            for (; ; ) {
+            for (;;) {
 
                 if (once) {
                     if (!stages.hasNext()) {

@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.microprofile.config.core.MpConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

@@ -16,10 +16,10 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
+import java.util.Set;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Application;
-
-import java.util.Set;
 
 @ApplicationScoped
 public class Application2 extends Application {

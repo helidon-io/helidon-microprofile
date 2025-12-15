@@ -57,7 +57,8 @@ class FallbackAntn extends MethodAntn implements Fallback {
                     throw new FaultToleranceDefinitionException("Fallback method " + fallbackMethod.getName()
                                                                         + " in class " + fallbackMethod.getDeclaringClass()
                             .getSimpleName()
-                                                                        + " incompatible return type " + fallbackMethod.getReturnType()
+                                                                        + " incompatible return type " + fallbackMethod
+                            .getReturnType()
                                                                         + " with " + method.getReturnType());
                 }
             } catch (NoSuchMethodException e) {

@@ -38,7 +38,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.microprofile.config.core.ConfigValueImpl;
 import io.helidon.microprofile.config.core.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;

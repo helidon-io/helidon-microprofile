@@ -84,6 +84,12 @@ class DataFetcherUtils {
      */
     private static final String MAP_MESSAGE = "This implementation does not support using a Map "
             + "as input to a query or mutation";
+    private static final String MULTI_LEVEL_ARRAY_MESSAGE = "This implementation does not currently support "
+            + "multi-level primitive arrays as arguments. "
+            + "Please use "
+            + "List or Collection of Object equivalent. E.g. "
+            + "In place of method(int [][] value) use "
+            + " method(List<List<Integer>> value)";
 
     /**
      * Private constructor for utilities class.
@@ -140,12 +146,7 @@ class DataFetcherUtils {
 
                         if (argument.isArrayReturnType() && argument.arrayLevels() > 1
                                 && SchemaGeneratorHelper.isPrimitiveArray(argument.originalType())) {
-                            throw new GraphQlConfigurationException("This implementation does not currently support "
-                                                                            + "multi-level primitive arrays as arguments. "
-                                                                            + "Please use "
-                                                                            + "List or Collection of Object equivalent. E.g. "
-                                                                            + "In place of method(int [][] value) use "
-                                                                            + " method(List<List<Integer>> value)");
+                            throw new GraphQlConfigurationException(MULTI_LEVEL_ARRAY_MESSAGE);
                         }
 
                         listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
@@ -495,36 +496,33 @@ class DataFetcherUtils {
         }
 
         if (numberKey != null) {
-            return originalType.equals(Float.class) ? Float.valueOf(numberKey.floatValue())
-                    : originalType.equals(float.class) ? numberKey.floatValue()
-                            : originalType.equals(Integer.class) ? Integer.valueOf(numberKey.intValue())
-                                    : originalType.equals(int.class) ? numberKey.intValue()
-                                            : originalType.equals(Long.class) ? Long.valueOf(numberKey.longValue())
-                                                    : originalType.equals(long.class) ? numberKey.longValue()
-                                                            : originalType.equals(Double.class)
-                                                                    ? Double.valueOf(numberKey.doubleValue())
-                                                                    : originalType.equals(double.class) ? numberKey.doubleValue()
-                                                                            : originalType.equals(Byte.class) ? Byte.valueOf(
-                                                                                    numberKey.byteValue())
-                                                                                    : originalType.equals(byte.class)
-                                                                                            ? numberKey.byteValue()
-                                                                                            : originalType.equals(Short.class)
-                                                                                                    ?
-                                                                                                    Short.valueOf(numberKey.shortValue())
-                                                                                                    : originalType.equals(short.class)
-                                                                                                            ?
-                                                                                                            numberKey.shortValue()
-                                                                                                            : originalType.equals(
-                                                                                                                    BigDecimal.class)
-                                                                                                                    ?
-                                                                                                                    BigDecimal.valueOf(
-                                                                                                                    numberKey.doubleValue())
-                                                                                                                    : originalType.equals(
-                                                                                                                            BigInteger.class)
-                                                                                                                            ?
-                                                                                                                            BigInteger.valueOf(
-                                                                                                                            numberKey.longValue())
-                                                                                                                            : key;
+            if (originalType == Float.class || originalType == float.class) {
+                return numberKey.floatValue();
+            }
+            if (originalType == Integer.class || originalType == int.class) {
+                return numberKey.intValue();
+            }
+            if (originalType == Long.class || originalType == long.class) {
+                return numberKey.longValue();
+            }
+            if (originalType == Double.class || originalType == double.class) {
+                return numberKey.doubleValue();
+            }
+            if (originalType == Byte.class || originalType == byte.class) {
+                return numberKey.byteValue();
+            }
+            if (originalType == Short.class || originalType == short.class) {
+                return numberKey.shortValue();
+            }
+            if (originalType == Character.class || originalType == char.class) {
+                return (char) numberKey.intValue();
+            }
+            if (originalType == BigDecimal.class) {
+                return BigDecimal.valueOf(numberKey.doubleValue());
+            }
+            if (originalType == BigInteger.class) {
+                return BigInteger.valueOf(numberKey.longValue());
+            }
         }
         if (originalType.equals(Float.class) || originalType.equals(float.class)) {
             return (Float) key;

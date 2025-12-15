@@ -20,8 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.server.Server;
 
 import jakarta.ws.rs.client.Client;

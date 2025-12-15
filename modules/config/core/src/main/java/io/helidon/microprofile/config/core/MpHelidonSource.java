@@ -27,7 +27,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigHelper;
-import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;

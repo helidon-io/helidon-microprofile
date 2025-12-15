@@ -333,7 +333,8 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
             MpMetaConfigProvider mpMetaConfigProvider = MpConfigSources.MP_META_PROVIDERS.get(type);
             if (mpMetaConfigProvider == null) {
                 throw new ConfigException("Wrong meta configuration, type " + type
-                                                  + " not supported, only supporting: " + MpConfigSources.MP_META_PROVIDERS.keySet());
+                                                  + " not supported, only supporting: "
+                                                  + MpConfigSources.MP_META_PROVIDERS.keySet());
             }
 
             List<? extends ConfigSource> delegates = mpMetaConfigProvider.create(type, config, profile);

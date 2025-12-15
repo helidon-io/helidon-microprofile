@@ -24,8 +24,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.config.core.MpConfigSources;
-import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.microprofile.config.core.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;

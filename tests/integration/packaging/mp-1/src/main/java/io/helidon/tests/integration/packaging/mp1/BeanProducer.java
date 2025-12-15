@@ -16,10 +16,10 @@
 
 package io.helidon.tests.integration.packaging.mp1;
 
+import io.helidon.tests.integration.packaging.mp1.other.ProducedBean;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
-
-import io.helidon.tests.integration.packaging.mp1.other.ProducedBean;
 
 @ApplicationScoped
 public class BeanProducer {

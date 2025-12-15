@@ -21,14 +21,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.inject.Inject;
-
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.tests.integration.packaging.mp1.other.BeanProcessor;
 import io.helidon.tests.integration.packaging.mp1.other.ProducedBean;
 
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Fallback;

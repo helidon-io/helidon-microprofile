@@ -35,8 +35,6 @@ import io.helidon.common.GenericType;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
-import io.helidon.microprofile.config.core.MpConfigBuilder;
-import io.helidon.microprofile.config.core.MpMetaConfig;
 import io.helidon.config.spi.ConfigMapper;
 
 import org.eclipse.microprofile.config.Config;

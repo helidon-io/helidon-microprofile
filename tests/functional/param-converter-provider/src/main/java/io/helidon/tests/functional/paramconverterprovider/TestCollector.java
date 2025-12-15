@@ -16,10 +16,10 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class TestCollector {

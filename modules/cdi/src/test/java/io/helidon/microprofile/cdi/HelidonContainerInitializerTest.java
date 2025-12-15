@@ -18,8 +18,8 @@ package io.helidon.microprofile.cdi;
 
 import java.util.Map;
 
-import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.microprofile.config.core.MpConfigSources;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.se.SeContainer;

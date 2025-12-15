@@ -18,8 +18,8 @@ package io.helidon.microprofile.server;
 
 import java.util.Map;
 
-import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.cdi.Main;
+import io.helidon.microprofile.config.core.MpConfigSources;
 
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import org.eclipse.microprofile.config.Config;

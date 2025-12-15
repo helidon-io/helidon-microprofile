@@ -51,7 +51,6 @@ class RestClientMetricsFilter implements ClientRequestFilter, ClientResponseFilt
      */
     private final LazyValue<RestClientMetricsCdiExtension> ext =
             LazyValue.create(() -> CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class));
-    ;
 
     private RestClientMetricsFilter() {
     }

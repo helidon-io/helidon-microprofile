@@ -47,8 +47,6 @@ import io.helidon.microprofile.lra.resources.StartAndAfter;
 import io.helidon.microprofile.lra.resources.Timeout;
 import io.helidon.microprofile.lra.resources.Work;
 import io.helidon.microprofile.server.CatchAllExceptionMapper;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
@@ -71,7 +69,6 @@ import org.hamcrest.core.AnyOf;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.hamcrest.MatcherAssert.assertThat;

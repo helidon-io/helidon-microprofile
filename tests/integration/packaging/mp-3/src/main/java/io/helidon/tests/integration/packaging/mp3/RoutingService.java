@@ -16,9 +16,9 @@
 package io.helidon.tests.integration.packaging.mp3;
 
 import io.helidon.microprofile.server.RoutingPath;
+import io.helidon.security.Security;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
-import io.helidon.security.Security;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

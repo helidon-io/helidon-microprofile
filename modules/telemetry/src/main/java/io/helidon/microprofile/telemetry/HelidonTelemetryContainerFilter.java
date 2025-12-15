@@ -66,6 +66,13 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String HTTP_ROUTE = "http.route";
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
+    private static final String DEPRECATED_WARNING = """
+            Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
+            names. Your configuration does not set %s to true, so your service uses the legacy span name
+            format which excludes the HTTP method. This feature is deprecated and marked for removal in a
+            future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
+            configuration to migrate to the current conventions.""";
+
     private static boolean spanNameFullUrl = false;
     private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
 
@@ -100,12 +107,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         if (!restSpanNameIncludesMethod && !spanNameWarningLogged.get()) {
             spanNameWarningLogged.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
-                       String.format("""
-                                             Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
-                                             names. Your configuration does not set %s to true, so your service uses the legacy span name
-                                             format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-                                             future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
-                                             configuration to migrate to the current conventions.""",
+                       String.format(DEPRECATED_WARNING,
                                      SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
