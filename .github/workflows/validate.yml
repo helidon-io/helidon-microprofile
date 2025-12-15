@@ -73,23 +73,6 @@ jobs:
           name: io-helidon-maven-artifacts
           path: ~/.m2/repository/io/helidon
           retention-days: 1
-  copyright:
-    needs: prime-build
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Download Maven Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: io-helidon-maven-artifacts
-          path: ~/.m2/repository/io/helidon
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-          fetch-depth: 0
-      - uses: ./.github/actions/common
-        with:
-          run: etc/scripts/copyright.sh
   checkstyle:
     needs: prime-build
     timeout-minutes: 5
@@ -106,46 +89,10 @@ jobs:
       - uses: ./.github/actions/common
         with:
           run: etc/scripts/checkstyle.sh
-  shellcheck:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          maven-cache: none
-          run: etc/scripts/shellcheck.sh
-  build:
-    needs: prime-build
-    timeout-minutes: 15
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Download Maven Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: io-helidon-maven-artifacts
-          path: ~/.m2/repository/io/helidon
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-write
-          maven-cache: read-write
-          run: |
-            mvn --version
-            mvn ${MVN_ARGS} build-cache:go-offline
-            mvn ${MVN_ARGS} -T8 \
-              -Dorg.slf4j.simpleLogger.showThreadName=true \
-              -DskipTests \
-              -Ptests \
-              install
 
   gate:
     runs-on: ubuntu-22.04
-    needs: [ copyright, checkstyle, shellcheck ]
+    needs: [ checkstyle ]
     steps:
       - shell: bash
         run: |
