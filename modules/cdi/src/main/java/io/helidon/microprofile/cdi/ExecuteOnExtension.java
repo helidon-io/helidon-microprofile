@@ -46,8 +46,6 @@ import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 public class ExecuteOnExtension implements Extension {
 
     private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
-
-    ;
     private final LazyValue<Map<Method, MethodType>> methodType = LazyValue.create(ConcurrentHashMap::new);
 
     void registerMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {

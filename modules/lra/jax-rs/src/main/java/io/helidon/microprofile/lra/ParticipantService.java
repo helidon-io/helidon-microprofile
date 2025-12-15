@@ -107,7 +107,8 @@ class ParticipantService {
                     .filter(m -> m.getName().equals(methodName))
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Cant find participant method " + methodName
-                                                                    + " with participant method: " + classFqdn + "#" + methodName));
+                                                                    + " with participant method: "
+                                                                    + classFqdn + "#" + methodName));
 
             int paramCount = method.getParameters().length;
 

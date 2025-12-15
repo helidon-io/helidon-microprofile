@@ -26,8 +26,6 @@ import java.util.function.Function;
 
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigValue;
-import io.helidon.microprofile.config.core.MpConfigSources;
-import io.helidon.microprofile.config.core.MpMetaConfig;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 

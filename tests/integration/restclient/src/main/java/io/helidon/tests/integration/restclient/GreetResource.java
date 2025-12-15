@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.restclient;
 
+import java.util.Collections;
+
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -23,8 +25,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-
-import java.util.Collections;
 
 /**
  * A typical greet resource that only handles a single GET for a default message.

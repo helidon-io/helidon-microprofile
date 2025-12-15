@@ -15,9 +15,9 @@
  */
 package io.helidon.microprofile.server;
 
-import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.config.ConfigCdiExtension;
+import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;

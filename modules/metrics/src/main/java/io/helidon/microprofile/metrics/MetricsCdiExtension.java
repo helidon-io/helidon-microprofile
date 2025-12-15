@@ -113,11 +113,10 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * MP metrics 3.0 spec. The issue and PR discussion explain how developers who provide their own producers should use
  * CDI qualifiers on the producers (and, therefore, injection points) to avoid ambiguity between their own producers and
  * producers written by vendors implementing MP metrics.
- *
+ * <p>
  * For Helidon, this means we no longer need to track producer fields and methods, nor do we need to augment injection points
  * with our own {@code VendorProvided} qualifier to disambiguate, because we now rely on developers who write their own
  * producers to avoid the ambiguity using qualifiers.
- * </p>
  */
 public class MetricsCdiExtension extends HelidonRestCdiExtension {
     static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS = Set.of(
@@ -149,6 +148,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 }
             };
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
+    private static final String GAUGE_WARNING_NOT_BEAN = """
+            @Gauge is configured on a bean %s that is neither ApplicationScoped nor
+            Singleton. This is most likely a bug. You may set 'metrics.warn-dependent'
+            configuration option to 'false' to remove this warning.""";
+
     private static Metadata syntheticTimerUnmappedExceptionMetadata;
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
     private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
@@ -165,7 +169,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private final List<MetricAnnotationDiscoveryObserver> metricAnnotationDiscoveryObservers = new ArrayList<>();
     private final List<MetricRegistrationObserver> metricRegistrationObservers = new ArrayList<>();
     private final Map<Executable, List<MetricAnnotationDiscovery>> metricAnnotationDiscoveriesByExecutable = new HashMap<>();
-    @SuppressWarnings("unchecked")
 
     // records stereotype annotations which have metrics annotations inside them
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
@@ -573,8 +576,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         syntheticTimerUnmappedExceptionMetadata = Metadata.builder()
                 .withName(syntheticTimerMetricUnmappedExceptionName)
                 .withDescription("""
-                                         The total number of unmapped exceptions that occur from this RESTful resouce method since \
-                                         the start of the server.""")
+                                         The total number of unmapped exceptions that occur from this RESTful resource method
+                                         since the start of the server.""")
                 .withUnit(MetricUnits.NONE)
                 .build();
         MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
@@ -608,11 +611,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
 
     /**
      * Records Java classes with a metrics annotation somewhere.
-     *
+     * <p>
      * By recording the classes here, we let CDI optimize its invocations of this observer method. Later, when we
      * observe managed beans (which CDI invokes for all managed beans) where we also have to examine each method and
      * constructor, we can quickly eliminate from consideration any classes we have not recorded here.
-     *
+     * <p>
      * This observer runs after other {@code ProcessAnnotatedType} observers to give other extensions a chance to provide their
      * own interceptors for selected constructors and methods by adding {@link MetricAnnotationDiscoveryObserver}
      * to the configured type, constructor, or method.
@@ -835,7 +838,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
             if (!syntheticTimerAnnotatedClassesIgnored.isEmpty()) {
                 LOGGER.log(Level.DEBUG, () ->
                         "Classes with synthetic Timed annotations added that were not processed, probably "
-                                + "because they were vetoed:" + syntheticTimerAnnotatedClassesIgnored.toString());
+                                + "because they were vetoed:" + syntheticTimerAnnotatedClassesIgnored);
             }
         }
         restRequestMetricsClassesProcessed.clear();
@@ -871,17 +874,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 }
                 if (scopeAnnotation != ApplicationScoped.class && type.getAnnotation(Singleton.class) == null) {
                     if (ConfigProvider.getConfig().getOptionalValue("metrics.warn-dependent", Boolean.class).orElse(true)) {
-                        LOGGER.log(Level.WARNING, String.format("""
-                                                                        @Gauge is configured on a bean %s that is neither ApplicationScoped nor \
-                                                                        Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' \
-                                                                        configuration option to 'false' to remove this warning.""",
+                        LOGGER.log(Level.WARNING, String.format(GAUGE_WARNING_NOT_BEAN,
                                                                 clazz.getName()));
                     }
                 }
 
                 String explicitGaugeName = gaugeAnnotation.name();
                 String gaugeNameSuffix = (
-                        explicitGaugeName.length() > 0 ? explicitGaugeName
+                        !explicitGaugeName.isEmpty() ? explicitGaugeName
                                 : javaMethod.getName());
                 String gaugeName = (
                         gaugeAnnotation.absolute() ? gaugeNameSuffix

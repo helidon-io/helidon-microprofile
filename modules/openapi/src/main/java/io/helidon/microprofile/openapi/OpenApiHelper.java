@@ -78,7 +78,8 @@ final class OpenApiHelper {
         if (warningsEnabledText != null) {
             LOGGER.log(System.Logger.Level.INFO, String.format("""
                                                                        Use of the property %s  + " is deprecated. \
-                                                                       Helidon logs parsing warnings by default but honors the property setting.""",
+                                                                       Helidon logs parsing warnings by default but honors the
+                                                                       property setting.""",
                                                                WARNINGS_ENABLED_PROPERTY_NAME));
             boolean warningsEnabled = Boolean.parseBoolean(warningsEnabledText);
             if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(java.util.logging.Level.WARNING) && !warningsEnabled) {

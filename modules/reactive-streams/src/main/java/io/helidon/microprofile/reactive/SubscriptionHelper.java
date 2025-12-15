@@ -40,7 +40,7 @@ enum SubscriptionHelper implements Flow.Subscription {
      * @return the old request amount after the operation
      */
     public static long addRequest(AtomicLong field, long n) {
-        for (; ; ) {
+        for (;;) {
             long current = field.get();
             if (current == Long.MAX_VALUE) {
                 return Long.MAX_VALUE;
@@ -65,7 +65,7 @@ enum SubscriptionHelper implements Flow.Subscription {
      */
     public static boolean setOnce(AtomicReference<Flow.Subscription> subscriptionField, Flow.Subscription upstream) {
         Objects.requireNonNull(upstream);
-        for (; ; ) {
+        for (;;) {
             Flow.Subscription current = subscriptionField.get();
             if (current == CANCELED) {
                 upstream.cancel();

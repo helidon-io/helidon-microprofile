@@ -21,15 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.salesforce.kafka.test.AbstractKafkaTestResource;
+import com.salesforce.kafka.test.KafkaTestCluster;
+import com.salesforce.kafka.test.KafkaTestUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.salesforce.kafka.test.AbstractKafkaTestResource;
-import com.salesforce.kafka.test.KafkaTestCluster;
-import com.salesforce.kafka.test.KafkaTestUtils;
 
 public class CustomKafkaTestResource
         extends AbstractKafkaTestResource<CustomKafkaTestResource> {

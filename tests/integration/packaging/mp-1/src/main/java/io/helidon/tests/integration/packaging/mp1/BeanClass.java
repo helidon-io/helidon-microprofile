@@ -19,7 +19,6 @@ package io.helidon.tests.integration.packaging.mp1;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Produces;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped

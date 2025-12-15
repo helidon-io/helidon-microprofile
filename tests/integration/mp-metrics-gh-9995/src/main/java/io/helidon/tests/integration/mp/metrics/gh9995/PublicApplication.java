@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.integration.mp.metrics.gh9995;
 
+import java.util.Set;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Application;
-
-import java.util.Set;
 
 /**
  * Application to expose public resource.

@@ -39,8 +39,6 @@ import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.ConfigValues;
 import io.helidon.config.MissingValueException;
-import io.helidon.microprofile.config.core.MpConfigImpl;
-import io.helidon.microprofile.config.core.SeConfigValue;
 import io.helidon.config.spi.ConfigMapper;
 
 /**

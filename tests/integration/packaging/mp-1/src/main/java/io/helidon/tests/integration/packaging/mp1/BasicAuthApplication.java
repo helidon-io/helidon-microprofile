@@ -17,11 +17,11 @@ package io.helidon.tests.integration.packaging.mp1;
 
 import java.util.Set;
 
+import io.helidon.security.annotations.Authenticated;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
-
-import io.helidon.security.annotations.Authenticated;
 
 /**
  * Application protected by HTTP Basic Authentication.

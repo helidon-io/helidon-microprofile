@@ -22,8 +22,6 @@ import java.util.Map;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.config.OverrideSources;
-import io.helidon.microprofile.config.core.MpConfigImpl;
-import io.helidon.microprofile.config.core.MpConfigProviderResolver;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigSource;

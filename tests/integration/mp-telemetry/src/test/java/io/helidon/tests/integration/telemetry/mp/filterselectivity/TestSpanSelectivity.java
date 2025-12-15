@@ -20,7 +20,6 @@ import java.util.List;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import io.opentelemetry.sdk.trace.data.SpanData;

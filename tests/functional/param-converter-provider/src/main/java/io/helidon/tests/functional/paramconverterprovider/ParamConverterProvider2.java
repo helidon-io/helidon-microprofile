@@ -16,12 +16,12 @@
 
 package io.helidon.tests.functional.paramconverterprovider;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.ext.ParamConverter;
 import jakarta.ws.rs.ext.ParamConverterProvider;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
 
 @ApplicationScoped
 public class ParamConverterProvider2 implements ParamConverterProvider {

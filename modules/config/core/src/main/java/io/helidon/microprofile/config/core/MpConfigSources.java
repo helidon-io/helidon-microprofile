@@ -41,9 +41,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.MutabilitySupport;
-import io.helidon.microprofile.config.core.MpEnvironmentVariablesMetaConfigProvider;
-import io.helidon.microprofile.config.core.MpEnvironmentVariablesSource;
-import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.microprofile.config.core.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;

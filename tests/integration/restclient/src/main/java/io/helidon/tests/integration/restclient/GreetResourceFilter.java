@@ -16,13 +16,13 @@
 
 package io.helidon.tests.integration.restclient;
 
+import java.io.IOException;
+import java.net.URI;
+
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.UriInfo;
-
-import java.io.IOException;
-import java.net.URI;
 
 /**
  * A client request filter that replaces port 8080 by the ephemeral port allocated for the

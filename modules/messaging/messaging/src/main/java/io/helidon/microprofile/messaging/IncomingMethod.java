@@ -109,19 +109,17 @@ class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
                         ackCtx.preAck();
                         try {
                             CompletionStage<Void> result = invoke(inMsg);
-                            return ReactiveStreams.fromCompletionStageNullable(result
-                                                                                       // on error resume
-                                                                                       .exceptionally(t -> {
-                                                                                           LOGGER.log(System.Logger.Level.ERROR,
-                                                                                                      () -> "Error when "
-                                                                                                              + "invoking "
-                                                                                                              + "@Incoming "
-                                                                                                              + "method " + getMethod().getName(),
-                                                                                                      t);
-                                                                                           ackCtx.postNack(t);
-                                                                                           return null;
-                                                                                       })
-                                                                                       .thenRun(ackCtx::postAck));
+                            // on error resume
+                            return ReactiveStreams.fromCompletionStageNullable(result.exceptionally(t -> {
+                                        LOGGER.log(System.Logger.Level.ERROR,
+                                                   () -> "Error when "
+                                                           + "invoking "
+                                                           + "@Incoming "
+                                                           + "method " + getMethod().getName(),
+                                                   t);
+                                        ackCtx.postNack(t);
+                                        return null;
+                                    }).thenRun(ackCtx::postAck));
                         } catch (Throwable t) {
                             LOGGER.log(System.Logger.Level.ERROR,
                                        () -> "Error when invoking @Incoming method " + getMethod().getName(), t);

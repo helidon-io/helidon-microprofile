@@ -16,10 +16,10 @@
 
 package io.helidon.tests.integration.security.mapper;
 
+import io.helidon.security.annotations.Authenticated;
+
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-
-import io.helidon.security.annotations.Authenticated;
 
 @Path("restricted")
 @Authenticated

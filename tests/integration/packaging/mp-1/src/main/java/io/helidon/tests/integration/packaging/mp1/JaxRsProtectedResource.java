@@ -15,12 +15,12 @@
  */
 package io.helidon.tests.integration.packaging.mp1;
 
+import io.helidon.security.abac.scope.ScopeValidator;
+
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-
-import io.helidon.security.abac.scope.ScopeValidator;
 
 /**
  * A resource to test.

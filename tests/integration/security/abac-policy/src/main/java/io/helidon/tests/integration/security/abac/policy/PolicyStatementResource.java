@@ -20,7 +20,6 @@ import io.helidon.security.abac.policy.PolicyValidator;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Response;
 
 /**
  * A resource with abac policy statements.

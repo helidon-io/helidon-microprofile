@@ -83,7 +83,7 @@ final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscript
         // null -> DONE: deliver onError later
         // s -> DONE: deliver error now
         // CANCELED -> DONE_CANCELED: RxJavaPlugins.onError
-        for (; ; ) {
+        for (;;) {
             Subscriber<? super T> s = downstream.get();
             Subscriber<? super T> u;
             if (s == TerminatedSubscriber.CANCELED) {
@@ -109,7 +109,7 @@ final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscript
         // null -> DONE: deliver onComplete later
         // s -> DONE: deliver onComplete now
         // CANCELED -> DONE_CANCELED -> ignore onComplete
-        for (; ; ) {
+        for (;;) {
             Subscriber<? super T> s = downstream.get();
             Subscriber<? super T> u;
             if (s == TerminatedSubscriber.CANCELED) {
@@ -144,7 +144,7 @@ final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscript
             } else {
                 // CANCELED || DONE_CANCELED : ignore
                 // DONE -> DONE_CANCELED : signal terminal event
-                for (; ; ) {
+                for (;;) {
                     Subscriber<? super T> s = downstream.get();
                     if (s == TerminatedSubscriber.CANCELED || s == TerminatedSubscriber.DONE_CANCELED) {
                         break;
@@ -180,7 +180,7 @@ final class DeferredProcessor<T> implements Multi<T>, Processor<T, T>, Subscript
         // null -> CANCEL : do nothing
         // s -> CANCEL : do nothing
         // DONE -> DONE_CANCEL : RxJavaPlugins.onError if error != null
-        for (; ; ) {
+        for (;;) {
             Subscriber<? super T> s = downstream.get();
             Subscriber<? super T> u;
             if (s == TerminatedSubscriber.CANCELED || s == TerminatedSubscriber.DONE_CANCELED) {
