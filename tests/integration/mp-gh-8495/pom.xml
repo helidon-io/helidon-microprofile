@@ -40,7 +40,7 @@
             <artifactId>helidon-microprofile-oidc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.security</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
