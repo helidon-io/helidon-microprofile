@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@
         <module>tck-opentracing</module>
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
-        <module>tck-lra</module>
         <module>tck-telemetry</module>
         <module>tck-core-profile</module>
         <module>tck-cdi</module>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,16 +31,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.messaging.jms</groupId>
-            <artifactId>helidon-messaging-jms</artifactId>
+            <groupId>io.helidon.microprofile.messaging.connectors.jms</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-jms</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.messaging</groupId>
             <artifactId>helidon-microprofile-messaging</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.messaging</groupId>
-            <artifactId>helidon-messaging-jms-shim</artifactId>
+            <groupId>io.helidon.microprofile.messaging.connectors</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-jms-shim</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -69,8 +69,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.messaging.mock</groupId>
-            <artifactId>helidon-messaging-mock</artifactId>
+            <groupId>io.helidon.microprofile.messaging.connectors.mock</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-mock</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

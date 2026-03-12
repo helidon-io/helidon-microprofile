@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("MP Telemetry support")
 @Features.Flavor(HelidonFlavor.MP)
 @Features.Path("Telemetry")
-@SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.telemetry {
 
     requires io.helidon.common.context;

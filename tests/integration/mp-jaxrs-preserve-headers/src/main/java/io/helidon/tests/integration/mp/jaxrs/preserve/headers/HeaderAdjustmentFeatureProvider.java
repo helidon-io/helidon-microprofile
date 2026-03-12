@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderValues;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -45,7 +46,7 @@ public class HeaderAdjustmentFeatureProvider
     }
 
     @Override
-    public HeaderAdjustmentFeature create(io.helidon.common.config.Config config, String name) {
+    public HeaderAdjustmentFeature create(Config config, String name) {
         return new HeaderAdjustmentFeature();
     }
 
@@ -59,7 +60,7 @@ public class HeaderAdjustmentFeatureProvider
         public void setup(ServerFeatureContext serverFeatureContext) {
             serverFeatureContext.socket(WebServer.DEFAULT_SOCKET_NAME)
                     .httpRouting()
-                    .addFeature(new HeaderAdjustmentHttpFeature(Config.global()));
+                    .addFeature(new HeaderAdjustmentHttpFeature(Services.get(Config.class)));
         }
 
         @Override
@@ -75,9 +76,9 @@ public class HeaderAdjustmentFeatureProvider
         @Weight(WEIGHT)
         private static class HeaderAdjustmentHttpFeature implements HttpFeature {
 
-            private final io.helidon.common.config.Config config;
+            private final Config config;
 
-            private HeaderAdjustmentHttpFeature(io.helidon.common.config.Config config) {
+            private HeaderAdjustmentHttpFeature(Config config) {
                 this.config = config;
             }
 

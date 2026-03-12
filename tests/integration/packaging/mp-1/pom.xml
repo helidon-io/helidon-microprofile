@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -106,18 +106,6 @@
                 <executions>
                     <execution>
                         <id>make-index</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.graalvm.buildtools</groupId>
-                <artifactId>native-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>build-native-image</id>
-                        <configuration>
-                            <quickBuild>true</quickBuild>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

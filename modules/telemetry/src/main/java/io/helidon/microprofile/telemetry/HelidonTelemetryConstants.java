@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,25 @@ package io.helidon.microprofile.telemetry;
  */
 class HelidonTelemetryConstants {
 
-    static final String HTTP_STATUS_CODE = "http.status_code";
-    static final String HTTP_METHOD = "http.method";
-    static final String HTTP_SCHEME = "http.scheme";
     //Private constructor for a utility class.
     private HelidonTelemetryConstants() {
     }
+
+    static final String HTTP_STATUS_CODE = "http.status_code";
+    static final String HTTP_METHOD = "http.method";
+    static final String HTTP_SCHEME = "http.scheme";
+
+    // The following are for maintaining compatibility with MicroProfile Telemetry 1.x.
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static final String NET_HOST_NAME = "net.host.name";
+
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static final String NET_HOST_PORT = "net.host.port";
+
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static final String NET_PEER_NAME = "net.peer.name";
+
+    @Deprecated(since = "4.4.0", forRemoval = true)
+    static final String NET_PEER_PORT = "net.peer.port";
+    // end of compatibility
 }

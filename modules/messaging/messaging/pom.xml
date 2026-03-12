@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-configurable</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-api</artifactId>
         </dependency>
@@ -47,6 +55,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.reactive-streams</groupId>
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
+            <artifactId>microprofile-reactive-streams-operators-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -64,8 +76,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.messaging.mock</groupId>
-            <artifactId>helidon-messaging-mock</artifactId>
+            <groupId>io.helidon.microprofile.messaging.connectors.mock</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-mock</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

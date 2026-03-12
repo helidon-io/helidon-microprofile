@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package io.helidon.microprofile.cors;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
@@ -56,8 +56,8 @@ class ErrorResponseTest {
         assertThat("Status from missing endpoint request", res.getStatusInfo(), is(Response.Status.NOT_FOUND));
         // the 404 is returned from Helidon WebServer, not from Jersey, so the CORS is not present
         // as we may route to additional services after Jersey is resolved
-        //        assertThat("With CORS enabled, headers in 404 response",
-        //                   res.getHeaders().keySet(),
-        //                   hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
+//        assertThat("With CORS enabled, headers in 404 response",
+//                   res.getHeaders().keySet(),
+//                   hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
     }
 }

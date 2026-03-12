@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import jakarta.inject.Inject;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -37,6 +38,8 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.container.Suspended;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
@@ -51,27 +54,24 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 @Counted
 public class HelloWorldResource {
 
+    private static final System.Logger LOGGER = System.getLogger(HelloWorldResource.class.getName());
+
     static final String SLOW_RESPONSE = "At last";
+
     // In case pipeline runs need a different time
     static final int SLOW_DELAY_MS = Integer.getInteger("helidon.microprofile.metrics.asyncSimplyTimedDelayMS", 2 * 1000);
+
     static final String MESSAGE_TIMER = "messageTimer";
     static final String SLOW_MESSAGE_TIMER = "slowMessageTimer";
     static final String SLOW_MESSAGE_SIMPLE_TIMER = "slowMessageSimpleTimer";
-    private static final System.Logger LOGGER = System.getLogger(HelloWorldResource.class.getName());
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
+
+    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+
     static CountDownLatch slowRequestInProgress = null;
     static CountDownLatch slowRequestInProgressDataCaptured = null;
     static CountDownLatch slowRequestResponseSent = null;
-    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
-    @Inject
-    MetricRegistry metricRegistry;
-    @Inject
-    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
-    private MetricRegistry vendorRegistry;
-
-    public HelloWorldResource() {
-
-    }
 
     static void initSlowRequest() {
         slowRequestInProgress = new CountDownLatch(1);
@@ -102,6 +102,17 @@ public class HelloWorldResource {
         return inflightRequests(metricRegistry).get().getValue().longValue();
     }
 
+    @Inject
+    MetricRegistry metricRegistry;
+
+    @Inject
+    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
+    private MetricRegistry vendorRegistry;
+
+    public HelloWorldResource() {
+
+    }
+
     // Do not add other metrics annotations to this method!
     @GET
     @Produces(MediaType.TEXT_PLAIN)
@@ -110,11 +121,18 @@ public class HelloWorldResource {
         return "Hello World";
     }
 
+    @HEAD
+    public Response plainHead(Request req) {
+        Response.ResponseBuilder builder = Response.status(Response.Status.OK);
+        builder.header("X-result", "good");
+        return builder.build();
+    }
+
     @GET
     @Timed(name = MESSAGE_TIMER, absolute = true)
     @Path("/withArg/{name}")
     @Produces(MediaType.TEXT_PLAIN)
-    public String messageWithArg(@PathParam("name") String input) {
+    public String messageWithArg(@PathParam("name") String input){
         return "Hello World, " + input;
     }
 
@@ -142,7 +160,7 @@ public class HelloWorldResource {
                 }
                 long afterResume = inflightRequestsCount();
                 LOGGER.log(Level.DEBUG,
-                           "inAsyncExec: " + inAsyncExec + ", afterResume: " + afterResume);
+                        "inAsyncExec: " + inAsyncExec + ", afterResume: " + afterResume);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Async test /slow wait was interrupted", e);
             }
@@ -219,11 +237,12 @@ public class HelloWorldResource {
         throw new HelloWorldUnmappedException();
     }
 
+    public static class HelloWorldMappedException extends Exception {}
+
+    public static class HelloWorldUnmappedException extends Exception {}
+
+
     private long inflightRequestsCount() {
         return inflightRequestsCount(vendorRegistry);
     }
-
-    public static class HelloWorldMappedException extends Exception { }
-
-    public static class HelloWorldUnmappedException extends Exception { }
 }

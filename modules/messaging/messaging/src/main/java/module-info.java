@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,19 +29,23 @@ import io.helidon.common.features.api.HelidonFlavor;
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.messaging {
 
-    requires io.helidon.common.reactive;
+    requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
     requires io.helidon.microprofile.config.core;
-    requires io.helidon.config;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.reactive;
     requires io.helidon.microprofile.server;
     requires jakarta.inject;
-    requires microprofile.reactive.messaging.api;
-    requires microprofile.reactive.streams.operators.api;
+    requires java.logging;
 
     requires static io.helidon.common.features.api;
 
     requires transitive jakarta.cdi;
+    requires transitive io.helidon.common.reactive;
+    requires transitive io.helidon.config;
+    requires transitive microprofile.config.api;
+    requires transitive microprofile.reactive.messaging.api;
+    requires transitive microprofile.reactive.streams.operators.api;
     requires transitive org.reactivestreams;
 
     exports io.helidon.microprofile.messaging;

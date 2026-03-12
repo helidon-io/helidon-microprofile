@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
+            <groupId>io.helidon.microprofile.security</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
@@ -59,8 +59,16 @@
             <artifactId>helidon-microprofile-oidc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.jwt</groupId>
+            <artifactId>helidon-microprofile-jwt-auth</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.metrics</groupId>
             <artifactId>helidon-microprofile-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.weld</groupId>
+            <artifactId>weld-core-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.weld</groupId>
@@ -127,6 +135,38 @@
             <artifactId>helidon-microprofile-telemetry</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-connector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey.tracing</groupId>
+            <artifactId>helidon-jersey-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.jersey.tracing</groupId>
+            <artifactId>helidon-jersey-tracing-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.rest-client</groupId>
             <artifactId>helidon-microprofile-rest-client</artifactId>
         </dependency>
@@ -143,12 +183,40 @@
             <artifactId>helidon-microprofile-messaging-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.scheduling</groupId>
-            <artifactId>helidon-microprofile-scheduling</artifactId>
+            <groupId>io.helidon.microprofile.messaging</groupId>
+            <artifactId>helidon-microprofile-messaging-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.lra</groupId>
-            <artifactId>helidon-microprofile-lra</artifactId>
+            <groupId>io.helidon.microprofile.messaging.connectors.aq</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-aq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging.connectors</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-jms-shim</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging.connectors.jms</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging.connectors.kafka</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging.connectors.mock</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-mock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.messaging.connectors.wls-jms</groupId>
+            <artifactId>helidon-microprofile-messaging-connectors-wls-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.reactive-streams</groupId>
+            <artifactId>helidon-microprofile-reactive-streams</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.scheduling</groupId>
+            <artifactId>helidon-microprofile-scheduling</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.openapi</groupId>
@@ -161,6 +229,10 @@
         <dependency>
             <groupId>io.helidon.microprofile.bean-validation</groupId>
             <artifactId>helidon-microprofile-bean-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.testing</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.microprofile.testing;
 
 import java.lang.System.Logger.Level;
+import java.lang.annotation.Annotation;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,8 +35,18 @@ import static io.helidon.microprofile.testing.ReflectionHelper.requirePublic;
  */
 public class HelidonTestContainer {
 
+    /**
+     * Indicate that the container previously failed to initialize.
+     */
+    public static final class InitializationFailed extends RuntimeException {
+        private InitializationFailed(RuntimeException error) {
+            super("Container initialization previously failed", error);
+        }
+    }
+
     private static final System.Logger LOGGER = System.getLogger(HelidonTestContainer.class.getName());
     private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
+
     private final HelidonTestInfo<?> testInfo;
     private final HelidonTestScope testScope;
     private final BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory;
@@ -45,6 +56,7 @@ public class HelidonTestContainer {
     private SeContainer container;
     private PinningRecorder pinningRecorder;
     private RuntimeException error;
+
     /**
      * Create a new instance.
      *
@@ -96,17 +108,18 @@ public class HelidonTestContainer {
      * Resolve an unqualified bean of the given type.
      *
      * @param type type
+     * @param qualifiers qualifiers
      * @param <T>  type
      * @return resolved instance
      * @throws InitializationFailed if the container previusly failed to
      *                              start
      */
     @SuppressWarnings("resource")
-    public <T> T resolveInstance(Class<T> type) throws InitializationFailed {
+    public <T> T resolveInstance(Class<T> type, Annotation... qualifiers) throws InitializationFailed {
         if (type.isAssignableFrom(SeContainer.class)) {
             return type.cast(container());
         }
-        return container().select(type).get();
+        return container().select(type, qualifiers).get();
     }
 
     /**
@@ -118,20 +131,8 @@ public class HelidonTestContainer {
      *                              start
      */
     @SuppressWarnings("resource")
-    public boolean isSupported(Class<?> type) throws InitializationFailed {
-        if (type.isAssignableFrom(SeContainer.class)) {
-            return true;
-        }
-        return !container().select(type).isUnsatisfied();
-    }
-
-    @Override
-    public String toString() {
-        return new PrettyPrinter()
-                .object(printer -> printer
-                        .value("id", id)
-                        .object("testInfo", PrettyPrinters.testInfo(testInfo)))
-                .toString();
+    public boolean isSupported(Class<?> type, Annotation... qualifiers) throws InitializationFailed {
+        return !container().select(type, qualifiers).isUnsatisfied();
     }
 
     private SeContainer container() {
@@ -173,12 +174,12 @@ public class HelidonTestContainer {
         container = initializer.initialize();
     }
 
-    /**
-     * Indicate that the container previously failed to initialize.
-     */
-    public static final class InitializationFailed extends RuntimeException {
-        private InitializationFailed(RuntimeException error) {
-            super("Container initialization previously failed", error);
-        }
+    @Override
+    public String toString() {
+        return new PrettyPrinter()
+                .object(printer -> printer
+                        .value("id", id)
+                        .object("testInfo", PrettyPrinters.testInfo(testInfo)))
+                .toString();
     }
 }
