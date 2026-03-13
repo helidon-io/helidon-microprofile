@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-Helidon Version:
+Helidon MicroProfile Version:
 Documentation URL:
 
 ## Problem Description

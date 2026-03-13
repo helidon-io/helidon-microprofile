@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,52 +36,10 @@
                 <profile>tests</profile>
             </profiles>
             <moduleSets>
-                <moduleSet name="core">
-                    <includes>
-                        <include>webserver/**</include>
-                        <include>webclient/**</include>
-                        <include>common/**</include>
-                        <include>config/**</include>
-                        <include>security/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="jpa-oracle">
-                    <includes>
-                        <include>tests/integration/jpa/oracle/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="jpa">
-                    <includes>
-                        <include>tests/integration/jpa/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="dbclient-oracle">
-                    <includes>
-                        <include>tests/integration/dbclient/oracle/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="dbclient">
-                    <includes>
-                        <include>tests/integration/dbclient/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="packaging">
-                    <includes>
-                        <include>tests/integration/packaging/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="it">
-                    <includes>
-                        <include>tests/integration/**</include>
-                    </includes>
-                </moduleSet>
                 <moduleSet name="others">
                     <includes>
                         <include>**/*</include>
                     </includes>
-                    <excludes>
-                        <exclude>tests/benchmark/**</exclude>
-                    </excludes>
                 </moduleSet>
             </moduleSets>
         </reactorRule>
@@ -108,23 +66,14 @@
                 </moduleSet>
             </moduleSets>
         </reactorRule>
-        <reactorRule name="default">
+        <reactorRule name="mp">
             <moduleSets>
                 <moduleSet name="core">
                     <includes>
-                        <include>codegen/**</include>
-                        <include>http/**</include>
-                        <include>builder/**</include>
-                        <include>webserver/**</include>
-                        <include>webclient/**</include>
-                        <include>common/**</include>
-                        <include>config/**</include>
-                        <include>security/**</include>
-                    </includes>
-                </moduleSet>
-                <moduleSet name="integrations">
-                    <includes>
-                        <include>integrations/**</include>
+                        <include>modules/config/**</include>
+                        <include>modules/weld/**</include>
+                        <include>modules/cdi/**</include>
+                        <include>modules/server/**</include>
                     </includes>
                 </moduleSet>
                 <moduleSet name="others">
