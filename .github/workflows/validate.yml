@@ -111,6 +111,7 @@ jobs:
             mvn ${MVN_ARGS} \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
+              -Ptests
               install
   _tests:
     needs: build
