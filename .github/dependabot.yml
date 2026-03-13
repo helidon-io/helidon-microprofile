@@ -20,7 +20,6 @@ updates:
     schedule:
       interval: "weekly"
     allow:
-      - dependency-name: "com.oracle.oci.sdk:oci-java-sdk-bom"
     labels:
       - "build"
       - "dependencies"

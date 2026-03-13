@@ -52,7 +52,9 @@
         <module>config</module>
         <module>telemetry</module>
         <module>service-registry</module>
-        <module>service-injected-config</module>
+<!--
+    we no longer need SE support, this test is probably going to be removed
+    <module>service-injected-config</module>-->
     </modules>
 
 

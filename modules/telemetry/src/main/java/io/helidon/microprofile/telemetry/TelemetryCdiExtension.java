@@ -120,6 +120,10 @@ public class TelemetryCdiExtension implements Extension {
                     return WithSpan.class;
                 }
 
+                @Override
+                public boolean inheritContext() {
+                    return true;
+                }
             });
 
             for (AnnotatedParameterConfigurator<?> param : method.params()) {
