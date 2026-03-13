@@ -51,17 +51,17 @@
             <moduleSets>
                 <moduleSet name="cdi">
                     <includes>
-                        <include>microprofile/tests/tck/tck-cdi*/**</include>
+                        <include>tests/tck/tck-cdi*/**</include>
                     </includes>
                 </moduleSet>
                 <moduleSet name="rest">
                     <includes>
-                        <include>microprofile/tests/tck/tck-rest*/**</include>
+                        <include>tests/tck/tck-rest*/**</include>
                     </includes>
                 </moduleSet>
                 <moduleSet name="others">
                     <includes>
-                        <include>microprofile/tests/tck/**</include>
+                        <include>tests/tck/**</include>
                     </includes>
                 </moduleSet>
             </moduleSets>

@@ -35,6 +35,7 @@ public class MessagingException extends RuntimeException {
     /**
      * Create new {@link MessagingException} with supplied {@code Throwable} as cause.
      *
+     * @param message descriptive exception message
      * @param cause of created {@link MessagingException}
      */
     public MessagingException(String message, Throwable cause) {

@@ -126,8 +126,9 @@ public class HelidonTestContainer {
      * Test if the given type is supported for injection.
      *
      * @param type type
+     * @param qualifiers qualifier annotations present on the injection point
      * @return {@code true} if supported, {@code false} otherwise
-     * @throws InitializationFailed if the container previusly failed to
+     * @throws InitializationFailed if the container previously failed to
      *                              start
      */
     @SuppressWarnings("resource")
