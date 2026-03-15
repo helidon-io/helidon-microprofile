@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -122,6 +122,7 @@ runs:
         path: |
           .m2/repository/**/*.*
           !.m2/repository/io/helidon/microprofile/**
+          !.m2/repository/io/helidon/jersey/**
         enableCrossOsArchive: true
         # only hash top-level poms to keep it fast
         key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
@@ -134,6 +135,7 @@ runs:
         path: |
           .m2/repository/**/*.*
           !.m2/repository/io/helidon/microprofile/**
+          !.m2/repository/io/helidon/jersey/**
         enableCrossOsArchive: true
         key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
         restore-keys: |
@@ -145,6 +147,7 @@ runs:
         path: |
           ./**/target/**
           .m2/repository/io/helidon/microprofile/**
+          .m2/repository/io/helidon/jersey/**
         enableCrossOsArchive: true
         key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
         restore-keys: |
@@ -157,6 +160,7 @@ runs:
         path: |
           ./**/target/**
           .m2/repository/io/helidon/microprofile/**
+          .m2/repository/io/helidon/jersey/**
         enableCrossOsArchive: true
         key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
     - name: Build cache (read-only)
@@ -166,6 +170,7 @@ runs:
         path: |
           ./**/target/**
           .m2/repository/io/helidon/microprofile/**
+          .m2/repository/io/helidon/jersey/**
         enableCrossOsArchive: true
         fail-on-cache-miss: true
         key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}

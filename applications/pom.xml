@@ -27,7 +27,7 @@
         <relativePath>../dependencies/pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.nicroprofile.applications</groupId>
+    <groupId>io.helidon.microprofile.applications</groupId>
     <artifactId>helidon-microprofile-applications-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon MicroProfile Applications Project</name>
