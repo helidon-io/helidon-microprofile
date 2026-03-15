@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -68,8 +68,12 @@ public class MetricsTest extends MetricsBaseTest {
         assertThat(counter.getCount(), is(8L));
     }
 
+    /*
+    This test is disabled, as it makes assumptions about the speed of the environment it runs on
+     */
     @Test
-    @DisabledIfSystemProperty(named = PERF_TEST_PROP_PREFIX + "enabled", matches = "false")
+    // @DisabledIfSystemProperty(named = PERF_TEST_PROP_PREFIX + "enabled", matches = "false")
+    @Disabled
     public void testCounted2Perf() {
         /*
          * Informal experience shows that, without the performance fix in MetricsInterceptorBase, this test measures more than 1 s
