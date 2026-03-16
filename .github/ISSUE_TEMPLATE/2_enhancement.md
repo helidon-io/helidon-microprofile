@@ -8,7 +8,7 @@ type: 'Feature'
 
 ---
 
-Helidon Version:
+Helidon MicroProfile Version:
 
 ## Enhancement Description
 

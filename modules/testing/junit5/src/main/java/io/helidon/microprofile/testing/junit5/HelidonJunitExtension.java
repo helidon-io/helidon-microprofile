@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package io.helidon.microprofile.testing.junit5;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,6 +29,9 @@ import io.helidon.microprofile.testing.HelidonTestScope;
 import io.helidon.microprofile.testing.Instrumented;
 import io.helidon.testing.junit5.TestJunitExtension;
 
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.inject.Qualifier;
+import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -99,11 +105,11 @@ public class HelidonJunitExtension extends TestJunitExtension
             // Instrument the test class
             // Use a proxy to start the container lazily
             Class<?> testClass = instrument(ctx.getRequiredTestClass(), List.of(), List.of(),
-                                            (type, method) -> {
-                                                // class context store specific to the intercepted method
-                                                Store store = store(ctx, method);
-                                                return requiredContainer(store).resolveInstance(type);
-                                            });
+                    (type, method) -> {
+                        // class context store specific to the intercepted method
+                        Store store = store(ctx, method);
+                        return requiredContainer(store).resolveInstance(type);
+                    });
             return Instrumented.allocateInstance(testClass);
         });
     }
@@ -138,8 +144,8 @@ public class HelidonJunitExtension extends TestJunitExtension
             HelidonTestContainerImpl container = container(classStore);
 
             if (context.getExecutionMode() == ExecutionMode.SAME_THREAD
-                    && container != null && !container.closed()
-                    && methodInfo.requiresReset()) {
+                && container != null && !container.closed()
+                && methodInfo.requiresReset()) {
 
                 // close the "class container" only for sequential executions
                 // parallel & requireReset use multiple containers
@@ -189,7 +195,14 @@ public class HelidonJunitExtension extends TestJunitExtension
         return supplyChecked(ctx, () -> {
             Store store = store(ctx, ctx.getRequiredTestMethod());
             HelidonTestContainerImpl container = requiredContainer(store);
-            return !container.initFailed() && container.isSupported(pc.getParameter().getType());
+            Class<?> type = pc.getParameter().getType();
+            if (type.equals(WebTarget.class) || type.equals(SeContainer.class)) {
+                return true;
+            }
+            Annotation[] qualifiers = qualifiers(pc.getParameter().getAnnotations());
+            return qualifiers.length > 0
+                   && !container.initFailed()
+                   && container.isSupported(type, qualifiers);
         });
     }
 
@@ -200,7 +213,29 @@ public class HelidonJunitExtension extends TestJunitExtension
         return supplyChecked(ctx, () -> {
             Store store = store(ctx, ctx.getRequiredTestMethod());
             HelidonTestContainerImpl container = requiredContainer(store);
-            return container.initFailed() ? null : container.resolveInstance(pc.getParameter().getType());
+            Parameter param = pc.getParameter();
+            return container.initFailed() ? null : container.resolveInstance(
+                    param.getType(), qualifiers(param.getAnnotations()));
+        });
+    }
+
+    private void invoke(Invocation<Void> invocation,
+                        ReflectiveInvocationContext<Method> ic,
+                        ExtensionContext context) throws Throwable {
+
+        runChecked(context, () -> {
+            Store methodStore = store(context, context.getRequiredTestMethod());
+            HelidonTestContainerImpl container = requiredContainer(methodStore);
+            if (container.initFailed()) {
+                invocation.skip();
+            } else {
+                // proxy handler uses class context
+                // hence we use a class context store specific to the test method
+                ExtensionContext classContext = classContext(context);
+                Store store = store(classContext, ic.getExecutable());
+                store.put("container", container);
+                invocation.proceed();
+            }
         });
     }
 
@@ -222,23 +257,9 @@ public class HelidonJunitExtension extends TestJunitExtension
         return c;
     }
 
-    private void invoke(Invocation<Void> invocation,
-                        ReflectiveInvocationContext<Method> ic,
-                        ExtensionContext context) throws Throwable {
-
-        runChecked(context, () -> {
-            Store methodStore = store(context, context.getRequiredTestMethod());
-            HelidonTestContainerImpl container = requiredContainer(methodStore);
-            if (container.initFailed()) {
-                invocation.skip();
-            } else {
-                // proxy handler uses class context
-                // hence we use a class context store specific to the test method
-                ExtensionContext classContext = classContext(context);
-                Store store = store(classContext, ic.getExecutable());
-                store.put("container", container);
-                invocation.proceed();
-            }
-        });
+    private static Annotation[] qualifiers(Annotation[] annotations) {
+        return Arrays.stream(annotations)
+                .filter(it -> it.annotationType().getAnnotation(Qualifier.class) != null)
+                .toArray(Annotation[]::new);
     }
 }

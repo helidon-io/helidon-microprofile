@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,20 +24,22 @@ public class MessagingException extends RuntimeException {
     private static final long serialVersionUID = 5597847427141298958L;
 
     /**
-     * Create new {@link MessagingException} with supplied {@code Throwable} as cause.
-     *
-     * @param cause of created {@link MessagingException}
-     */
-    MessagingException(final Throwable cause) {
-        super(cause);
-    }
-
-    /**
      * Create new {@link MessagingException} with supplied message.
      *
      * @param message the exception message
      */
-    MessagingException(final String message) {
+    public MessagingException(String message) {
         super(message);
     }
+
+    /**
+     * Create new {@link MessagingException} with supplied {@code Throwable} as cause.
+     *
+     * @param message descriptive exception message
+     * @param cause of created {@link MessagingException}
+     */
+    public MessagingException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

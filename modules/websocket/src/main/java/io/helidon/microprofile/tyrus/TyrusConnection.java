@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.DateTime;
+import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.spi.ServerConnection;
@@ -55,6 +56,7 @@ class TyrusConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(TyrusConnection.class.getName());
 
     private final ConnectionContext ctx;
+    private final HttpPrologue prologue;
     private final WebSocketEngine.UpgradeInfo upgradeInfo;
     private final TyrusListener listener;
 
@@ -63,8 +65,9 @@ class TyrusConnection implements ServerConnection, WsSession {
     private volatile boolean readingNetwork;
     private volatile ZonedDateTime lastRequestTimestamp;
 
-    TyrusConnection(ConnectionContext ctx, WebSocketEngine.UpgradeInfo upgradeInfo) {
+    TyrusConnection(ConnectionContext ctx, HttpPrologue prologue, WebSocketEngine.UpgradeInfo upgradeInfo) {
         this.ctx = ctx;
+        this.prologue = prologue;
         this.upgradeInfo = upgradeInfo;
         this.listener = new TyrusListener();
         this.lastRequestTimestamp = DateTime.timestamp();
@@ -158,6 +161,11 @@ class TyrusConnection implements ServerConnection, WsSession {
     }
 
     @Override
+    public HttpPrologue prologue() {
+        return prologue;
+    }
+
+    @Override
     public void close(boolean interrupt) {
         // either way, finish
         this.canRun = false;
@@ -219,10 +227,6 @@ class TyrusConnection implements ServerConnection, WsSession {
             connection = upgradeInfo.createConnection(writer, TyrusListener::close);
         }
 
-        private static void close(CloseReason closeReason) {
-            LOGGER.log(Level.DEBUG, () -> "Connection closed: " + closeReason);
-        }
-
         /**
          * Writes a buffer to Tyrus. May retry a few times given that Tyrus may
          * not be able to read all bytes at once.
@@ -241,6 +245,10 @@ class TyrusConnection implements ServerConnection, WsSession {
                 String reason = "Tyrus did not consume all data after " + MAX_RETRIES + " retries";
                 connection.close(new CloseReason(UNEXPECTED_CONDITION, reason));
             }
+        }
+
+        private static void close(CloseReason closeReason) {
+            LOGGER.log(Level.DEBUG, () -> "Connection closed: " + closeReason);
         }
     }
 }

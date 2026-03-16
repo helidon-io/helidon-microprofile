@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,24 @@
 
 package io.helidon.microprofile.tests.testing.junit5;
 
+import java.net.URI;
+
 import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddJaxRs;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.Socket;
 
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Test when discovery is disabled.
@@ -34,17 +41,30 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @HelidonTest
 @DisableDiscovery
 @AddBean(TestConstructorInjection.MyBean.class)
+@AddJaxRs
 class TestConstructorInjection {
     private final int currentPort;
+    private final URI uri;
+    private final String rawUri;
+    private final WebTarget target;
 
     @Inject
-    public TestConstructorInjection(@Named("port") int currentPort) {
+    public TestConstructorInjection(@Named("port") int currentPort,
+                                    @Socket("@default") URI uri,
+                                    @Socket("@default") String rawUri,
+                                    WebTarget target) {
         this.currentPort = currentPort;
+        this.uri = uri;
+        this.rawUri = rawUri;
+        this.target = target;
     }
 
     @Test
     void testIt() {
         assertThat(currentPort, is(423));
+        assertThat(uri, not(nullValue()));
+        assertThat(rawUri, not(nullValue()));
+        assertThat(target, not(nullValue()));
     }
 
     public static class MyBean {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
@@ -50,6 +50,8 @@ import org.glassfish.jersey.server.model.Resource;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_NAME;
+import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_PORT;
 
 /**
  * Filter to process Server request and Server response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -57,21 +59,18 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_S
  */
 @Provider
 class HelidonTelemetryContainerFilter implements ContainerRequestFilter, ContainerResponseFilter {
-    @Deprecated(forRemoval = true, since = "4.1")
-    static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
     private static final String SPAN = Span.class.getName();
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String HTTP_TARGET = "http.target";
     private static final String HTTP_ROUTE = "http.route";
+
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
+
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
-    private static final String DEPRECATED_WARNING = """
-            Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
-            names. Your configuration does not set %s to true, so your service uses the legacy span name
-            format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-            future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
-            configuration to migrate to the current conventions.""";
+
+    @Deprecated(forRemoval = true, since = "4.1")
+    static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
     private static boolean spanNameFullUrl = false;
     private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
@@ -107,8 +106,13 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         if (!restSpanNameIncludesMethod && !spanNameWarningLogged.get()) {
             spanNameWarningLogged.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
-                       String.format(DEPRECATED_WARNING,
-                                     SPAN_NAME_INCLUDES_METHOD));
+                       String.format("""
+                               Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
+                               names. Your configuration does not set %s to true, so your service uses the legacy span name
+                               format which excludes the HTTP method. This feature is deprecated and marked for removal in a
+                               future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
+                               configuration to migrate to the current conventions.""",
+                               SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
 
@@ -145,8 +149,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 .tag(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
                 .tag(HTTP_TARGET, resolveTarget(requestContext))
                 .tag(HTTP_ROUTE, route)
-                .tag(SemanticAttributes.NET_HOST_NAME.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
-                .tag(SemanticAttributes.NET_HOST_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
+                .tag(ServerAttributes.SERVER_ADDRESS.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(ServerAttributes.SERVER_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
+                .tag(NET_HOST_NAME, requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(NET_HOST_PORT, requestContext.getUriInfo().getBaseUri().getPort())
+
                 .update(builder -> parentSpanContext.ifPresent(builder::parent))
                 .start();
 
@@ -197,14 +204,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             request.removeProperty(SPAN);
             request.removeProperty(SPAN_SCOPE);
         }
-    }
-
-    private static Class<?> getRealClass(Class<?> object) {
-        Class<?> result = object;
-        while (result.isSynthetic()) {
-            result = result.getSuperclass();
-        }
-        return result;
     }
 
     private Optional<SpanContext> parentSpanContext(ContainerRequestContext requestContext) {
@@ -301,5 +300,13 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                     .storeInContext(context)
                     .makeCurrent();
         }
+    }
+
+    private static Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
     }
 }

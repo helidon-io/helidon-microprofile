@@ -8,7 +8,7 @@ type: 'Task'
 
 ---
 
-Helidon Version:
+Helidon MicroProfile Version:
 
 ## Task Description
 

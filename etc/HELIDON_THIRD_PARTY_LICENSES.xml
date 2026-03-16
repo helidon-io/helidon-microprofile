@@ -125,7 +125,6 @@
                 <consumer>helidon-dbclient-jsonp</consumer>
                 <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
-                <consumer>helidon-lra-coordinator-server</consumer>
                 <consumer>helidon-microprofile-server</consumer>
                 <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-security-jwt</consumer>
@@ -573,7 +572,6 @@
                 <consumer>helidon-bundles-config</consumer>
                 <consumer>helidon-config</consumer>
                 <consumer>helidon-config-hocon</consumer>
-                <consumer>helidon-config-mp</consumer>
                 <consumer>helidon-config-tests-module-mappers-1-base</consumer>
                 <consumer>helidon-config-tests-module-mappers-2-override</consumer>
                 <consumer>helidon-config-tests-module-parsers-1-override</consumer>
@@ -1477,7 +1475,6 @@
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-config-hocon-mp</consumer>
-                <consumer>helidon-config-mp</consumer>
                 <consumer>helidon-config-yaml-mp</consumer>
                 <consumer>helidon-health-checks</consumer>
                 <consumer>helidon-integrations-cdi-datasource</consumer>
@@ -1601,37 +1598,6 @@
                 SPDXVersion: SPDX-2.1 PackageName: MicroProfile PackageHomePage: http://www.eclipse.org/microprofile
                 PackageLicenseDeclared: Apache-2.0 -------------------------------------------- See full text at the bottom of
                 this document for license: Apache-2.0
-            </attribution>
-        </dependency>
-        <dependency>
-            <id>149579</id>
-            <name>MicroProfile LRA API</name>
-            <version>2.0</version>
-            <licensor>Eclipse Foundation</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-lra-coordinator-client-spi</consumer>
-                <consumer>helidon-lra-coordinator-narayana-client</consumer>
-                <consumer>helidon-lra-coordinator-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
-            </consumers>
-            <attribution>MicroProfile LRA API (org.eclipse.microprofile.lra:microprofile-lra-api) Copyright (c) 2018-2021
-                Contributors to the Eclipse Foundation --------------------------------------------
-                ====================================================================== == NOTICE file corresponding to section
-                4(d) of the Apache License, == == Version 2.0, in this case for MicroProfile LRA ==
-                ======================================================================
-
-                This product includes software developed at The Apache Software Foundation (http://www.apache.org/).
-
-                SPDXVersion: SPDX-2.1 PackageName: Eclipse MicroProfile PackageHomePage: http://www.eclipse.org/microprofile
-                PackageLicenseDeclared: Apache-2.0
-
-                PackageCopyrightText: &lt;text&gt;
-                Michael Musgrove mmusgrov@redhat.com Nicola Ferraro ni.ferraro@gmail.com Ondra Chaloupka ochaloup@redhat.com Tom
-                Jenkinson tom.jenkinson@redhat.com Martin Stefanko mstefank@redhat.com Rudy De Busscher rdebusscher@gmail.com
-                &lt;/text&gt;
-                -------------------------------------------- See full text at the bottom of this document for license: Apache-2.0
-                --------------------------------------------
             </attribution>
         </dependency>
         <dependency>
@@ -3063,7 +3029,6 @@
                 <consumer>helidon-integrations-cdi-reference-counted-context</consumer>
                 <consumer>helidon-integrations-oci-sdk-cdi</consumer>
                 <consumer>helidon-microprofile-graphql-server</consumer>
-                <consumer>helidon-microprofile-lra</consumer>
                 <consumer>helidon-microprofile-openapi</consumer>
             </consumers>
             <attribution>Jandex: Core (io.smallrye:jandex) Copyright 2013,2021 Red Hat, Inc., and individual contributors
@@ -6346,7 +6311,6 @@
             <licensor>QOS.ch</licensor>
             <licenseName>MIT</licenseName>
             <consumers>
-                <consumer>helidon-lra-coordinator-server</consumer>
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-tracing-providers-jaeger</consumer>
             </consumers>

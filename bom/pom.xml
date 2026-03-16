@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile</groupId>
+                <groupId>io.helidon.microprofile.security</groupId>
                 <artifactId>helidon-microprofile-security</artifactId>
                 <version>${helidon.mp.version}</version>
             </dependency>
@@ -100,6 +100,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.metrics</groupId>
                 <artifactId>helidon-microprofile-metrics</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.weld</groupId>
+                <artifactId>weld-core-impl</artifactId>
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
@@ -168,6 +173,46 @@
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-client</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-common</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-connector</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-server</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-webserver</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-media-jsonp</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey.tracing</groupId>
+                <artifactId>helidon-jersey-tracing</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey.tracing</groupId>
+                <artifactId>helidon-jersey-tracing-client</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.rest-client</groupId>
                 <artifactId>helidon-microprofile-rest-client</artifactId>
                 <version>${helidon.mp.version}</version>
@@ -193,23 +238,43 @@
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.microprofile.messaging</groupId>
+                <artifactId>helidon-microprofile-messaging-metrics</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors.aq</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-aq</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-jms-shim</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors.jms</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-jms</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors.kafka</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-kafka</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors.mock</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-mock</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.messaging.connectors.wls-jms</groupId>
+                <artifactId>helidon-microprofile-messaging-connectors-wls-jms</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.scheduling</groupId>
                 <artifactId>helidon-microprofile-scheduling</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.lra</groupId>
-                <artifactId>helidon-microprofile-lra</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.lra</groupId>
-                <artifactId>helidon-microprofile-lra-testing</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.integrations.graal</groupId>
-                <artifactId>helidon-mp-graal-native-image-extension</artifactId>
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>

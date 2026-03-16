@@ -9,7 +9,7 @@ assignees: ''
 
 ## Environment Details
 
-* Helidon Version:
+* Helidon MicroProfile Version:
 * JDK version:
 * OS:
 

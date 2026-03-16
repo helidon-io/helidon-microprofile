@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigMapper;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -221,8 +221,10 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         CONFIGS.put(classLoader, newConfig);
 
         if (classLoader == Thread.currentThread().getContextClassLoader()) {
-            // this should be the default class loader (we do not support classloader magic in Helidon)
-            GlobalConfig.config(() -> newConfig, true);
+            try {
+                Services.set(io.helidon.config.Config.class, newConfig);
+            } catch (Exception ígnored) {
+            }
         }
 
         return newConfig;

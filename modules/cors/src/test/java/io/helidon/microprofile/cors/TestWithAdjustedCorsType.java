@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.microprofile.cors;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddExtension;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.Extension;
@@ -56,23 +56,6 @@ class TestWithAdjustedCorsType extends BaseCrossOriginTest {
         assertThat("Status from simple CORS request", response.getStatus(), is(200));
     }
 
-    @Target(ElementType.TYPE)
-    static @interface AugmentingAnnotation {
-        class Literal extends AnnotationLiteral<AugmentingAnnotation> implements AugmentingAnnotation {
-
-            private static final long serialVersionUID = 1L;
-
-            private static final Literal INSTANCE = new Literal();
-
-            private Literal() {
-            }
-
-            static Literal getInstance() {
-                return INSTANCE;
-            }
-        }
-    }
-
     public static class AugmentingExtension implements Extension {
 
         void processAnnotatedType(@Observes ProcessAnnotatedType<?> pat) {
@@ -80,6 +63,23 @@ class TestWithAdjustedCorsType extends BaseCrossOriginTest {
             if (pat.getAnnotatedType().getJavaClass().getName().equals(CrossOriginTest.CorsResource0.class.getName())) {
                 pat.configureAnnotatedType()
                         .add(AugmentingAnnotation.Literal.getInstance());
+            }
+        }
+    }
+
+    @Target(ElementType.TYPE)
+    @interface AugmentingAnnotation {
+            class Literal extends AnnotationLiteral<AugmentingAnnotation> implements AugmentingAnnotation {
+
+            private static final long serialVersionUID = 1L;
+
+            private static final Literal INSTANCE=new Literal();
+
+            static Literal getInstance(){
+            return INSTANCE;
+            }
+
+            private Literal(){
             }
         }
     }

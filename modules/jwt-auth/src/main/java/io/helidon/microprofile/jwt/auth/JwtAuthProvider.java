@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,9 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
+import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.config.metadata.ConfiguredValue;
@@ -928,7 +928,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
             config.get("propagate").asBoolean().ifPresent(this::propagate);
             config.get("allow-impersonation").asBoolean().ifPresent(this::allowImpersonation);
             config.get("principal-type").asString().as(SubjectType::valueOf).ifPresent(this::subjectType);
-            config.get("atn-token.handler").map(TokenHandler::create).ifPresent(this::atnTokenHandler);
+            config.get("atn-token.handler").as(TokenHandler::create).ifPresent(this::atnTokenHandler);
             config.get("atn-token").asNode().ifPresent(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
             config.get("atn-token.default-key-id").asString().ifPresent(this::defaultKeyId);
@@ -1338,14 +1338,14 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         }
 
         private void verifyKeys(Config config) {
-            config.get("jwk.resource").map(Resource::create).ifPresent(this::verifyJwk);
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::verifyJwk);
         }
 
         private void outbound(Config config) {
             config.get("jwt-issuer").asString().ifPresent(this::issuer);
 
             // jwk is optional, we may be propagating existing token
-            config.get("jwk.resource").map(Resource::create).ifPresent(this::signJwk);
+            config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
         }
     }
 

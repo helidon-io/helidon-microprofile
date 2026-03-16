@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.reactive.Multi;
-import io.helidon.messaging.connectors.mock.MockConnector;
-import io.helidon.messaging.connectors.mock.TestConnector;
+import io.helidon.microprofile.messaging.connectors.mock.MockConnector;
+import io.helidon.microprofile.messaging.connectors.mock.TestConnector;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
@@ -35,7 +35,7 @@ import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.messaging.connectors.mock.MockConnector.CONNECTOR_NAME;
+import static io.helidon.microprofile.messaging.connectors.mock.MockConnector.CONNECTOR_NAME;
 import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.INCOMING_PREFIX;
 import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.OUTGOING_PREFIX;
 import static org.hamcrest.MatcherAssert.assertThat;

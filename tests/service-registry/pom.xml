@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2025 Oracle and/or its affiliates.
+    Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -80,11 +80,6 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.integrations.langchain4j</groupId>
-                            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
                             <groupId>io.helidon.service</groupId>
                             <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
@@ -100,11 +95,6 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.integrations.langchain4j</groupId>
-                        <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
