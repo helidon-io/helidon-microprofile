@@ -151,10 +151,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 }
             };
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
-    private static final String GAUGE_WARNING_NOT_BEAN = """
-            @Gauge is configured on a bean %s that is neither ApplicationScoped nor
-            Singleton. This is most likely a bug. You may set 'metrics.warn-dependent'
-            configuration option to 'false' to remove this warning.""";
+    // log statements should not have end of lines
+    private static final String GAUGE_WARNING_NOT_BEAN = "@Gauge is configured on a bean %s that is neither ApplicationScoped "
+            + "nor Singleton. This is most likely a bug. You may set 'metrics.warn-dependent' configuration option to 'false' "
+            + "to remove this warning.";
 
     private static Metadata syntheticTimerUnmappedExceptionMetadata;
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();

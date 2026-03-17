@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,10 +76,9 @@ final class OpenApiHelper {
         // deprecated.
         String warningsEnabledText = System.getProperty(WARNINGS_ENABLED_PROPERTY_NAME);
         if (warningsEnabledText != null) {
-            LOGGER.log(System.Logger.Level.INFO, String.format("""
-                                                                       Use of the property %s  + " is deprecated. \
-                                                                       Helidon logs parsing warnings by default but honors the
-                                                                       property setting.""",
+            // do not use multiline strings, as we do not want new lines in log output
+            LOGGER.log(System.Logger.Level.INFO, String.format("Use of the property %s is deprecated. Helidon logs parsing "
+                                                                       + "warnings by default but honors the property setting.",
                                                                WARNINGS_ENABLED_PROPERTY_NAME));
             boolean warningsEnabled = Boolean.parseBoolean(warningsEnabledText);
             if (SNAKE_YAML_INTROSPECTOR_LOGGER.isLoggable(java.util.logging.Level.WARNING) && !warningsEnabled) {
