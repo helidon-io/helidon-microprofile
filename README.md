@@ -17,7 +17,7 @@
 
 Implementation of Eclipse [MicroProfile 6.0](https://github.com/eclipse/microprofile/releases/tag/6.0) specifications.
 
-Java 21 is required to use Helidon MicroProfile 5.
+Java 26 is required to use Helidon MicroProfile 5.
 
 ## License
 
@@ -63,7 +63,7 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 21 to build Helidon MicroProfile 4.
+You need JDK 26 to build Helidon MicroProfile 5.
 
 You also need Maven. We recommend 3.9.0 or newer.
 
