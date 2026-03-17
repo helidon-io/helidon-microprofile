@@ -30,7 +30,7 @@ on:
 
 env:
   MVN_VERSION: 3.9.9
-  JAVA_VERSION: 21
+  JAVA_VERSION: 26
   JAVA_DISTRO: oracle
   MVN_ARGS: |
     -B -fae -e
@@ -107,7 +107,7 @@ jobs:
           maven-cache: read-write
           run: |
             mvn --version
-            mvn ${MVN_ARGS} io.helidon.build-tools:helidon-build-cache-maven-plugin:4.0.26:go-offline
+            mvn ${MVN_ARGS} build-cache:go-offline
             mvn ${MVN_ARGS} \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
@@ -140,6 +140,23 @@ jobs:
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
               verify
+  spotbugs:
+    needs: build
+    timeout-minutes: 30
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MVN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -DskipTests \
+              -Pspotbugs \
+              verify
   _tck:
     needs: build
     timeout-minutes: 30
@@ -163,7 +180,7 @@ jobs:
               verify
   gate:
     runs-on: ubuntu-22.04
-    needs: [ copyright, checkstyle, shellcheck, build, _tests, _tck ]
+    needs: [ copyright, checkstyle, spotbugs, shellcheck, build, _tests, _tck ]
     steps:
       - shell: bash
         run: |

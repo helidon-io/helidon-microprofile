@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
         <version>5.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-jsonp-test</artifactId>
-    <name>Helidon MicroProfile Tests TCK JSONP</name>
+    <name>Helidon MicroProfile Tests TCK JSONP Test</name>
 
     <dependencies>
         <dependency>

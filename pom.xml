@@ -45,7 +45,7 @@
     </modules>
 
     <properties>
-        <version.java>21</version.java>
+        <version.java>26</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -73,7 +73,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-        <version.lib.asm>9.8</version.lib.asm>
+        <version.lib.asm>9.9.1</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jinjava>2.8.1</version.lib.jinjava>
@@ -647,6 +647,13 @@
                             </plugin>
                         </plugins>
                     </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>${version.lib.asm}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.owasp</groupId>
