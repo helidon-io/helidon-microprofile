@@ -74,7 +74,7 @@
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.9.1</version.lib.asm>
-        <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
+        <version.lib.checkstyle>13.3.0</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.jinjava>2.8.1</version.lib.jinjava>
         <!-- Dependencies convergence via jinjava -->
@@ -129,7 +129,7 @@
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.ant>3.1.0</version.plugin.ant>
         <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
-        <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.6.0</version.plugin.checkstyle>
         <version.plugin.compiler>3.11.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
@@ -234,11 +234,6 @@
         </javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/
         </javadoc.link.jackson-databind>
-        <javadoc.link.oci-common>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-common/${version.lib.oci}/
-        </javadoc.link.oci-common>
-        <javadoc.link.oci-addons-oke-workload-identity>
-            https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-addons-oke-workload-identity/${version.lib.oci}/
-        </javadoc.link.oci-addons-oke-workload-identity>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc
         </javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}
