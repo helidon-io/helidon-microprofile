@@ -45,7 +45,9 @@ import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Scopes;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.RequestScopeFeature;
@@ -55,6 +57,7 @@ import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.observe.ObserveFeature;
@@ -373,6 +376,21 @@ public class ServerCdiExtension implements Extension {
                     .orElseGet(() -> RequestScopeFeature.create(GlobalServiceRegistry.registry().supply(Scopes.class), true));
 
             serverBuilder.addFeature(feature);
+        }
+    }
+
+    void registerHttpFeatures(@Observes
+                              @Priority(LIBRARY_BEFORE)
+                              @Initialized(ApplicationScoped.class) Object event) {
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        Lookup lookup = Lookup.create(HttpFeature.class);
+        for (var instance : registry.lookupInstances(lookup)) {
+            HttpFeature feature = (HttpFeature) instance.get();
+            HttpRouting.Builder routing = findRouting(
+                    feature.getClass().getName(),
+                    feature.socket(),
+                    feature.socketRequired());
+            routing.addFeature(feature);
         }
     }
 
