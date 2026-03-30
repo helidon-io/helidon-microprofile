@@ -45,9 +45,7 @@ import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.service.registry.GlobalServiceRegistry;
-import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Scopes;
-import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.RequestScopeFeature;
@@ -382,10 +380,7 @@ public class ServerCdiExtension implements Extension {
     void registerHttpFeatures(@Observes
                               @Priority(LIBRARY_BEFORE)
                               @Initialized(ApplicationScoped.class) Object event) {
-        ServiceRegistry registry = GlobalServiceRegistry.registry();
-        Lookup lookup = Lookup.create(HttpFeature.class);
-        for (var instance : registry.lookupInstances(lookup)) {
-            HttpFeature feature = (HttpFeature) instance.get();
+        for (var feature : GlobalServiceRegistry.registry().all(HttpFeature.class)) {
             HttpRouting.Builder routing = findRouting(
                     feature.getClass().getName(),
                     feature.socket(),
