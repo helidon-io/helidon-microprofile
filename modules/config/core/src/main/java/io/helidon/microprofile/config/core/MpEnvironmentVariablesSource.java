@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.config.PropertiesFilter;
 
 import jakarta.annotation.Priority;
@@ -43,7 +43,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
 
     MpEnvironmentVariablesSource(int cacheSize) {
         this.env = Map.copyOf(PropertiesFilter.create(System.getProperties()).filter(System.getenv()));
-        this.cache = LruCache.<String, Cached>builder().capacity(cacheSize).build();
+        this.cache = LruCache.create(cacheSize);
     }
 
     @Override

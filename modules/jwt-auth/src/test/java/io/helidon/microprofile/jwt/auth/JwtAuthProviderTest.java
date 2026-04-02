@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,8 +96,8 @@ public class JwtAuthProviderTest {
         when(appSecurityLevel.filterAnnotations(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(List.of(io.helidon.common.types.Annotation.builder()
                                             .typeName(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG)
-                                            .putValue("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
-                                            .putValue("realmName", "helidon-realm")
+                                            .property("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
+                                            .property("realmName", "helidon-realm")
                                             .build()));
 
         when(atnRequest.env()).thenReturn(se);
@@ -440,8 +440,8 @@ public class JwtAuthProviderTest {
         when(appSecurityLevel.filterAnnotations(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG, EndpointConfig.AnnotationScope.CLASS))
                 .thenReturn(List.of(io.helidon.common.types.Annotation.builder()
                                             .typeName(JwtAuthAnnotationAnalyzer.LOGIN_CONFIG)
-                                            .putValue("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
-                                            .putValue("realmName", "helidon-realm")
+                                            .property("authMethod", JwtAuthAnnotationAnalyzer.LOGIN_CONFIG_METHOD)
+                                            .property("realmName", "helidon-realm")
                                             .build()));
         when(atnRequest.endpointConfig()).thenReturn(ep);
 
