@@ -176,8 +176,8 @@ class SecurityDefinition {
 
         int count = 0;
         for (SecurityLevel securityLevel : securityLevels) {
-            count += securityLevel.getClassLevelAnnotations().size();
-            count += securityLevel.getMethodLevelAnnotations().size();
+            count += securityLevel.classAnnotations().size();
+            count += securityLevel.methodAnnotations().size();
         }
         return (count != 0) || authorizeByDefault;
     }

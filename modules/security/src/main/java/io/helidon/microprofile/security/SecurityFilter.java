@@ -17,9 +17,7 @@
 package io.helidon.microprofile.security;
 
 import java.lang.System.Logger.Level;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -329,11 +327,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             definition.requiresAuthentication(true);
         }
 
-        Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap = new HashMap<>();
-        addCustomAnnotations(customAnnotsMap, realClass);
-
-        SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
-                .withClassAnnotations(customAnnotsMap)
+        SecurityLevel securityLevel = SecurityLevel.builder()
+                .type(TypeName.create(realClass))
+                .classAnnotations(AnnotationFactory.create(realClass))
                 .build();
         definition.securityLevels().add(securityLevel);
 
@@ -433,11 +429,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
                 SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(methodDef.securityLevels().size() - 1);
 
-                Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations = new HashMap<>();
-                addCustomAnnotations(methodAnnotations, method);
-                SecurityLevel newSecurityLevel = SecurityLevel.create(currentSecurityLevel)
-                        .withMethodName(method.getName())
-                        .withMethodAnnotations(methodAnnotations)
+                SecurityLevel newSecurityLevel = SecurityLevel.builder()
+                        .from(currentSecurityLevel)
+                        .methodName(method.getName())
+                        .methodAnnotations(AnnotationFactory.create(method))
                         .build();
                 methodDef.securityLevels().set(methodDef.securityLevels().size() - 1, newSecurityLevel);
                 for (AnnotationAnalyzer analyzer : analyzers) {
@@ -477,12 +472,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
         int index = methodDef.securityLevels().size() - 1;
         SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(index);
-        Map<Class<? extends Annotation>, List<Annotation>> methodLevelAnnotations = new HashMap<>();
-        addCustomAnnotations(methodLevelAnnotations, definitionMethod);
-
-        methodDef.securityLevels().set(index, SecurityLevel.create(currentSecurityLevel)
-                .withMethodName(definitionMethod.getName())
-                .withMethodAnnotations(methodLevelAnnotations)
+        methodDef.securityLevels().set(index, SecurityLevel.builder()
+                .from(currentSecurityLevel)
+                .methodName(definitionMethod.getName())
+                .methodAnnotations(AnnotationFactory.create(definitionMethod))
                 .build());
         try {
             resourceMethodSecurityLock.lock();
@@ -492,8 +485,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         for (AnnotationAnalyzer analyzer : analyzers) {
-            AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
-                                                                                    resClassSecurity.analyzerResponse(analyzer));
+            AnnotationAnalyzer.AnalyzerResponse analyzerResponse =
+                    analyzer.analyze(TypeName.create(definitionMethod.getDeclaringClass()),
+                                     TypedElementFactory.create(definitionMethod),
+                                     resClassSecurity.analyzerResponse(analyzer));
 
             methodDef.analyzerResponse(analyzer, analyzerResponse);
         }
@@ -510,26 +505,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                                                               aClass -> securityForClass(definitionClass, appClassSecurity));
         } finally {
             resourceClassSecurityLock.unlock();
-        }
-    }
-
-    private void addCustomAnnotations(Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap, Class<?> theClass) {
-        Annotation[] annotations = theClass.getAnnotations();
-        for (Annotation annotation : annotations) {
-            addToMap(annotation.annotationType(), customAnnotsMap, annotation);
-        }
-    }
-
-    private void addToMap(Class<? extends Annotation> annotClass,
-                          Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap,
-                          Annotation... annot) {
-        customAnnotsMap.computeIfAbsent(annotClass, key -> new LinkedList<>()).addAll(Arrays.asList(annot));
-    }
-
-    private void addCustomAnnotations(Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap, Method theMethod) {
-        Annotation[] annotations = theMethod.getAnnotations();
-        for (Annotation annotation : annotations) {
-            addToMap(annotation.annotationType(), customAnnotsMap, annotation);
         }
     }
 
