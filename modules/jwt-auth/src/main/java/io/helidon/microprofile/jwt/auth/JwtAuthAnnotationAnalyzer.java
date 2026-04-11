@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import io.helidon.common.Weight;
@@ -122,23 +121,6 @@ public class JwtAuthAnnotationAnalyzer implements AnnotationAnalyzer {
     @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
         return analyze(TypeName.create(maybeAnnotated), AnnotationFactory.create(maybeAnnotated));
-    }
-
-    // resource class analysis
-    @SuppressWarnings("removal")
-    @Override
-    public AnalyzerResponse analyze(Class<?> maybeAnnotated, AnalyzerResponse previousResponse) {
-        return AnalyzerResponse.builder(previousResponse)
-                .build();
-    }
-
-    // resource method analysis
-    @SuppressWarnings("removal")
-    @Override
-    public AnalyzerResponse analyze(Method maybeAnnotated, AnalyzerResponse previousResponse) {
-        return analyze(TypeName.create(maybeAnnotated.getDeclaringClass()),
-                       AnnotationFactory.create(maybeAnnotated),
-                       previousResponse);
     }
 
     @Override
