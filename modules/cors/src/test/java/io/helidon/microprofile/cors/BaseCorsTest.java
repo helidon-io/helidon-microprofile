@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeAll;
  * on the requests.
  */
 @HelidonTest
-abstract class BaseCrossOriginTest {
+abstract class BaseCorsTest {
 
     private static final String ALLOW_RESTRICTED_HEADERS = "sun.net.http.allowRestrictedHeaders";
     private static boolean originalAllowRestrictedHeaders;

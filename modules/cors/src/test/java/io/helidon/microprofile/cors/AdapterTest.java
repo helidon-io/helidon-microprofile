@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.is;
 
 @AddBean(AdapterTest.TestApp.class)
 @AddBean(AdapterTest.TestResource.class)
-public class AdapterTest extends BaseCrossOriginTest {
+public class AdapterTest extends BaseCorsTest {
 
     private static final String APP_PATH = "/adaptertestapp";
     private static final String RESOURCE_PATH = "/adaptertestresource";

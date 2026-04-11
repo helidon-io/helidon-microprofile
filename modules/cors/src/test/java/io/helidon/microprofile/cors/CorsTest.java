@@ -51,20 +51,20 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.isEmptyString;
 
 /**
- * Class CrossOriginTest.
+ * CORS integration test.
  */
-@AddBean(CrossOriginTest.CorsResource0.class)
-@AddBean(CrossOriginTest.CorsResource1.class)
-@AddBean(CrossOriginTest.CorsResource2.class)
-@AddBean(CrossOriginTest.CorsResource3.class)
-@AddBean(CrossOriginTest.CorsResource4.class)
+@AddBean(CorsTest.CorsResource0.class)
+@AddBean(CorsTest.CorsResource1.class)
+@AddBean(CorsTest.CorsResource2.class)
+@AddBean(CorsTest.CorsResource3.class)
+@AddBean(CorsTest.CorsResource4.class)
 @AddConfig(key = "cors.paths.0.path-pattern", value = "/cors3")
 @AddConfig(key = "cors.paths.0.allow-origins", value = "http://foo.bar,http://bar.foo")
 @AddConfig(key = "cors.paths.0.allow-methods", value = "DELETE,PUT")
 @AddConfig(key = "cors.paths.1.path-pattern", value = "/cors4")
 @AddConfig(key = "cors.paths.1.allow-origins", value = "http://foo.bar,http://bar.foo")
 @AddConfig(key = "cors.paths.1.allow-methods", value = "GET")
-class CrossOriginTest extends BaseCrossOriginTest {
+class CorsTest extends BaseCorsTest {
     @Inject
     private WebTarget target;
 

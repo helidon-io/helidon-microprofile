@@ -56,7 +56,7 @@ public class CorsCdiExtension implements Extension {
      */
     static final String CORS_CONFIG_KEY = "cors";
 
-    private final Set<Method> methodsWithCrossOriginIncorrectlyUsed = new HashSet<>();
+    private final Set<Method> methodsWithMisplacedCorsAnnotations = new HashSet<>();
     private final List<CorsPathConfig> corsConfigs = new ArrayList<>();
 
     private Config config;
@@ -99,7 +99,7 @@ public class CorsCdiExtension implements Extension {
                 if (am.isAnnotationPresent(OPTIONS.class)) {
                     endpointList.add(corsConfig.get());
                 } else {
-                    methodsWithCrossOriginIncorrectlyUsed.add(method);
+                    methodsWithMisplacedCorsAnnotations.add(method);
                 }
             }
         });
@@ -121,12 +121,12 @@ public class CorsCdiExtension implements Extension {
     void ready(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
                ServerCdiExtension server) {
 
-        if (!methodsWithCrossOriginIncorrectlyUsed.isEmpty()) {
+        if (!methodsWithMisplacedCorsAnnotations.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format(
                             "CORS annotations are valid only on @OPTIONS methods; found incorrectly on the following "
                                     + "methods:%n%s",
-                            methodsWithCrossOriginIncorrectlyUsed));
+                            methodsWithMisplacedCorsAnnotations));
         }
 
         CorsFeature corsFeature = CorsFeature.builder()
@@ -135,19 +135,6 @@ public class CorsCdiExtension implements Extension {
                 .build();
 
         server.addFeature(corsFeature);
-    }
-
-    @SuppressWarnings("removal")
-    private static CorsPathConfig annotationToConfig(CrossOrigin crossOrigin, String path) {
-        return CorsPathConfig.builder()
-                .pathPattern(path)
-                .allowOrigins(Set.of(crossOrigin.value()))
-                .allowHeaders(Set.of(crossOrigin.allowHeaders()))
-                .exposeHeaders(Set.of(crossOrigin.exposeHeaders()))
-                .allowMethods(Set.of(crossOrigin.allowMethods()))
-                .allowCredentials(crossOrigin.allowCredentials())
-                .maxAge(Duration.ofSeconds(crossOrigin.maxAge()))
-                .build();
     }
 
     private String pathOfMethod(Method javaMember) {
@@ -172,11 +159,7 @@ public class CorsCdiExtension implements Extension {
         }
     }
 
-    @SuppressWarnings("removal")
     private Optional<CorsPathConfig> corsConfig(AnnotatedMethod<?> am, String path) {
-        if (am.isAnnotationPresent(CrossOrigin.class)) {
-            return Optional.of(annotationToConfig(am.getAnnotation(CrossOrigin.class), path));
-        }
         boolean found = false;
         var builder = CorsPathConfig.builder()
                 .pathPattern(path);
