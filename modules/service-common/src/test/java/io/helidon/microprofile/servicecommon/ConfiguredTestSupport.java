@@ -15,20 +15,25 @@
  */
 package io.helidon.microprofile.servicecommon;
 
-import java.util.Optional;
-
 import io.helidon.config.Config;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpRouting;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.
  */
-@SuppressWarnings("removal")
-public class ConfiguredTestSupport extends io.helidon.webserver.servicecommon.HelidonFeatureSupport {
+public class ConfiguredTestSupport implements HttpFeature {
 
     static final String ENDPOINT_PATH = "/testendpoint";
+    private static final HttpService EMPTY_SERVICE = rules -> {
+    };
 
     private final int importance;
+    private final String context;
+    private final boolean enabled;
+    private final String routing;
 
     /**
      * Initialization.
@@ -36,8 +41,11 @@ public class ConfiguredTestSupport extends io.helidon.webserver.servicecommon.He
      * @param builder builder for the service support instance.
      */
     private ConfiguredTestSupport(Builder builder) {
-        super(System.getLogger(ConfiguredTestSupport.class.getName()), builder, "testservice");
         importance = builder.importance;
+        enabled = builder.enabled;
+        routing = builder.routing;
+        String configuredContext = builder.webContext;
+        context = configuredContext.startsWith("/") ? configuredContext : "/" + configuredContext;
     }
 
     static Builder builder() {
@@ -45,33 +53,57 @@ public class ConfiguredTestSupport extends io.helidon.webserver.servicecommon.He
     }
 
     @Override
-    public Optional<HttpService> service() {
-        return Optional.of(rules -> {
-        });
+    public void setup(HttpRouting.Builder routing) {
+        setup(routing, routing);
+    }
+
+    @Override
+    public String socket() {
+        return routing == null ? WebServer.DEFAULT_SOCKET_NAME : routing;
+    }
+
+    void setup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
+        if (enabled) {
+            featureRouting.register(context, EMPTY_SERVICE);
+        }
     }
 
     int importance() {
         return importance;
     }
 
-    static class Builder extends io.helidon.webserver.servicecommon.HelidonFeatureSupport.Builder<Builder, ConfiguredTestSupport>
-            implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
+    static class Builder implements io.helidon.common.Builder<Builder, ConfiguredTestSupport> {
 
         private int importance;
-
-        private Builder() {
-            super(ENDPOINT_PATH);
-        }
+        private String webContext = ENDPOINT_PATH;
+        private String routing;
+        private boolean enabled = true;
 
         @Override
         public ConfiguredTestSupport build() {
             return new ConfiguredTestSupport(this);
         }
 
-        @Override
         public Builder config(Config config) {
-            super.config(config);
+            config.get("web-context").asString().ifPresent(this::webContext);
+            config.get("routing").asString().ifPresent(this::routing);
+            config.get("enabled").asBoolean().ifPresent(this::enabled);
             config.get("importance").asInt().ifPresent(this::importance);
+            return this;
+        }
+
+        public Builder webContext(String path) {
+            webContext = path;
+            return this;
+        }
+
+        public Builder routing(String routing) {
+            this.routing = routing;
+            return this;
+        }
+
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
             return this;
         }
 
