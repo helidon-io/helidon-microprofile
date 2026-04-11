@@ -211,9 +211,6 @@
         <javadoc.link.microprofile-rest-client>
             https://download.eclipse.org/microprofile/microprofile-rest-client-${version.lib.microprofile-rest-client}/apidocs
         </javadoc.link.microprofile-rest-client>
-        <javadoc.link.microprofile-tracing>
-            https://download.eclipse.org/microprofile/microprofile-opentracing-${version.lib.microprofile-tracing}/apidocs/
-        </javadoc.link.microprofile-tracing>
 
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey
         </javadoc.link.jersey>
@@ -404,10 +401,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-rest-client}</url>
                                 <location>${javadoc.pkg.dir}/microprofile-rest-client</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.microprofile-tracing}</url>
-                                <location>${javadoc.pkg.dir}/microprofile-tracing</location>
                             </offlineLink>
 
                             <offlineLink>
@@ -1208,16 +1201,6 @@
                 <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
                 <artifactId>microprofile-fault-tolerance-tck</artifactId>
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-tck-rest-client</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.rest.client</groupId>

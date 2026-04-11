@@ -37,12 +37,10 @@ import java.util.function.Supplier;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.microprofile.server.Server;
-import io.helidon.service.registry.Services;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
-import io.helidon.tracing.Tracer;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -236,9 +234,6 @@ public final class Mp1Main {
         // Access Log
         validateAccessLog(collector);
 
-        // Tracing
-        validateTracing(collector);
-
         // Health Checks
         validateHealth(collector, target);
 
@@ -369,15 +364,6 @@ public final class Mp1Main {
 
     private static void validateJwtProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
         validateEndpointWithJwtHeader(collector, target, "/jwt", jwtToken);
-    }
-
-    private static void validateTracing(Errors.Collector collector) {
-        Tracer tracer = Services.get(Tracer.class);
-        if (!tracer.toString().contains("OpenTelemetry")) {
-            // could not find how to get the actual instance of tracer from API
-            collector.fatal(tracer,
-                            "This application should be configured with OpenTelemetry Jaeger tracer, yet it is not: " + tracer);
-        }
     }
 
     private static void validateOpenAPI(Errors.Collector collector, WebTarget target) {

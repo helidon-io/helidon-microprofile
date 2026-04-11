@@ -54,7 +54,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
  * <ol>
  * <li>From request property {@link #TRACER_PROPERTY_NAME}</li>
  * <li>From JAX-RS server, when the client is invoked in scope of a JAX-RS inbound request
- * and appropriate filter is configured (see helidon-jersey-tracing and helidon-microprofile-tracing modules)</li>
+ * and the Jersey tracing integration is configured on the server</li>
  * <li>From {@link io.helidon.service.registry.Services#get(Class)}</li>
  * </ol>
  * <p>
@@ -114,7 +114,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
     public static final String CURRENT_SPAN_CONTEXT_PROPERTY_NAME = "io.helidon.tracing.span-context";
     /**
      * Header used by Envoy proxy. Automatically propagated when within Jersey and
-     * when using helidon-microprofile-tracing module.
+     * when inbound tracing context is available.
      */
     public static final String X_OT_SPAN_CONTEXT = "x-ot-span-context";
     /*
@@ -122,7 +122,7 @@ public class ClientTracingFilter implements ClientRequestFilter, ClientResponseF
      */
     /**
      * Header used by routers. Automatically propagated when within Jersey and
-     * when using helidon-microprofile-tracing module.
+     * when inbound tracing context is available.
      */
     public static final String X_REQUEST_ID = "x-request-id";
     static final String SPAN_PROPERTY_NAME = ClientTracingFilter.class.getName() + ".span";
