@@ -20,7 +20,7 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;

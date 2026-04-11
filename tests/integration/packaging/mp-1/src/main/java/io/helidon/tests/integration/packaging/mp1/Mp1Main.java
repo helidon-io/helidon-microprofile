@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.microprofile.server.Server;
+import io.helidon.service.registry.Services;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -371,7 +372,7 @@ public final class Mp1Main {
     }
 
     private static void validateTracing(Errors.Collector collector) {
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         if (!tracer.toString().contains("OpenTelemetry")) {
             // could not find how to get the actual instance of tracer from API
             collector.fatal(tracer,
@@ -745,4 +746,3 @@ public final class Mp1Main {
         return "basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 }
-

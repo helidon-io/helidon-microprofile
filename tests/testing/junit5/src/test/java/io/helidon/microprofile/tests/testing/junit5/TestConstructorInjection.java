@@ -18,11 +18,11 @@ package io.helidon.microprofile.tests.testing.junit5;
 
 import java.net.URI;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddJaxRs;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddJaxRs;
+import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
-import io.helidon.microprofile.testing.junit5.Socket;
+import io.helidon.microprofile.testing.Socket;
 
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.service.registry.Services;
 import io.helidon.tracing.SpanListener;

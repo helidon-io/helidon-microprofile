@@ -23,8 +23,8 @@ import java.util.Map;
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.server.CatchAllExceptionMapper;
 import io.helidon.microprofile.testing.AddConfigBlock;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;

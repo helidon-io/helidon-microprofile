@@ -23,8 +23,8 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.Configuration;
 
 import jakarta.websocket.HandshakeResponse;
 import jakarta.websocket.OnMessage;
