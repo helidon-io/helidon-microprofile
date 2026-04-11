@@ -51,12 +51,12 @@ public class ExceptionQueries {
 
     @Query("uncheckedQuery1")
     public String uncheckedQuery1() {
-        throw new IllegalArgumentException(new SecurityException("my exception"));
+        throw new IllegalArgumentException(new LegacyAccessControlLikeException("my exception"));
     }
 
     @Query("uncheckedQuery2")
     public String uncheckedQuery2() {
-        throw new MyIllegalArgumentException(new SecurityException("my exception"));
+        throw new MyIllegalArgumentException(new LegacyAccessControlLikeException("my exception"));
     }
 
     @Query
@@ -114,6 +114,20 @@ public class ExceptionQueries {
 
         public MyIOException(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * Preserves the legacy GraphQL error payload without relying on the deprecated JDK exception type.
+     */
+    public static class LegacyAccessControlLikeException extends SecurityException {
+        public LegacyAccessControlLikeException(String message) {
+            super(message);
+        }
+
+        @Override
+        public String toString() {
+            return "java.security.AccessControlException: " + getMessage();
         }
     }
 
