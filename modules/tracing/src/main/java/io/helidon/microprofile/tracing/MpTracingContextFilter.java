@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.microprofile.tracing;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
@@ -65,7 +66,7 @@ public class MpTracingContextFilter implements ContainerRequestFilter {
     public void filter(ContainerRequestContext requestContext) {
         ServerRequest serverRequest = this.request.get();
 
-        Tracer tracer = serverRequest.context().get(Tracer.class).orElseGet(Tracer::global);
+        Tracer tracer = serverRequest.context().get(Tracer.class).orElseGet(() -> Services.get(Tracer.class));
         Optional<SpanContext> parentSpan = Span.current().map(Span::context);
 
         boolean clientEnabled = config.getOptionalValue("tracing.client.enabled", Boolean.class).orElse(true);
