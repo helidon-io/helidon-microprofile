@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,25 @@ import io.helidon.tracing.Tracer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.inject.Inject;
 
 public class TestExtension implements Extension {
 
     static Tracer globalTracerAtStartup;
 
-    void startup(@Observes @Initialized(ApplicationScoped.class) Object startup) {
-        globalTracerAtStartup = Tracer.global();
+    void registerBeans(@Observes BeforeBeanDiscovery discovery) {
+        discovery.addAnnotatedType(StartupObserver.class, StartupObserver.class.getName());
+    }
+
+    @ApplicationScoped
+    public static class StartupObserver {
+        @Inject
+        private Tracer tracer;
+
+        void startup(@Observes @Initialized(ApplicationScoped.class) Object startup) {
+            globalTracerAtStartup = tracer;
+        }
     }
 }

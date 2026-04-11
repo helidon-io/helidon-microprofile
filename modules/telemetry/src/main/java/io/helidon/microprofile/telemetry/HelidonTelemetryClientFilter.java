@@ -43,8 +43,6 @@ import jakarta.ws.rs.ext.Provider;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_PEER_NAME;
-import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_PEER_PORT;
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -54,6 +52,8 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_PE
 class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
     private static final String HTTP_URL = "http.url";
+    private static final String LEGACY_NET_PEER_NAME = "net.peer.name";
+    private static final String LEGACY_NET_PEER_PORT = "net.peer.port";
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String SPAN = Span.class.getName();
     private static final Set<Response.Status.Family> ERROR_STATUS_FAMILIES = Set.of(
@@ -99,8 +99,8 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                 .tag(HTTP_URL, clientRequestContext.getUri().toString())
                 .tag(ServerAttributes.SERVER_ADDRESS.getKey(), clientRequestContext.getUri().getHost())
                 .tag(ServerAttributes.SERVER_PORT.getKey(), clientRequestContext.getUri().getPort())
-                .tag(NET_PEER_NAME, clientRequestContext.getUri().getHost())
-                .tag(NET_PEER_PORT, clientRequestContext.getUri().getPort())
+                .tag(LEGACY_NET_PEER_NAME, clientRequestContext.getUri().getHost())
+                .tag(LEGACY_NET_PEER_PORT, clientRequestContext.getUri().getPort())
 
                 .update(builder -> Span.current()
                         .map(Span::context)
