@@ -38,16 +38,7 @@
         <module>config</module>
         <module>harness</module>
         <module>health</module>
-        <!--
-        Disabled, fails
-        Expected: iterable containing ["NO_ACK-1", "NO_ACK-2", "NO_ACK-3"]
-         but: No item matched: "NO_ACK-1"
-        at org.hamcrest.MatcherAssert.assertThat(MatcherAssert.java:20)
-        at io.helidon.microprofile.messaging.connectors.mock.MockOutgoing.awaitData(MockOutgoing.java:166)
-        at io.helidon.microprofile.messaging.connectors.mock.MockOutgoing.awaitPayloads(MockOutgoing.java:194)
-        at io.helidon.microprofile.messaging.connectors.jms.AckMpTest.resendAckTestPart2(AckMpTest.java:121)
         <module>jms</module>
-        -->
         <module>kafka</module>
         <module>mp-bean-validation</module>
         <module>mp-gh-2421</module>
