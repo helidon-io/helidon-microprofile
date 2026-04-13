@@ -18,6 +18,7 @@ package io.helidon.microprofile.security;
 
 import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -310,9 +311,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     // accessible for unit testing
     SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
         Class<?> realClass = getRealClass(theClass);
+        TypeName realType = TypeName.create(realClass);
         Authenticated atn = realClass.getAnnotation(Authenticated.class);
         Authorized atz = realClass.getAnnotation(Authorized.class);
         Audited audited = realClass.getAnnotation(Audited.class);
+        List<io.helidon.common.types.Annotation> classAnnotations = classAnnotations(realClass);
 
         // as sometimes we may want to prevent calls to authorization provider unless
         // explicitly invoked by developer
@@ -329,8 +332,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         SecurityLevel securityLevel = SecurityLevel.builder()
-                .type(TypeName.create(realClass))
-                .classAnnotations(AnnotationFactory.create(realClass))
+                .type(realType)
+                .classAnnotations(classAnnotations)
                 .build();
         definition.securityLevels().add(securityLevel);
 
@@ -338,10 +341,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
 
             if (null == parent) {
-                analyzerResponse = analyzer.analyze(TypeName.create(realClass), AnnotationFactory.create(realClass));
+                analyzerResponse = analyzer.analyze(realType, classAnnotations);
             } else {
-                analyzerResponse = analyzer.analyze(TypeName.create(realClass),
-                                                    AnnotationFactory.create(realClass),
+                analyzerResponse = analyzer.analyze(realType,
+                                                    classAnnotations,
                                                     parent.analyzerResponse(analyzer));
             }
 
@@ -351,6 +354,12 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             logger().log(Level.TRACE, "Security definition for resource {0}: {1}", theClass.getName(), definition);
         }
         return definition;
+    }
+
+    private List<io.helidon.common.types.Annotation> classAnnotations(Class<?> resourceClass) {
+        return Arrays.stream(resourceClass.getAnnotations())
+                .map(AnnotationFactory::create)
+                .toList();
     }
 
     private SecurityDefinition getMethodSecurity(InvokedResource invokedResource,
