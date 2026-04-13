@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -33,6 +34,16 @@ import org.eclipse.microprofile.reactive.messaging.Message;
  * @param <V> the type of Kafka record value
  */
 public interface KafkaMessage<K, V> extends Message<V> {
+
+    @Override
+    default KafkaMessage<K, V> withAck(Supplier<CompletionStage<Void>> ack) {
+        return new KafkaWrappedMessage<>(this, getPayload(), ack, getNack());
+    }
+
+    @Override
+    default KafkaMessage<K, V> withNack(Function<Throwable, CompletionStage<Void>> nack) {
+        return new KafkaWrappedMessage<>(this, getPayload(), getAck(), nack);
+    }
 
     /**
      * Name of the topic from which was this message received.
@@ -85,6 +96,26 @@ public interface KafkaMessage<K, V> extends Message<V> {
      * @param key     Kafka record key
      * @param payload Kafka record value
      * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked
+     * @param nack    The negative-ack function, this will be invoked when the returned messages
+     *                {@link #nack(Throwable)} method is invoked
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> KafkaMessage<K, V> of(K key,
+                                        V payload,
+                                        Supplier<CompletionStage<Void>> ack,
+                                        Function<Throwable, CompletionStage<Void>> nack) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(key, payload, ack, nack);
+    }
+
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param key     Kafka record key
+     * @param payload Kafka record value
+     * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked
      * @param <K>     the type of Kafka record key
      * @param <V>     the type of Kafka record value
      * @return A message with the given payload and ack function
@@ -92,6 +123,24 @@ public interface KafkaMessage<K, V> extends Message<V> {
     static <K, V> KafkaMessage<K, V> of(K key, V payload, Supplier<CompletionStage<Void>> ack) {
         Objects.requireNonNull(payload);
         return new KafkaProducerMessage<>(key, payload, ack);
+    }
+
+    /**
+     * Create a message with the given payload and ack function.
+     *
+     * @param payload Kafka record value
+     * @param ack     The ack function, this will be invoked when the returned messages {@link #ack()} method is invoked
+     * @param nack    The negative-ack function, this will be invoked when the returned messages
+     *                {@link #nack(Throwable)} method is invoked
+     * @param <K>     the type of Kafka record key
+     * @param <V>     the type of Kafka record value
+     * @return A message with the given payload and ack function
+     */
+    static <K, V> KafkaMessage<K, V> of(V payload,
+                                        Supplier<CompletionStage<Void>> ack,
+                                        Function<Throwable, CompletionStage<Void>> nack) {
+        Objects.requireNonNull(payload);
+        return new KafkaProducerMessage<>(null, payload, ack, nack);
     }
 
     /**
