@@ -307,7 +307,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      * @param parent   base security definition or {@code null}
      * @return security definition for the class
      */
-    private SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
+    // accessible for unit testing
+    SecurityDefinition securityForClass(Class<?> theClass, SecurityDefinition parent) {
         Class<?> realClass = getRealClass(theClass);
         Authenticated atn = realClass.getAnnotation(Authenticated.class);
         Authorized atz = realClass.getAnnotation(Authorized.class);
