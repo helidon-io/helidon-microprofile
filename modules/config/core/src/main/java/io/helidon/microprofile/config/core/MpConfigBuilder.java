@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,6 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigMappers;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.encryption.EncryptionFilterService;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.microprofile.config.core.spi.MpConfigFilter;
 import io.helidon.microprofile.config.core.spi.MpConfigSourceProvider;
 import io.helidon.microprofile.config.core.spi.MpMetaConfigProvider;
@@ -79,7 +77,6 @@ import static io.helidon.microprofile.config.core.MpMetaConfig.MetaConfigSource;
 /**
  * Configuration builder.
  */
-@Configured(prefix = "mp.config", root = true)
 class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder {
     private static final System.Logger LOGGER = System.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
@@ -230,7 +227,6 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
      * @param profile name of the profile, such as {@code dev, test}
      * @return updated builder instance
      */
-    @ConfiguredOption(key = "profile", type = String.class, description = "Configure an explicit profile name.")
     public MpConfigBuilder profile(String profile) {
         this.profile = profile;
         return this;
