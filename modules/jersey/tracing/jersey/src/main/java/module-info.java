@@ -29,6 +29,7 @@ module io.helidon.tracing.jersey {
     requires io.helidon.common.context;
     requires io.helidon.common;
     requires io.helidon.jersey.common;
+    requires io.helidon.service.registry;
     requires io.helidon.tracing.config;
     requires jakarta.annotation;
     requires jersey.server;

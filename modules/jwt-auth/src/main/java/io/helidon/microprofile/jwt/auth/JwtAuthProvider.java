@@ -533,7 +533,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * A custom object to configure specific handling of outbound calls.
      */
-    @SuppressWarnings("removal")
     public static class JwtOutboundTarget {
         private final TokenHandler outboundHandler;
         private final String jwtKid;
@@ -614,7 +613,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * Fluent API builder for {@link JwtAuthProvider}.
      */
-    @SuppressWarnings("removal")
     @Configured(description = "MP-JWT Auth configuration is defined by the spec (options prefixed with `mp.jwt.`), "
             + "and we add a few configuration options for the security provider (options prefixed with "
             + "`security.providers.mp-jwt-auth.`)")

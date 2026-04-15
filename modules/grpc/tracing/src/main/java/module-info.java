@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ module io.helidon.microprofile.grpc.tracing {
     requires io.helidon.config;
     requires io.helidon.microprofile.config.core;
     requires io.helidon.webserver.grpc;
+    requires io.helidon.webserver.grpc.tracing;
     requires io.helidon.microprofile.grpc.server;
-    requires io.helidon.tracing;
     requires io.helidon.common.features.api;
 
     provides io.helidon.microprofile.grpc.server.spi.GrpcMpExtension

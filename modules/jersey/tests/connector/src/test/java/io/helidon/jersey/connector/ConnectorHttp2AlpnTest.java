@@ -40,7 +40,7 @@ class ConnectorHttp2AlpnTest extends ConnectorBase {
         Keys privateKeyConfig = Keys.builder()
                 .keystore(keystore -> keystore
                         .keystore(Resource.create("certificate.p12"))
-                        .keystorePassphrase("helidon"))
+                        .passphrase("helidon"))
                 .build();
 
         Tls tls = Tls.builder()

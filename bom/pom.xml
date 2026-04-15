@@ -163,11 +163,6 @@
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.tracing</groupId>
-                <artifactId>helidon-microprofile-tracing</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile.telemetry</groupId>
                 <artifactId>helidon-microprofile-telemetry</artifactId>
                 <version>${helidon.mp.version}</version>

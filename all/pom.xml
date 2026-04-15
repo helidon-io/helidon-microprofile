@@ -127,10 +127,6 @@
             <artifactId>helidon-microprofile-grpc-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.tracing</groupId>
-            <artifactId>helidon-microprofile-tracing</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.telemetry</groupId>
             <artifactId>helidon-microprofile-telemetry</artifactId>
         </dependency>

@@ -21,11 +21,9 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
@@ -79,7 +77,7 @@ class TyrusConnection implements ServerConnection, WsSession {
         DataReader dataReader = ctx.dataReader();
 
         try {
-            limit.invoke(() -> listener.onOpen(this));
+            limit.run(() -> listener.onOpen(this));
         } catch (LimitException e) {
             listener.onError(this, e);
             throw new CloseConnectionException("Too many concurrent requests");
@@ -95,7 +93,7 @@ class TyrusConnection implements ServerConnection, WsSession {
                 BufferData buffer = dataReader.readBuffer();
                 readingNetwork = false;
                 lastRequestTimestamp = DateTime.timestamp();
-                limit.invoke(() -> listener.onMessage(this, buffer, true));
+                limit.run(() -> listener.onMessage(this, buffer, true));
                 lastRequestTimestamp = DateTime.timestamp();
             } catch (LimitException e) {
                 listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
@@ -107,12 +105,6 @@ class TyrusConnection implements ServerConnection, WsSession {
             }
         }
         listener.onClose(this, WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
-    }
-
-    @SuppressWarnings("removal")
-    @Override
-    public void handle(Semaphore requestSemaphore) {
-        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override

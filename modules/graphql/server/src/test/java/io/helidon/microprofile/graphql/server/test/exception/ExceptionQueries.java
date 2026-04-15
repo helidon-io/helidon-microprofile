@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.graphql.server.test.exception;
 
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,12 +51,12 @@ public class ExceptionQueries {
 
     @Query("uncheckedQuery1")
     public String uncheckedQuery1() {
-        throw new IllegalArgumentException(new AccessControlException("my exception"));
+        throw new IllegalArgumentException(new LegacyAccessControlLikeException("my exception"));
     }
 
     @Query("uncheckedQuery2")
     public String uncheckedQuery2() {
-        throw new MyIllegalArgumentException(new AccessControlException("my exception"));
+        throw new MyIllegalArgumentException(new LegacyAccessControlLikeException("my exception"));
     }
 
     @Query
@@ -115,6 +114,20 @@ public class ExceptionQueries {
 
         public MyIOException(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * Preserves the legacy GraphQL error payload without relying on the deprecated JDK exception type.
+     */
+    public static class LegacyAccessControlLikeException extends SecurityException {
+        public LegacyAccessControlLikeException(String message) {
+            super(message);
+        }
+
+        @Override
+        public String toString() {
+            return "java.security.AccessControlException: " + getMessage();
         }
     }
 

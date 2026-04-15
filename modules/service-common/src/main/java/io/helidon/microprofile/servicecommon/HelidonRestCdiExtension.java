@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,9 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
  * annotated types for REST-based services.
  * </p>
  * <p>
- * Each CDI extension is presumed to layer on an SE-style service support class which itself is a subclass of
- * {@link io.helidon.webserver.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
- * The service support base class and its builder are both type parameters to this class.
+ * Each CDI extension is presumed to layer on an SE-style service support class with an associated {@code Builder}
+ * class. The service support typically consumes the component config exposed by this extension and registers itself
+ * directly with the selected routing builder.
  * </p>
  * <p>
  * Each concrete implementation should:

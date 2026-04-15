@@ -33,9 +33,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@AddBean(CrossOriginTest.CorsResource0.class)
+@AddBean(CorsTest.CorsResource0.class)
 @AddExtension(TestWithAdjustedCorsType.AugmentingExtension.class)
-class TestWithAdjustedCorsType extends BaseCrossOriginTest {
+class TestWithAdjustedCorsType extends BaseCorsTest {
 
     @Inject
     private WebTarget webTarget;
@@ -60,7 +60,7 @@ class TestWithAdjustedCorsType extends BaseCrossOriginTest {
 
         void processAnnotatedType(@Observes ProcessAnnotatedType<?> pat) {
             // Single out the CORS-controlled resource.
-            if (pat.getAnnotatedType().getJavaClass().getName().equals(CrossOriginTest.CorsResource0.class.getName())) {
+            if (pat.getAnnotatedType().getJavaClass().getName().equals(CorsTest.CorsResource0.class.getName())) {
                 pat.configureAnnotatedType()
                         .add(AugmentingAnnotation.Literal.getInstance());
             }

@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.eclipse</groupId>
             <artifactId>yasson</artifactId>
-            <!-- FIXME update it in dependencies/pom.xml. Currently this version makes opentracing tcks to fail  -->
+            <!-- FIXME update it in dependencies/pom.xml after the remaining JSON-B compatibility sweep. -->
             <version>3.0.3</version>
         </dependency>
     </dependencies>

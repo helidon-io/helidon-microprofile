@@ -16,10 +16,13 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 import io.helidon.microprofile.config.core.MpConfigSources;
+import io.helidon.scheduling.Scheduling;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.DeploymentException;
@@ -61,10 +64,10 @@ public class InvalidStateTest {
 
     @Test
     void invalidTimeUnit() {
-        assertDeploymentException(IllegalArgumentException.class,
-                                  Map.of(InvalidTimeUnit.class.getName() + ".invalidTimeUnitMethod.schedule.time-unit",
+        assertDeploymentException(DateTimeParseException.class,
+                                  Map.of("test.duration",
                                          "LIGHT_YEAR"),
-                                  InvalidTimeUnit.class);
+                                  InvalidDuration.class);
     }
 
     void assertDeploymentException(Class<? extends Throwable> expected, Class<?>... beans) {
@@ -84,7 +87,7 @@ public class InvalidStateTest {
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addExtensions(SchedulingCdiExtension.class);
         initializer.addBeanClasses(beans);
-        try (SeContainer c = initializer.initialize()) {
+        try (SeContainer _ = initializer.initialize()) {
             fail("Expected " + expected.getName());
         } catch (AssertionFailedError e) {
             throw e;
@@ -93,39 +96,45 @@ public class InvalidStateTest {
         }
     }
 
+    @ApplicationScoped
     static class InvalidCronBean {
-        @Scheduled("invalid cron")
+        @Scheduling.Cron("invalid cron")
         void invalidCron() {
         }
     }
 
+    @ApplicationScoped
     static class DoubleAnnotationBean {
-        @Scheduled("0/2 * * * * ? *")
-        @FixedRate(2)
+        @Scheduling.Cron("0/2 * * * * ? *")
+        @Scheduling.FixedRate("PT2S")
         void invalidAnnotations() {
         }
     }
 
+    @ApplicationScoped
     static class UnresolvedPlaceholderBean {
-        @Scheduled("${unresolved}")
+        @Scheduling.Cron("${unresolved}")
         void invalidAnnotations() {
         }
     }
 
+    @ApplicationScoped
     static class NegativeDelay {
-        @FixedRate(-1)
+        @Scheduling.FixedRate("PT-1S")
         void negativeDelay() {
         }
     }
 
+    @ApplicationScoped
     static class ZeroRateBean {
-        @FixedRate(0)
+        @Scheduling.FixedRate("PT0S")
         void zeroRate() {
         }
     }
 
-    static class InvalidTimeUnit {
-        @FixedRate(2)
+    @ApplicationScoped
+    static class InvalidDuration {
+        @Scheduling.FixedRate("${test.duration:PT10S}")
         void invalidTimeUnitMethod() {
         }
     }

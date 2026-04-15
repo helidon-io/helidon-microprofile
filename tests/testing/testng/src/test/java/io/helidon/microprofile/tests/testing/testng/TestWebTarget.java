@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.microprofile.tests.testing.testng;
 
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.testing.testng.AddBean;
-import io.helidon.microprofile.testing.testng.AddExtension;
-import io.helidon.microprofile.testing.testng.DisableDiscovery;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddExtension;
+import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.testng.HelidonTest;
 
 import jakarta.inject.Inject;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.microprofile.tests.testing.junit5;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddConfigBlock;
-import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
+import io.helidon.microprofile.testing.AddConfigBlock;
+import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;

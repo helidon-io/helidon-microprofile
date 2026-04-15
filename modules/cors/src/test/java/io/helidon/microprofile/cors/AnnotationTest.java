@@ -61,7 +61,7 @@ class AnnotationTest {
     @Path("/cors1")
     static class CorsResourceWithBadAnnotation {
 
-        // The following @CrossOrigin should trigger an error during start-up annotation processing
+        // The following annotations should trigger an error during start-up annotation processing
         // because it is not on an @OPTIONS method.
         @Cors.AllowOrigins({"http://foo.bar", "http://bar.foo"})
         @Cors.AllowMethods("PUT")

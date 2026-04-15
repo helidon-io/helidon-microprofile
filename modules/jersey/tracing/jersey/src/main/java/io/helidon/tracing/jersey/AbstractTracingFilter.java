@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -68,7 +69,7 @@ public abstract class AbstractTracingFilter implements ContainerRequestFilter, C
 
         if (spanConfig.enabled()) {
             spanName = spanConfig.newName().orElse(spanName);
-            Tracer tracer = context.get(Tracer.class).orElseGet(Tracer::global);
+            Tracer tracer = context.get(Tracer.class).orElseGet(() -> Services.get(Tracer.class));
             SpanContext parentSpan = context.get(TracingConfig.class, SpanContext.class)
                     .orElseGet(() -> context.get(SpanContext.class).orElse(null));
 

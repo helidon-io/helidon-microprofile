@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.io.IOException;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.graphql.server.test.db.TestDB;
 import io.helidon.microprofile.graphql.server.test.exception.ExceptionQueries;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;

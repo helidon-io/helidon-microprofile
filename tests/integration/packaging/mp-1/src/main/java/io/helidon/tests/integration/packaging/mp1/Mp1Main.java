@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.jwt.jwk.JwkRSA;
-import io.helidon.tracing.Tracer;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -235,9 +234,6 @@ public final class Mp1Main {
         // Access Log
         validateAccessLog(collector);
 
-        // Tracing
-        validateTracing(collector);
-
         // Health Checks
         validateHealth(collector, target);
 
@@ -368,15 +364,6 @@ public final class Mp1Main {
 
     private static void validateJwtProtectedResource(Errors.Collector collector, WebTarget target, String jwtToken) {
         validateEndpointWithJwtHeader(collector, target, "/jwt", jwtToken);
-    }
-
-    private static void validateTracing(Errors.Collector collector) {
-        Tracer tracer = Tracer.global();
-        if (!tracer.toString().contains("OpenTelemetry")) {
-            // could not find how to get the actual instance of tracer from API
-            collector.fatal(tracer,
-                            "This application should be configured with OpenTelemetry Jaeger tracer, yet it is not: " + tracer);
-        }
     }
 
     private static void validateOpenAPI(Errors.Collector collector, WebTarget target) {
@@ -745,4 +732,3 @@ public final class Mp1Main {
         return "basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 }
-

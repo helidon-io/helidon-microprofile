@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigBuilderSupport;
-import io.helidon.config.DeprecatedConfig;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.scheduling.Cron;
 import io.helidon.scheduling.Invocation;
@@ -57,7 +56,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 /**
  * Scheduling CDI Extension.
  */
-@SuppressWarnings("removal")
 public class SchedulingCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(SchedulingCdiExtension.class.getName());
     private final Queue<AnnotatedMethod<?>> methods = new LinkedList<>();
@@ -108,8 +106,6 @@ public class SchedulingCdiExtension implements Extension {
     void registerMethods(
             @Observes
             @WithAnnotations({
-                    Scheduled.class,
-                    FixedRate.class,
                     Scheduling.Cron.class,
                     Scheduling.FixedRate.class}) ProcessAnnotatedType<?> pat) {
         // Lookup scheduled methods
@@ -158,8 +154,8 @@ public class SchedulingCdiExtension implements Extension {
                                                             method.getName()));
             }
 
-            if (am.isAnnotationPresent(FixedRate.class)
-                    && am.isAnnotationPresent(Scheduled.class)) {
+            if (am.isAnnotationPresent(Scheduling.Cron.class)
+                    && am.isAnnotationPresent(Scheduling.FixedRate.class)) {
                 throw new DeploymentException(String.format("Scheduled method %s#%s can have only one scheduling annotation.",
                                                             method.getDeclaringClass().getName(),
                                                             method.getName()));
@@ -167,43 +163,13 @@ public class SchedulingCdiExtension implements Extension {
 
             Config methodConfig = config.get(aClass.getName() + "." + method.getName() + ".schedule");
 
-            if (am.isAnnotationPresent(FixedRate.class)) {
-                FixedRate annotation = am.getAnnotation(FixedRate.class);
-
-                Task task = io.helidon.scheduling.FixedRate.builder()
-                        .initialDelay(annotation.initialDelay())
-                        .delayType(annotation.delayType())
-                        .delay(annotation.value())
-                        .timeUnit(annotation.timeUnit())
-                        .config(methodConfig)
-                        .executor(executorService)
-                        .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
-                        .build();
-
-                LOGGER.log(Level.DEBUG, () -> String.format("Method %s#%s scheduled to be executed %s",
-                                                            aClass.getSimpleName(), method.getName(), task.description()));
-            } else if (am.isAnnotationPresent(Scheduling.FixedRate.class)) {
+            if (am.isAnnotationPresent(Scheduling.FixedRate.class)) {
                 Scheduling.FixedRate annotation = am.getAnnotation(Scheduling.FixedRate.class);
 
                 Task task = io.helidon.scheduling.FixedRate.builder()
                         .delayBy(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.delayBy())))
                         .delayType(annotation.delayType())
                         .interval(Duration.parse(ConfigBuilderSupport.resolveExpression(config, annotation.value())))
-                        .config(methodConfig)
-                        .executor(executorService)
-                        .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
-                        .build();
-
-                LOGGER.log(Level.DEBUG, () -> String.format("Method %s#%s scheduled to be executed %s",
-                                                            aClass.getSimpleName(), method.getName(), task.description()));
-            } else if (am.isAnnotationPresent(Scheduled.class)) {
-                Scheduled annotation = am.getAnnotation(Scheduled.class);
-
-                Task task = Cron.builder()
-                        .concurrentExecution(annotation.concurrentExecution())
-                        .expression(DeprecatedConfig.get(methodConfig, "expression", "cron")
-                                            .asString()
-                                            .orElseGet(() -> ConfigBuilderSupport.resolveExpression(config, annotation.value())))
                         .config(methodConfig)
                         .executor(executorService)
                         .task(inv -> invokeWithOptionalParam(beanInstance, method, inv))
@@ -238,9 +204,7 @@ public class SchedulingCdiExtension implements Extension {
     }
 
     private boolean hasScheduleAnnotation(AnnotatedMethod<?> am) {
-        return am.isAnnotationPresent(Scheduled.class)
-                || am.isAnnotationPresent(FixedRate.class)
-                || am.isAnnotationPresent(Scheduling.Cron.class)
+        return am.isAnnotationPresent(Scheduling.Cron.class)
                 || am.isAnnotationPresent(Scheduling.FixedRate.class);
     }
 }

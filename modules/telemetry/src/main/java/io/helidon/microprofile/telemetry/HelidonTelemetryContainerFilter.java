@@ -50,8 +50,6 @@ import org.glassfish.jersey.server.model.Resource;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_NAME;
-import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HOST_PORT;
 
 /**
  * Filter to process Server request and Server response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -64,6 +62,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String HTTP_TARGET = "http.target";
     private static final String HTTP_ROUTE = "http.route";
+    private static final String LEGACY_NET_HOST_NAME = "net.host.name";
+    private static final String LEGACY_NET_HOST_PORT = "net.host.port";
 
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
 
@@ -151,8 +151,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 .tag(HTTP_ROUTE, route)
                 .tag(ServerAttributes.SERVER_ADDRESS.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
                 .tag(ServerAttributes.SERVER_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
-                .tag(NET_HOST_NAME, requestContext.getUriInfo().getBaseUri().getHost())
-                .tag(NET_HOST_PORT, requestContext.getUriInfo().getBaseUri().getPort())
+                .tag(LEGACY_NET_HOST_NAME, requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(LEGACY_NET_HOST_PORT, requestContext.getUriInfo().getBaseUri().getPort())
 
                 .update(builder -> parentSpanContext.ifPresent(builder::parent))
                 .start();

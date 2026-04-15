@@ -29,6 +29,7 @@ module io.helidon.tracing.jersey.client {
 
     requires io.helidon.common.context;
     requires io.helidon.common;
+    requires io.helidon.service.registry;
     requires io.helidon.tracing.config;
     requires io.helidon.tracing;
     requires jakarta.annotation;
@@ -42,7 +43,7 @@ module io.helidon.tracing.jersey.client {
     exports io.helidon.tracing.jersey.client;
 
     // needed to propagate tracing context from server to client
-    exports io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey, io.helidon.microprofile.tracing;
+    exports io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey;
 
     uses io.helidon.tracing.spi.TracerProvider;
 

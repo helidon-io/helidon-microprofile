@@ -4,8 +4,6 @@ This test makes sure the following helidon modules can be compiled into native i
 
 - MicroProfile CDI
 - MicroProfile Server
-- MicroProfile Tracing
-- Jaeger Tracer
 - MicroProfile Access Log
 - MicroProfile Fault Tolerance
 - MicroProfile Metrics

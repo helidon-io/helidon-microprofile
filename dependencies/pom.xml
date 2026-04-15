@@ -122,7 +122,6 @@
         <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
-        <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.netty>4.1.130.Final</version.lib.netty>
@@ -133,7 +132,6 @@
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.58.0</version.lib.opentelemetry.opentracing.shim>
         <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
@@ -232,11 +230,6 @@
                 <groupId>io.opentelemetry.semconv</groupId>
                 <artifactId>opentelemetry-semconv</artifactId>
                 <version>${version.lib.opentelemetry.semconv}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-opentracing-shim</artifactId>
-                <version>${version.lib.opentelemetry.opentracing.shim}</version>
             </dependency>
             <dependency>
                 <groupId>io.opentracing</groupId>
@@ -569,17 +562,6 @@
                 <groupId>org.eclipse.microprofile.fault-tolerance</groupId>
                 <artifactId>microprofile-fault-tolerance-api</artifactId>
                 <version>${version.lib.microprofile-fault-tolerance-api}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.opentracing</groupId>
-                <artifactId>microprofile-opentracing-api</artifactId>
-                <version>${version.lib.microprofile-tracing}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.osgi</groupId>

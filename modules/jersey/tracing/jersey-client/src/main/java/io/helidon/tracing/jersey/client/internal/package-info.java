@@ -16,6 +16,6 @@
 /**
  * Internal package is only for use in other modules this is intended for.
  * Currently the only class {@link io.helidon.tracing.jersey.client.internal.TracingContext} is to be used
- * by helidon-jersey-tracing and helidon-microprofile-tracing modules.
+ * by the Jersey tracing modules.
  */
 package io.helidon.tracing.jersey.client.internal;

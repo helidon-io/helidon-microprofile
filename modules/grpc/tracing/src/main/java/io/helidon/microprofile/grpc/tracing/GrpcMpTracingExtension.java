@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
-import io.helidon.tracing.Tracer;
 import io.helidon.webserver.grpc.GrpcTracingConfig;
-import io.helidon.webserver.grpc.GrpcTracingInterceptor;
+import io.helidon.webserver.grpc.spi.GrpcServerService;
+import io.helidon.webserver.grpc.tracing.GrpcTracingServiceProvider;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -36,11 +36,11 @@ public class GrpcMpTracingExtension implements GrpcMpExtension {
     @Override
     public void configure(GrpcMpContext context) {
         Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
-        GrpcTracingConfig tracingConfig = GrpcTracingConfig.create(config.get(GRPC_TRACING_ROOT));
-        if (tracingConfig.enabled()) {
-            Tracer tracer = Tracer.global();
-            GrpcTracingInterceptor interceptor = GrpcTracingInterceptor.create(tracer, tracingConfig);
-            context.routing().intercept(interceptor);
+        Config tracingConfig = config.get(GRPC_TRACING_ROOT);
+        if (!GrpcTracingConfig.create(tracingConfig).enabled()) {
+            return;
         }
+        GrpcServerService tracingService = new GrpcTracingServiceProvider().create(tracingConfig, "tracing");
+        tracingService.interceptors().forEach(interceptor -> context.routing().intercept(interceptor));
     }
 }

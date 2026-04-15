@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
@@ -62,7 +61,11 @@ import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.staticcontent.ClasspathHandlerConfig;
+import io.helidon.webserver.staticcontent.FileSystemHandlerConfig;
 import io.helidon.webserver.staticcontent.StaticContentConfig;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
+import io.helidon.webserver.staticcontent.TemporaryStorage;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -613,48 +616,45 @@ public class ServerCdiExtension implements Extension {
         }
     }
 
-    @SuppressWarnings("removal")
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        io.helidon.webserver.staticcontent.StaticContentService.FileSystemBuilder pBuilder =
-                io.helidon.webserver.staticcontent.StaticContentService.builder(config.get("location")
-                                                                                        .as(Path.class)
-                                                                                        .get());
-        pBuilder.welcomeFileName(config.get("welcome")
-                                         .asString()
-                                         .orElse("index.html"));
+        var builder = FileSystemHandlerConfig.builder()
+                .location(config.get("location").as(Path.class).get())
+                .welcome(config.get("welcome").asString().orElse("index.html"));
+        config.get("cache-in-memory")
+                .asList(String.class)
+                .stream()
+                .flatMap(List::stream)
+                .forEach(builder::addCachedFile);
 
-        var staticContent = pBuilder.build();
+        HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
         } else {
-            Supplier<io.helidon.webserver.staticcontent.StaticContentService> ms = () -> staticContent;
-            routingBuilder.register(ms);
+            routingBuilder.register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
 
-    @SuppressWarnings("removal")
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
-
-        io.helidon.webserver.staticcontent.StaticContentService.ClassPathBuilder cpBuilder =
-                io.helidon.webserver.staticcontent.StaticContentService.builder(config.get("location").asString().get());
-        cpBuilder.welcomeFileName(config.get("welcome")
-                                          .asString()
-                                          .orElse("index.html"));
+        var builder = ClasspathHandlerConfig.builder()
+                .location(normalizeClasspathLocation(config.get("location").asString().get()))
+                .welcome(config.get("welcome").asString().orElse("index.html"));
         config.get("tmp-dir")
                 .as(Path.class)
-                .ifPresent(cpBuilder::tmpDir);
+                .ifPresent(tmpDir -> builder.temporaryStorage(TemporaryStorage.builder()
+                                                                     .directory(tmpDir)
+                                                                     .build()));
 
         config.get("cache-in-memory")
                 .asList(String.class)
                 .stream()
                 .flatMap(List::stream)
-                .forEach(cpBuilder::addCacheInMemory);
+                .forEach(builder::addCachedFile);
 
-        var staticContent = cpBuilder.build();
+        HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
@@ -662,6 +662,20 @@ public class ServerCdiExtension implements Extension {
             routingBuilder.register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static classpath");
+    }
+
+    private String normalizeClasspathLocation(String location) {
+        String normalizedLocation = location;
+        if (normalizedLocation.startsWith("/")) {
+            normalizedLocation = normalizedLocation.substring(1);
+        }
+        while (normalizedLocation.endsWith("/")) {
+            normalizedLocation = normalizedLocation.substring(0, normalizedLocation.length() - 1);
+        }
+        if (normalizedLocation.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+        return normalizedLocation;
     }
 
     private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {

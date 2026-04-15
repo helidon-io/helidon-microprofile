@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.trace.Span;
@@ -54,7 +55,7 @@ class TestSpanListenersWithInjection {
     }
 
     void onStartup(@Observes @Initialized(ApplicationScoped.class) Object event) {
-        io.helidon.tracing.Tracer.global().register(LISTENER);
+        Services.get(io.helidon.tracing.Tracer.class).register(LISTENER);
     }
 
     @Test

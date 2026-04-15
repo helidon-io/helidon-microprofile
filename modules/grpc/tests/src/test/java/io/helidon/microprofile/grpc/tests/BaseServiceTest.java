@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.microprofile.grpc.tests;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
 import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webclient.grpc.GrpcClient;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,9 +29,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
-@AddConfig(key = HelidonTelemetryContainerFilter.SPAN_NAME_INCLUDES_METHOD,
+@AddConfig(key = WithSpanUsingLegacySpanNameTest.LEGACY_SPAN_NAME_INCLUDES_METHOD,
            value = "false")
 class WithSpanUsingLegacySpanNameTest extends WithSpanTestBase {
+    static final String LEGACY_SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
     private static Logger logger = Logger.getLogger(HelidonTelemetryContainerFilter.class.getName());
     private static MemoryLogHandler memoryLogHandler;
@@ -59,7 +60,7 @@ class WithSpanUsingLegacySpanNameTest extends WithSpanTestBase {
         // @Deprecated(forRemoval = true) in 5.1 remove the following:
         assertThat("Log output",
                    memoryLogHandler.logAsString(),
-                   containsString("does not set " + HelidonTelemetryContainerFilter.SPAN_NAME_INCLUDES_METHOD));
+                   containsString("does not set " + LEGACY_SPAN_NAME_INCLUDES_METHOD));
         // end of removal
 
     }
