@@ -29,10 +29,10 @@
     <packaging>pom</packaging>
 
     <artifactId>helidon-microprofile-modules-project</artifactId>
-    <name>Helidon MicroProfile Modules</name>
+    <name>Helidon MicroProfile Modules Project</name>
 
     <description>
-        All feature modules of Helidon MP. This directory is only structure separator, this module is not used as a parent.
+        All feature modules of Helidon MP. This directory is only a structure separator, this module is not used as a parent.
     </description>
 
     <modules>
