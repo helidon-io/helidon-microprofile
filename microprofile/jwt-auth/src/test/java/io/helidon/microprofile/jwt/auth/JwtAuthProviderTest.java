@@ -166,8 +166,8 @@ public class JwtAuthProviderTest {
         Jwt jwt = signedJwt.getJwt();
 
         // MP specific additions
-        assertThat(jwt.payloadClaim("upn"), not(Optional.empty()));
-        assertThat(jwt.payloadClaim("groups"), not(Optional.empty()));
+        assertThat(jwt.payloadClaimValue("upn"), not(Optional.empty()));
+        assertThat(jwt.payloadClaimValue("groups"), not(Optional.empty()));
         assertThat(jwt.userPrincipal(), is(Optional.of(username)));
         assertThat(jwt.userGroups(), not(Optional.empty()));
         assertThat(jwt.userGroups().get(), hasItems("group1", "group2", "group3"));

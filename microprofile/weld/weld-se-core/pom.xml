@@ -104,37 +104,68 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jar-for-reactor</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classesDirectory>${project.build.directory}/empty-classes</classesDirectory>
+                            <skipIfEmpty>true</skipIfEmpty>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- create the shaded JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <shadedArtifactAttached>false</shadedArtifactAttached>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <createSourcesJar>false</createSourcesJar>
+                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                    <artifactSet>
+                        <includes>
+                            <include>org.jboss.weld.se:weld-se-core</include>
+                        </includes>
+                    </artifactSet>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/services/jakarta.enterprise.inject.spi.CDIProvider</exclude>
+                                <exclude>META-INF/services/jakarta.enterprise.inject.se.SeContainerInitializer</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
                 <executions>
+                    <execution>
+                        <id>shade-for-reactor</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>shade</id>
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
-                        <configuration>
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                            <createSourcesJar>false</createSourcesJar>
-                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-                            <artifactSet>
-                                <includes>
-                                    <include>org.jboss.weld.se:weld-se-core</include>
-                                </includes>
-                            </artifactSet>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/services/jakarta.enterprise.inject.spi.CDIProvider</exclude>
-                                        <exclude>META-INF/services/jakarta.enterprise.inject.se.SeContainerInitializer</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

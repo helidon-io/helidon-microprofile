@@ -30,39 +30,3 @@ security:
             # AES is no longer supported, and this is a test of authentication, not encryption
             password: "password"
             roles: [ "user" ]
-    - http-digest-auth:
-        realm: "mic"
-        # Algorithm - MD5 is default (and now the only supported)
-        # algorithm: "MD5"
-        # QOP options - auth or empty (fallback to old RFC)
-        # default is auth
-        # qop: ["auth"]
-
-        # Password for protecting nonce values. Should be the same for
-        # services that want to share digest authentication (obviously together with realm)
-        server-secret: "pwd"
-
-        # Timeout of nonce values, defeault is 24 hours
-        # nonce-timeout-millis: 11111111111
-        users:
-          - login: "jack"
-            password: "jackIsGreat"
-            roles: [ "user", "admin" ]
-          - login: "jill"
-            # AES is no longer supported, and this is a test of authentication, not encryption
-            password: "password"
-            roles: [ "user" ]
-    - name: "digest_old"
-      http-digest-auth:
-        realm: "mic"
-        type: "DIGEST"
-        # QOP options - auth or empty (fallback to old RFC)
-        qop: [ ]
-        users:
-          - login: "jack"
-            password: "jackIsGreat"
-            roles: [ "user", "admin" ]
-          - login: "jill"
-            # AES is no longer supported, and this is a test of authentication, not encryption
-            password: "password"
-            roles: [ "user" ]

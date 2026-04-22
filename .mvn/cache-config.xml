@@ -70,10 +70,10 @@
             <moduleSets>
                 <moduleSet name="core">
                     <includes>
-                        <include>modules/config/**</include>
-                        <include>modules/weld/**</include>
-                        <include>modules/cdi/**</include>
-                        <include>modules/server/**</include>
+                        <include>microprofile/config/**</include>
+                        <include>microprofile/weld/**</include>
+                        <include>microprofile/cdi/**</include>
+                        <include>microprofile/server/**</include>
                     </includes>
                 </moduleSet>
                 <moduleSet name="others">

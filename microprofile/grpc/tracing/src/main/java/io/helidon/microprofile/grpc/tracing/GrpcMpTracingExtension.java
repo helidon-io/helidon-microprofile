@@ -20,8 +20,8 @@ import io.helidon.config.Config;
 import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
-import io.helidon.webserver.grpc.GrpcTracingConfig;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
+import io.helidon.webserver.grpc.tracing.GrpcTracingConfig;
 import io.helidon.webserver.grpc.tracing.GrpcTracingServiceProvider;
 
 import org.eclipse.microprofile.config.ConfigProvider;

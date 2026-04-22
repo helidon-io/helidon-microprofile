@@ -22,7 +22,6 @@ import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;
@@ -31,7 +30,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_PASSWORD;
@@ -40,11 +38,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Unit test for {@link HttpBasicAuthProvider} and {@link HttpDigestAuthProvider}.
+ * Unit test for {@link HttpBasicAuthProvider}.
  */
 @HelidonTest
 @AddBean(TestResource.class)
@@ -57,14 +54,10 @@ class HttpAuthProviderTest {
     private static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
     private final String serverBase;
-    private final String digestUri;
-    private final String digestOldUri;
 
     @Inject
     HttpAuthProviderTest(WebTarget target) {
         serverBase = target.getUri().toString();
-        digestUri = serverBase + "/digest";
-        digestOldUri = serverBase + "/digest_old";
     }
 
     @AfterAll
@@ -83,26 +76,6 @@ class HttpAuthProviderTest {
     }
 
     @Test
-    void digestTestJack() {
-        testProtected(digestUri, "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
-    }
-
-    @Test
-    void digestTestJill() {
-        testProtected(digestUri, "jill", "password", Set.of("user"), Set.of("admin"));
-    }
-
-    @Test
-    void digestOldTestJack() {
-        testProtected(digestOldUri, "jack", "jackIsGreat", Set.of("user", "admin"), Set.of());
-    }
-
-    @Test
-    void digestOldTestJill() {
-        testProtected(digestOldUri, "jill", "password", Set.of("user"), Set.of("admin"));
-    }
-
-    @Test
     void basicTest401() {
         // here we call the endpoint
         Response response = client.target(serverBase)
@@ -113,35 +86,6 @@ class HttpAuthProviderTest {
         String authHeader = response.getHeaderString(WWW_AUTHENTICATE);
         assertThat("We should have received " + WWW_AUTHENTICATE + " header", authHeader, notNullValue());
         assertThat(authHeader.toLowerCase(), is("basic realm=\"mic\""));
-    }
-
-    @Test
-    void digestTest401() {
-        // here we call the endpoint
-        Response response = client.target(digestUri)
-                .request()
-                .get();
-
-        assertThat(response.getStatus(), is(401));
-        String authHeader = response.getHeaderString(WWW_AUTHENTICATE);
-        assertThat(authHeader, notNullValue());
-        assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
-        assertThat(authHeader.toLowerCase(), containsString("qop="));
-    }
-
-    @Test
-    @Disabled
-    void digestOldTest401() {
-        // here we call the endpoint
-        Response response = client.target(digestOldUri)
-                .request()
-                .get();
-
-        assertThat(response.getStatus(), is(401));
-        String authHeader = response.getHeaderString(WWW_AUTHENTICATE);
-        assertThat(authHeader, notNullValue());
-        assertThat(authHeader.toLowerCase(), startsWith("digest realm=\"mic\""));
-        assertThat(authHeader.toLowerCase(), not(containsString("qop=")));
     }
 
     private Response callProtected(String uri, String username, String password) {

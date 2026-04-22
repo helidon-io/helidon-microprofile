@@ -17,7 +17,6 @@ package io.helidon.microprofile.jwt.auth;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.net.MalformedURLException;
@@ -57,6 +56,8 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -89,9 +90,6 @@ import io.helidon.security.spi.OutboundSecurityProvider;
 import io.helidon.security.util.TokenHandler;
 
 import jakarta.enterprise.inject.spi.DeploymentException;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReaderFactory;
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -128,7 +126,6 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
      */
     private static final String CONFIG_JWT_HEADER = "mp.jwt.token.header";
     private static final System.Logger LOGGER = System.getLogger(JwtAuthProvider.class.getName());
-    private static final JsonReaderFactory JSON = Json.createReaderFactory(Collections.emptyMap());
 
     private final boolean optional;
     private final boolean authenticate;
@@ -1155,7 +1152,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         .resource(Resource.create("public key from PKCS8", jwkJson))
                         .build();
             }
-            JsonObject jsonObject = JSON.createReader(new StringReader(jwkJson)).readObject();
+            JsonObject jsonObject = JsonParser.create(jwkJson).readJsonObject();
             return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 
@@ -1296,7 +1293,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         .resource(Resource.create("public key from PKCS8", jwkJson))
                         .build();
             }
-            JsonObject jsonObject = JSON.createReader(new StringReader(jwkJson)).readObject();
+            JsonObject jsonObject = JsonParser.create(jwkJson).readJsonObject();
             return JwkKeys.builder().addKey(Jwk.create(jsonObject)).build();
         }
 

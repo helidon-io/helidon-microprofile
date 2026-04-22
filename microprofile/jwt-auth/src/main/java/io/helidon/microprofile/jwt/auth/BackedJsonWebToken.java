@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.jwt.auth;
 
+import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -49,7 +50,7 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
         this.jwt = signed.getJwt();
         this.signed = signed;
         BasicAttributes container = BasicAttributes.create();
-        jwt.payloadClaims()
+        jwt.payloadClaimsJson()
                 .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
 
         jwt.email().ifPresent(value -> container.put("email", value));
@@ -78,7 +79,7 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
 
     @Override
     public Set<String> getClaimNames() {
-        return jwt.payloadClaims().keySet();
+        return jwt.payloadClaimsJson().keySet();
     }
 
     @SuppressWarnings("unchecked")
@@ -161,8 +162,20 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
             // special case, raw token is not really a claim
             return Optional.of(Json.createValue(signed.tokenContent()));
         }
-        return jwt.payloadClaim(claimName)
-                .or(() -> jwt.headerClaim(claimName));
+        return jwt.payloadClaimValue(claimName)
+                .map(this::toJsonp)
+                .or(() -> jwt.headerClaimValue(claimName)
+                        .map(this::toJsonp));
+    }
+
+    private JsonValue toJsonp(io.helidon.json.JsonValue value) {
+        return switch (value.type()) {
+        case STRING -> Json.createValue(value.asString().value());
+        case NUMBER -> Json.createValue(value.asNumber().bigDecimalValue());
+        case BOOLEAN -> value.asBoolean().value() ? JsonValue.TRUE : JsonValue.FALSE;
+        case NULL -> JsonValue.NULL;
+        case OBJECT, ARRAY, UNKNOWN -> Json.createReader(new StringReader(value.toString())).readValue();
+        };
     }
 
     private Object convert(Claims claims, JsonValue value) {

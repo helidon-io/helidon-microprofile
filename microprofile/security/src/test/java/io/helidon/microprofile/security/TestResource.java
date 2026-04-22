@@ -43,24 +43,4 @@ public class TestResource {
                 + " user: " + securityContext.userName() + "\n"
                 + " subject: " + securityContext.user();
     }
-
-    @Authenticated(provider = "http-digest-auth")
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    @Path("/digest")
-    public String digest(@Context SecurityContext securityContext) {
-        return "Digest provider\n"
-                + " user: " + securityContext.userName() + "\n"
-                + " subject: " + securityContext.user();
-    }
-
-    @Authenticated(provider = "digest_old")
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    @Path("/digest_old")
-    public String digestOld(@Context SecurityContext securityContext) {
-        return "Digest provider\n"
-                + " user: " + securityContext.userName() + "\n"
-                + " subject: " + securityContext.user();
-    }
 }
