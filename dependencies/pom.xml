@@ -41,7 +41,6 @@
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
-        <version.lib.coherence>25.03.1</version.lib.coherence>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.commons-io>2.16.1</version.lib.commons-io>
@@ -50,8 +49,6 @@
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.7</version.lib.eclipselink>
-        <!-- el-impl has been replaced by expressly. But we still manage version to not break existing application poms -->
-        <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.expressly>5.0.0</version.lib.expressly>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
         <!-- For dependency convergence. google-http-client version should match what is used by google-api-client -->
@@ -60,7 +57,6 @@
         <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
         <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
-        <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.13.2</version.lib.gson>
@@ -72,7 +68,6 @@
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
-        <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.21.1</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
@@ -127,20 +122,15 @@
         <version.lib.netty>4.1.130.Final</version.lib.netty>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
-        <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.58.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
-        <version.lib.opentracing>0.33.0</version.lib.opentracing>
-        <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
-        <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
         <version.lib.parsson>1.1.7</version.lib.parsson>
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
-        <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
@@ -150,8 +140,6 @@
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
         <version.lib.weld>5.1.6.Final</version.lib.weld>
         <version.lib.yasson>3.0.4</version.lib.yasson>
-        <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
-        <version.lib.zipkin>2.12.5</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
         <version.lib.crac>1.5.0</version.lib.crac>
     </properties>
@@ -232,17 +220,6 @@
                 <version>${version.lib.opentelemetry.semconv}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-util</artifactId>
-                <version>${version.lib.opentracing}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.annotation</groupId>
-                        <artifactId>javax.annotation-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-annotations</artifactId>
                 <version>${version.lib.opentelemetry.instrumentation.annotations}</version>
@@ -256,21 +233,6 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
                 <version>${version.lib.opentelemetry-sdk-extension-autoconfigure}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-api</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-noop</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentracing.contrib</groupId>
-                <artifactId>opentracing-tracerresolver</artifactId>
-                <version>${version.lib.opentracing.tracerresolver}</version>
             </dependency>
             <!--
                 "Jakarta XML Binding API". (See
@@ -307,13 +269,6 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <version>${version.lib.jaxb-runtime}</version>
-            </dependency>
-            <dependency>
-                <!-- contains the API as well -->
-                <!-- Has been replaced by expressly. We manage version to not break existing application poms -->
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>${version.lib.el-impl}</version>
             </dependency>
             <dependency>
                 <!-- Jakarta EL implementation -->
@@ -425,24 +380,9 @@
             </dependency>
 
             <dependency>
-                <groupId>io.opentracing.contrib</groupId>
-                <artifactId>opentracing-grpc</artifactId>
-                <version>${version.lib.opentracing.grpc}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.lib.guava}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.zipkin2</groupId>
-                <artifactId>zipkin</artifactId>
-                <version>${version.lib.zipkin}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.reporter2</groupId>
-                <artifactId>zipkin-sender-urlconnection</artifactId>
-                <version>${version.lib.zipkin.sender-urlconnection}</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -1059,13 +999,6 @@
                 <groupId>io.helidon</groupId>
                 <artifactId>helidon-bom</artifactId>
                 <version>${helidon.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.oracle.coherence.ce</groupId>
-                <artifactId>coherence-bom</artifactId>
-                <version>${version.lib.coherence}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

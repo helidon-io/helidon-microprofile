@@ -1745,23 +1745,6 @@
             </attribution>
         </dependency>
         <dependency>
-            <id>76790</id>
-            <name>OpenTracing API for Java</name>
-            <version>0.33.0</version>
-            <licensor>Opentracing.Io</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-tracing-providers-opentracing</consumer>
-                <consumer>helidon-tracing-providers-zipkin</consumer>
-                <consumer>helidon-tracing-tracer-resolver</consumer>
-            </consumers>
-            <attribution>opentracing-util: 0.33.0, Apache 2.0 opentracing-mock: 0.33.0, Apache 2.0 opentracing-api: 0.33.0, Apache
-                2.0 opentracing-noop: 0.33.0, Apache 2.0 Copyright 2016-2019 The OpenTracing Authors
-                --------------------------------------------------------- See full text at the bottom of this document for
-                license: Apache-2.0
-            </attribution>
-        </dependency>
-        <dependency>
             <id>139371</id>
             <name>SnakeYAML</name>
             <version>2.0</version>
@@ -6141,22 +6124,6 @@
             </attribution>
         </dependency>
         <dependency>
-            <id>77053</id>
-            <name>opentracing-tracerresolver</name>
-            <version>0.1.8</version>
-            <licensor>opentracing-contrib</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-tracing-tracer-resolver</consumer>
-            </consumers>
-            <attribution>opentracing-tracerresolver: 0.1.8, Apache 2.0 Copyright 2017-2019 The OpenTracing Authors
-                -------------------------------------------------------------------------- 4th-party dependencies: OpenTracing API
-                for Java: 0.33.0, Apache 2.0 (opentracing-api is used in opentracing-tracerresolver) Copyright 2016-2019 The
-                OpenTracing Authors --------------------------------------------------------------------------- See full text at
-                the bottom of this document for license: Apache-2.0
-            </attribution>
-        </dependency>
-        <dependency>
             <id>129267</id>
             <name>reactive-streams</name>
             <version>1.0.4</version>
@@ -6452,24 +6419,6 @@
             <attribution>SmallRye: OpenAPI UI (io.smallrye:smallrye-open-api-ui) Copyright 2020 Red Hat, Inc.
                 -------------------------------------------- See full text at the bottom of this document for license: Apache-2.0
                 --------------------------------------------
-            </attribution>
-        </dependency>
-        <dependency>
-            <id>150715</id>
-            <name>zipkin-sender-urlconnection</name>
-            <version>2.16.4</version>
-            <licensor>OpenZipkin</licensor>
-            <licenseName>Apache 2.0</licenseName>
-            <consumers>
-                <consumer>helidon-tracing-providers-zipkin</consumer>
-            </consumers>
-            <attribution>Zipkin Sender: URLConnection (io.zipkin.reporter2:zipkin-sender-urlconnection) Copyright 2016-2020 The
-                OpenZipkin Authors -------------------------------------------- See full text at the bottom of this document for
-                license: Apache-2.0 -------------------------------------------- Fourth Party Dependencies
-                -------------------------------------------- "Zipkin Reporter: Core" (io.zipkin.reporter2:zipkin-reporter)
-                Copyright 2016-2020 The OpenZipkin Authors Apache License Version 2.0 --------------------------------------------
-                "Zipkin Core Library" (io.zipkin.zipkin2:zipkin) Copyright 2015-2020 The OpenZipkin Authors Apache License Version
-                2.0 --------------------------------------------
             </attribution>
         </dependency>
     </dependencies>
