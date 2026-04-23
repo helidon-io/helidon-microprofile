@@ -50,7 +50,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: '0'
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
       - name: Helidon Priming build
         uses: ./.github/actions/common
         with:
@@ -60,7 +61,6 @@ jobs:
           run: |
             etc/scripts/prime-build.sh
   copyright:
-    needs: prime-build
     timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
