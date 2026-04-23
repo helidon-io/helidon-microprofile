@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,19 +20,15 @@ security:
   provider-policy:
     type: "COMPOSITE"
     authentication:
-      - name: "http-digest-auth"
+      - name: "header-atn"
         flag: "SUFFICIENT"
       - name: "http-basic-auth"
         flag: "SUFFICIENT"
   providers:
-    - http-digest-auth:
-        realm: "helidon"
+    - header-atn:
         optional: true
-        server-secret: "aPassword"
-        users:
-          - login: "digest"
-            password: "digest"
-            roles: [ "user", "admin" ]
+        atn-token:
+          header: "X-AUTH-USER"
     - http-basic-auth:
         realm: "helidon"
         optional: true

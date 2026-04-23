@@ -40,7 +40,7 @@
         <module>dependencies</module>
         <module>all</module>
         <module>applications</module>
-        <module>modules</module>
+        <module>microprofile</module>
         <module>bundles</module>
     </modules>
 

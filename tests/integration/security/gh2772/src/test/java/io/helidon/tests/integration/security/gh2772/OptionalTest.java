@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class OptionalTest {
     }
 
     /*
-     * Digest auth provider will abstain but basic will work and we get e2e call done.
+     * Header auth provider will abstain but basic will work and we get e2e call done.
      */
     @Test
     void testResourceEndpointBasic() {
@@ -64,8 +64,8 @@ class OptionalTest {
     }
 
     /*
-     * We are passing Auth headers with wrong user info for basic auth so both provider will abastain,
-     * and with all abstain, composite will return 401.
+     * We are passing auth headers with wrong user info for basic auth, so header auth abstains
+     * and the request remains unauthorized.
      */
     @Test
     void testResourceEndpointBasicFail() {
