@@ -102,7 +102,6 @@
         <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.surefire.testng>3.1.2</version.lib.surefire.testng>
         <version.lib.testng>7.8.0</version.lib.testng>
-        <version.lib.zipkin.junit>2.12.5</version.lib.zipkin.junit>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>3.0.0.Final</version.lib.weld-junit>
@@ -221,24 +220,10 @@
         </javadoc.link.hibernate>
         <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/
         </javadoc.link.ojdbc>
-        <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/
-        </javadoc.link.ucp>
-
-        <javadoc.jackson.version>2.14</javadoc.jackson.version>
-        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/
-        </javadoc.link.jackson-annotations>
-        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/
-        </javadoc.link.jackson-core>
-        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/
-        </javadoc.link.jackson-databind>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc
         </javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}
         </javadoc.link.typesafe-config>
-        <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}
-        </javadoc.link.opentracing>
-        <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
-
         <!--suppress UnresolvedMavenProperty -->
         <javadoc.pkg.dir>${top.parent.basedir}/etc/javadoc</javadoc.pkg.dir>
     </properties>
@@ -293,18 +278,6 @@
                         <offline>true</offline>
                         <offlineLinks>
                             <offlineLink>
-                                <url>${javadoc.link.jackson-annotations}</url>
-                                <location>${javadoc.pkg.dir}/jackson-annotations</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.jackson-core}</url>
-                                <location>${javadoc.pkg.dir}/jackson-core</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.jackson-databind}</url>
-                                <location>${javadoc.pkg.dir}/jackson-databind</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.jakarta-jaxrs}</url>
                                 <location>${javadoc.pkg.dir}/jakarta-jaxrs</location>
                             </offlineLink>
@@ -327,18 +300,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.typesafe-config}</url>
                                 <location>${javadoc.pkg.dir}/typesafe-config</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.opentracing}</url>
-                                <location>${javadoc.pkg.dir}/opentracing</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.prometheus}</url>
-                                <location>${javadoc.pkg.dir}/prometheus</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.zipkin}</url>
-                                <location>${javadoc.pkg.dir}/zipkin</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.jakarta-jsonb}</url>
@@ -422,18 +383,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.ojdbc}</url>
                                 <location>${javadoc.pkg.dir}/ojdbc</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.ucp}</url>
-                                <location>${javadoc.pkg.dir}/ucp</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.oci-common}</url>
-                                <location>${javadoc.pkg.dir}/oci-common</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.oci-addons-oke-workload-identity}</url>
-                                <location>${javadoc.pkg.dir}/oci-addons-oke-workload-identity</location>
                             </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
@@ -1055,11 +1004,6 @@
                 <version>${version.lib.scala}</version>
             </dependency>
             <dependency>
-                <groupId>io.opentracing</groupId>
-                <artifactId>opentracing-mock</artifactId>
-                <version>${version.lib.opentracing}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.ee.tck.coreprofile</groupId>
                 <artifactId>core-profile-tck-impl</artifactId>
                 <version>${version.lib.microprofile-core-profile}</version>
@@ -1118,11 +1062,6 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-porting-package-tck</artifactId>
                 <version>${version.lib.weld}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.zipkin2</groupId>
-                <artifactId>zipkin-junit</artifactId>
-                <version>${version.lib.zipkin.junit}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.bedrock</groupId>

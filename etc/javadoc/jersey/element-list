@@ -64,7 +64,6 @@ org.glassfish.jersey.netty.connector
 org.glassfish.jersey.netty.connector.internal
 org.glassfish.jersey.oauth1.signature
 org.glassfish.jersey.oauth1.signature.internal
-org.glassfish.jersey.opentracing
 org.glassfish.jersey.process
 org.glassfish.jersey.process.internal
 org.glassfish.jersey.server
