@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ jobs:
         uses: ./.github/actions/common
         with:
           free-space: true
-          build-cache: read-write
+          build-cache: write-only
+          build-cache-id: prime-build
           maven-cache: read-write
           run: |
             etc/scripts/prime-build.sh
@@ -72,6 +73,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: prime-build
           run: etc/scripts/copyright.sh
   checkstyle:
     needs: prime-build
@@ -84,6 +86,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: prime-build
           run: etc/scripts/checkstyle.sh
   shellcheck:
     timeout-minutes: 5
@@ -107,6 +110,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-write
+          build-cache-id: build
           maven-cache: read-write
           run: |
             mvn --version
@@ -135,6 +139,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: build
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
           free-space: true
           run: |
@@ -154,6 +159,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: build
           run: |
             mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
@@ -175,6 +181,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: build
           test-artifact-name: tests-tck-${{ matrix.moduleSet }}
           run: |
             mvn ${MVN_ARGS} \
