@@ -61,6 +61,7 @@ jobs:
           run: |
             etc/scripts/prime-build.sh
   copyright:
+    needs: prime-build
     timeout-minutes: 5
     runs-on: ubuntu-22.04
     steps:
