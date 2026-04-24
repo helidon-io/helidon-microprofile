@@ -1324,6 +1324,12 @@
             </modules>
         </profile>
         <profile>
+            <id>examples</id>
+            <modules>
+                <module>examples</module>
+            </modules>
+        </profile>
+        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
