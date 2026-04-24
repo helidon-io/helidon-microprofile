@@ -166,6 +166,23 @@ jobs:
               -DskipTests \
               -Pspotbugs \
               verify
+  examples:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          build-cache-id: build
+          run: |
+            mvn ${MVN_ARGS} \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -f examples/pom.xml \
+              verify
   _tck:
     needs: build
     timeout-minutes: 30
@@ -190,7 +207,7 @@ jobs:
               verify
   gate:
     runs-on: ubuntu-22.04
-    needs: [ copyright, checkstyle, spotbugs, shellcheck, build, _tests, _tck ]
+    needs: [ copyright, checkstyle, spotbugs, shellcheck, build, examples, _tests, _tck ]
     steps:
       - shell: bash
         run: |
