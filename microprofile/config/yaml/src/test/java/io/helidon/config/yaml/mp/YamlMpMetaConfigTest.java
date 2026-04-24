@@ -16,6 +16,12 @@
 
 package io.helidon.config.yaml.mp;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import io.helidon.config.ConfigException;
 
 import org.eclipse.microprofile.config.Config;
@@ -26,6 +32,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -95,6 +102,44 @@ class YamlMpMetaConfigTest {
     }
 
     @Test
+    void testDefaultMetaConfigUsesContextClassLoader(@TempDir Path tempDir) throws IOException {
+        writeYaml(tempDir.resolve("mp-meta-config.yaml"), """
+                add-discovered-sources: false
+                add-discovered-converters: false
+
+                sources:
+                  - type: "yaml"
+                    classpath: "context-application.yaml"
+                    optional: false
+                """);
+        writeYaml(tempDir.resolve("context-application.yaml"), """
+                string: Context String
+                number: 321
+                array:
+                  - Alpha
+                  - Beta
+                  - Gamma
+                boolean: false
+                """);
+
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        try (URLClassLoader contextClassLoader = new URLClassLoader(new URL[]{tempDir.toUri().toURL()},
+                                                                    originalClassLoader)) {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+            config = ConfigProvider.getConfig();
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+        }
+
+        assertThat(config.getValue("string", String.class), is("Context String"));
+        assertThat(config.getValue("number", String.class), is("321"));
+        assertThat(config.getValue("array.0", String.class), is("Alpha"));
+        assertThat(config.getValue("array.1", String.class), is("Beta"));
+        assertThat(config.getValue("array.2", String.class), is("Gamma"));
+        assertThat(config.getValue("boolean", String.class), is("false"));
+    }
+
+    @Test
     void testMetaNonExistentNotOptional() {
         System.setProperty(META_CONFIG_SYSTEM_PROPERTY, "custom-mp-meta-config-path-not-optional.yaml");
         try {
@@ -127,5 +172,9 @@ class YamlMpMetaConfigTest {
         assertThat(config.getValue("array.2", String.class), is("Three"));
         assertThat(config.getValue("boolean", String.class), is("true"));
         assertThat(config.getValue("extra", String.class), is("Extra"));
+    }
+
+    private static void writeYaml(Path path, String content) throws IOException {
+        Files.writeString(path, content);
     }
 }
