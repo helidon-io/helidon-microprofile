@@ -49,11 +49,7 @@
         <module>tck-cdi</module>
         <module>tck-cdi-lang-model</module>
         <module>tck-restful</module>
-        <!--
-        Failures after upgrade to Java 26
-        ee.jakarta.tck.json.bind.customizedmapping.numberformat.NumberFormatCustomizationTest
         <module>tck-jsonb</module>
-        -->
         <module>tck-jsonp</module>
         <module>tck-inject</module>
         <module>tck-annotations</module>
