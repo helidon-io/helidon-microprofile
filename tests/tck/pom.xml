@@ -42,10 +42,7 @@
         <module>tck-rest-client</module>
         <module>tck-reactive-operators</module>
         <module>tck-telemetry</module>
-        <!--
-        Failures after upgrade to Java 26
         <module>tck-core-profile</module>
-        -->
         <module>tck-cdi</module>
         <module>tck-cdi-lang-model</module>
         <module>tck-restful</module>
