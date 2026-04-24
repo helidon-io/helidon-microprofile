@@ -69,7 +69,12 @@ final class MpMetaConfig {
     private static Optional<ConfigSource> findMetaConfig(String fileName) {
         // file system, then classpath
         return findFile(fileName)
-                .or(() -> findClasspath(MpMetaConfig.class.getClassLoader(), fileName));
+                .or(() -> findClasspath(metaConfigClassLoader(), fileName));
+    }
+
+    private static ClassLoader metaConfigClassLoader() {
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        return contextClassLoader == null ? MpMetaConfig.class.getClassLoader() : contextClassLoader;
     }
 
     private static Optional<ConfigSource> findFile(String name) {
