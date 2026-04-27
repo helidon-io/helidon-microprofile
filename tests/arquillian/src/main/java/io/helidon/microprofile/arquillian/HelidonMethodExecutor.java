@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
     public TestResult invoke(TestMethodExecutor testMethodExecutor) {
         RequestContextController controller = enricher.getRequestContextController();
         try {
+            clearInterruptedStatus("before test execution");
             controller.activate();
             Object instance = testMethodExecutor.getInstance();
             Method method = testMethodExecutor.getMethod();
@@ -88,12 +89,16 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             enricher.enrich(instance);
             injectURI(testMethodExecutor);
             jUnitTestNameRule(testMethodExecutor);
+            clearInterruptedStatus("before lifecycle setup");
             invokeBefore(instance, method);
+            clearInterruptedStatus("before test method");
             testMethodExecutor.invoke(enricher.resolve(method));
+            clearInterruptedStatus("before lifecycle cleanup");
             invokeAfter(instance, method);
         } catch (Throwable t) {
             return TestResult.failed(t);
         } finally {
+            clearInterruptedStatus("after test execution");
             try {
                 controller.deactivate();
             } catch (ContextNotActiveException e) {
@@ -101,6 +106,12 @@ public class HelidonMethodExecutor implements ContainerMethodExecutor {
             }
         }
         return TestResult.passed();
+    }
+
+    private static void clearInterruptedStatus(String phase) {
+        if (Thread.interrupted()) {
+            LOGGER.log(Level.DEBUG, "Cleared interrupted status " + phase);
+        }
     }
 
     /**
