@@ -70,6 +70,7 @@ public class BasicAuthOutboundOverrideTest {
         when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_ID)).thenReturn(user);
         when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_SECRET)).thenReturn(password);
         when(requestContext.getUri()).thenReturn(URI.create("http://localhost:7070/test"));
+        when(requestContext.getMethod()).thenReturn("GET");
         when(requestContext.getStringHeaders()).thenReturn(new MultivaluedHashMap<>());
         when(requestContext.getHeaders()).thenReturn(jerseyHeaders);
         when(requestContext.getPropertyNames()).thenReturn(List.of(
