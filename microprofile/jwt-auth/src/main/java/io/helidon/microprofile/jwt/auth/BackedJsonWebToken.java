@@ -45,10 +45,16 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
 
     private final AbacSupport properties;
     private final String name;
+    private final Optional<Set<String>> groups;
 
     BackedJsonWebToken(SignedJwt signed) {
+        this(signed, null);
+    }
+
+    BackedJsonWebToken(SignedJwt signed, Set<String> groups) {
         this.jwt = signed.getJwt();
         this.signed = signed;
+        this.groups = Optional.ofNullable(groups);
         BasicAttributes container = BasicAttributes.create();
         jwt.payloadClaimsJson()
                 .forEach((key, jsonValue) -> container.put(key, JwtUtil.toObject(jsonValue)));
@@ -123,7 +129,7 @@ final class BackedJsonWebToken extends JsonWebTokenImpl {
         case raw_token:
             return (T) signed.tokenContent();
         case groups:
-            return (T) jwt.userGroups().map(HashSet::new).orElse(null);
+            return (T) groups.or(() -> jwt.userGroups().map(HashSet::new)).orElse(null);
         case aud:
             return (T) jwt.audience().map(HashSet::new).orElse(null);
         case email_verified:

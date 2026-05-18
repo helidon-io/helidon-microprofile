@@ -80,3 +80,34 @@ jwt-no-outbound:
     # Expected audience (if not defined, any audience is accepted - security issue...)
     jwt-audience: "audience.application.id"
     default-key-id: "verify-rsa"
+
+jwt-custom-groups:
+  # Token extraction
+  atn-token:
+    # JWK configuration (where to get keys for verification/signatures)
+    jwk.resource.resource-path: "verify-jwk.json"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    default-key-id: "verify-rsa"
+  jwt-groups-path: "permissions"
+
+jwt-custom-groups-nested:
+  # Token extraction
+  atn-token:
+    # JWK configuration (where to get keys for verification/signatures)
+    jwk.resource.resource-path: "verify-jwk.json"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    default-key-id: "verify-rsa"
+  jwt-groups-path: "realm_access/roles"
+
+jwt-custom-groups-separated:
+  # Token extraction
+  atn-token:
+    # JWK configuration (where to get keys for verification/signatures)
+    jwk.resource.resource-path: "verify-jwk.json"
+    # Expected audience (if not defined, any audience is accepted - security issue...)
+    jwt-audience: "audience.application.id"
+    default-key-id: "verify-rsa"
+  jwt-groups-path: "permissions"
+  jwt-groups-separator: ","
