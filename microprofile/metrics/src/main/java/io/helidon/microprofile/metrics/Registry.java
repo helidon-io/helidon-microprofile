@@ -239,7 +239,7 @@ class Registry implements MetricRegistry {
 
     @Override
     public Metric getMetric(MetricID metricID) {
-        return metricsById.get(metricID);
+        return access(() -> metricsById.get(metricID));
     }
 
     @Override
