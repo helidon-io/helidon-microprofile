@@ -20,7 +20,7 @@
 @SuppressWarnings("requires-transitive-automatic")
 module io.helidon.microprofile.testing {
 
-    requires transitive io.helidon.common.testing.vitualthreads;
+    requires transitive io.helidon.common.testing.virtualthreads;
     requires io.helidon.microprofile.config.core;
     requires io.helidon.config.yaml.mp;
     requires io.helidon.microprofile.cdi;

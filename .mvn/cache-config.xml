@@ -36,6 +36,16 @@
                 <profile>tests</profile>
             </profiles>
             <moduleSets>
+                <moduleSet name="core">
+                    <includes>
+                        <include>microprofile/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="it">
+                    <includes>
+                        <include>tests/integration/**</include>
+                    </includes>
+                </moduleSet>
                 <moduleSet name="others">
                     <includes>
                         <include>**/*</include>
