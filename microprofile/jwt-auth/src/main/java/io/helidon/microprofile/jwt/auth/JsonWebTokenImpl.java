@@ -46,6 +46,10 @@ class JsonWebTokenImpl implements JsonWebToken, Principal {
         return new BackedJsonWebToken(signed);
     }
 
+    static JsonWebTokenImpl create(SignedJwt signed, Set<String> groups) {
+        return new BackedJsonWebToken(signed, groups);
+    }
+
     @Override
     public String getName() {
         return null;
