@@ -23,7 +23,6 @@ import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
-import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -272,7 +271,6 @@ class OpenTelemetryProducer {
 
         tracer = openTelemetry.getTracer(exporterName);
         helidonTracer = HelidonOpenTelemetry.create(openTelemetry, tracer, Map.of());
-        OpenTelemetryTracerProvider.globalTracer(helidonTracer);
     }
 
     // Process "otel." properties from microprofile config file.
