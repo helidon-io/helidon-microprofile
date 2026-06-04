@@ -19,10 +19,6 @@ Implementation of Eclipse [MicroProfile 6.0](https://github.com/eclipse/micropro
 
 Java 26 is required to use Helidon MicroProfile 5.
 
-## License
-
-Helidon is available under Apache License 2.0.
-
 ## Documentation
 
 Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
@@ -115,10 +111,18 @@ but a couple are handy to use on your desktop to verify your changes.
 
 ## Contributing
 
-* Learn how to [contribute](CONTRIBUTING.md)
+* Learn how to [contribute](./CONTRIBUTING.md)
 * See [issues](https://github.com/oracle/helidon/issues) for issues you can help with
 
 ## Stay Informed
 
 * Twitter: [@helidon_project](https://twitter.com/helidon_project)
 * Blog: [Helidon on Medium](https://medium.com/helidon)
+
+## License
+
+Helidon is available under Apache License 2.0.
+
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
