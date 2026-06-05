@@ -94,7 +94,7 @@ public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
     private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
     private static final ResolvedType OPEN_TELEMETRY = ResolvedType.create("io.opentelemetry.api.OpenTelemetry");
-    // and tracer must be excluded as well, as we need to create it in its CDI extension
+    // Helidon tracer producers must be excluded, as telemetry adds the application tracer directly
     private static final ResolvedType TRACER = ResolvedType.create("io.helidon.tracing.Tracer");
     private static final TypeName CDI_NAMED_TYPE = TypeName.create(Named.class);
 
@@ -357,7 +357,13 @@ public class ServiceRegistryExtension implements Extension {
 
     private void addCdiProducer(BeanManager bm, CdiProducer cdiProducer) {
         var type = cdiProducer.contract();
-        if (invalidContract(ResolvedType.create(type))) {
+        ResolvedType contract = ResolvedType.create(type);
+        if (contract.equals(TRACER)) {
+            // Telemetry registers the concrete application tracer directly; a CDI producer descriptor cannot safely
+            // serve async static registry lookups.
+            return;
+        }
+        if (invalidContract(contract)) {
             // this is not a contract we can support
             return;
         }

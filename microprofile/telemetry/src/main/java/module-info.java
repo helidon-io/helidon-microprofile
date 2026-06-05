@@ -29,9 +29,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.telemetry {
 
     requires io.helidon.common.context;
+    requires io.helidon.common;
     requires io.helidon.microprofile.config.core;
     requires io.helidon.config;
     requires io.helidon.microprofile.server;
+    requires io.helidon.service.registry;
     requires io.helidon.tracing;
     requires io.helidon.tracing.providers.opentelemetry;
     requires io.opentelemetry.api;

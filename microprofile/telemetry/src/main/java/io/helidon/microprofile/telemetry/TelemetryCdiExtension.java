@@ -175,9 +175,9 @@ public class TelemetryCdiExtension implements Extension {
     void finish(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE) @Initialized(ApplicationScoped.class) Object startup,
                 Tracer tracer) {
         // Forcing CDI to get us a tracer and then invoking one of the bean's methods triggers the producer to do its
-        // initialization, including setting the global tracer as part of start up.
+        // initialization during start up.
         tracer.enabled();
         LOGGER.log(System.Logger.Level.TRACE,
-                   () -> "Global tracer set to " + tracer.unwrap(io.opentelemetry.api.trace.Tracer.class));
+                   () -> "Telemetry tracer initialized as " + tracer.unwrap(io.opentelemetry.api.trace.Tracer.class));
     }
 }

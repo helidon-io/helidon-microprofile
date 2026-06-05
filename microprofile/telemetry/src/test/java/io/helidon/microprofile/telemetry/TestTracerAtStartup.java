@@ -15,14 +15,23 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.List;
+
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.Services;
+import io.helidon.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 
 @HelidonTest
 @AddConfig(key = "otel.sdk.disabled", value = "false")
@@ -30,8 +39,27 @@ class TestTracerAtStartup {
 
     @Test
     void checkForFullFeaturedTracerAtStartup() {
+        Tracer telemetryTracer = TestExtension.globalTracerAtStartup;
+        Tracer serviceRegistryTracer = Services.get(Tracer.class);
+
         assertThat("Global tracer from start-up extension",
-                   TestExtension.globalTracerAtStartup.unwrap(io.opentelemetry.api.trace.Tracer.class).getClass().getName(),
+                   telemetryTracer.unwrap(io.opentelemetry.api.trace.Tracer.class).getClass().getName(),
                    not(containsString("Default")));
+        assertThat("Static tracer lookup",
+                   serviceRegistryTracer,
+                   sameInstance(telemetryTracer));
+        assertThat("Static tracer delegate",
+                   serviceRegistryTracer.unwrap(io.opentelemetry.api.trace.Tracer.class).getClass().getName(),
+                   not(containsString("Default")));
+
+        List<ServiceInfo> tracerServices = GlobalServiceRegistry.registry().lookupServices(Lookup.create(Tracer.class));
+        assertThat("Application tracer supplier descriptor",
+                   tracerServices.stream()
+                           .anyMatch(it -> it.serviceType().fqName().equals(ApplicationTracerSupplier.class.getName())),
+                   is(true));
+        assertThat("No CDI producer descriptor for the telemetry tracer",
+                   tracerServices.stream()
+                           .noneMatch(it -> it.serviceType().fqName().equals(OpenTelemetryProducer.class.getName())),
+                   is(true));
     }
 }
