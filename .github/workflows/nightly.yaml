@@ -40,7 +40,8 @@ jobs:
         uses: ./.github/actions/common
         with:
           free-space: true
-          build-cache: read-write
+          build-cache: write-only
+          build-cache-id: prime-build
           maven-cache: read-write
           setup-latest-java: true
           run: |
@@ -56,6 +57,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-write
+          build-cache-id: build
           maven-cache: read-write
           setup-latest-java: true
           run: |
@@ -85,6 +87,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          build-cache-id: build
           setup-latest-java: true
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}-latest-java
           run: |
