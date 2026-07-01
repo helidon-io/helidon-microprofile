@@ -17,6 +17,7 @@
 package io.helidon.microprofile.grpc.core;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -130,14 +131,29 @@ public abstract class AbstractServiceBuilder {
     /**
      * Obtain the {@link MarshallerSupplier} to use.
      * <p>
-     * The {@link MarshallerSupplier} will be determined by the {@link io.helidon.grpc.api.Grpc.GrpcMarshaller}
-     * annotation if it is present otherwise the default supplier will be returned.
+     * The {@link MarshallerSupplier} will be determined by {@link GrpcMarshaller}, or by the deprecated
+     * {@link io.helidon.grpc.api.Grpc.GrpcMarshaller} compatibility annotation, if present. Otherwise the default
+     * supplier will be returned.
      *
      * @return the {@link MarshallerSupplier} to use
      */
     protected MarshallerSupplier getMarshallerSupplier() {
-        Grpc.GrpcMarshaller annotation = annotatedServiceClass.getAnnotation(Grpc.GrpcMarshaller.class);
-        return annotation == null ? MarshallerSupplier.create() : ModelHelper.getMarshallerSupplier(annotation);
+        return getMarshallerSupplier(annotatedServiceClass);
+    }
+
+    /**
+     * Obtain the {@link MarshallerSupplier} configured on an annotated element.
+     *
+     * @param annotatedElement annotated service type or method
+     * @return the {@link MarshallerSupplier} to use
+     */
+    protected static MarshallerSupplier getMarshallerSupplier(AnnotatedElement annotatedElement) {
+        Objects.requireNonNull(annotatedElement);
+        GrpcMarshaller annotation = annotatedElement.getAnnotation(GrpcMarshaller.class);
+        Grpc.GrpcMarshaller legacyAnnotation = annotatedElement.getAnnotation(Grpc.GrpcMarshaller.class);
+        return annotation == null && legacyAnnotation == null
+                ? MarshallerSupplier.create()
+                : ModelHelper.getMarshallerSupplier(annotation, legacyAnnotation);
     }
 
     /**

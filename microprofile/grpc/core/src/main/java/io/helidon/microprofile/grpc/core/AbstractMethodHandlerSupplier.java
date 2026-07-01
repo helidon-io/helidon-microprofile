@@ -136,16 +136,14 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
         @Override
         public Class<?> getRequestType() {
-            Grpc.RequestType annotation = method.getAnnotation(Grpc.RequestType.class);
-            if (annotation != null) {
-                return annotation.value();
-            }
-            return requestType;
+            return ModelHelper.getRequestType(method.getAnnotation(RequestType.class),
+                                              method.getAnnotation(Grpc.RequestType.class),
+                                              requestType);
         }
 
         /**
-         * Set the request type to use if no {@link io.helidon.grpc.api.Grpc.RequestType} annotation
-         * is present on the annotated method.
+         * Set the request type to use if no {@link RequestType} or deprecated
+         * {@link io.helidon.grpc.api.Grpc.RequestType} annotation is present on the annotated method.
          *
          * @param requestType the request type
          */
@@ -155,16 +153,14 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
         @Override
         public Class<?> getResponseType() {
-            Grpc.ResponseType annotation = method.getAnnotation(Grpc.ResponseType.class);
-            if (annotation != null) {
-                return annotation.value();
-            }
-            return responseType;
+            return ModelHelper.getResponseType(method.getAnnotation(ResponseType.class),
+                                               method.getAnnotation(Grpc.ResponseType.class),
+                                               responseType);
         }
 
         /**
-         * Set the response type to use if no {@link io.helidon.grpc.api.Grpc.ResponseType} annotation
-         * is present on the annotated method.
+         * Set the response type to use if no {@link ResponseType} or deprecated
+         * {@link io.helidon.grpc.api.Grpc.ResponseType} annotation is present on the annotated method.
          *
          * @param responseType the response type
          */

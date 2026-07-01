@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import java.lang.reflect.Method;
 import java.util.AbstractMap;
 
 import io.helidon.grpc.api.Grpc;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ModelHelperTest {
 
@@ -57,6 +59,49 @@ public class ModelHelperTest {
         assertThat(cls, equalTo(IFaceOne.class));
     }
 
+    @Test
+    void shouldResolveMatchingMessageTypeAnnotations() throws Exception {
+        Method method = ModelHelperTest.class.getMethod("matchingMessageTypes");
+
+        assertThat(ModelHelper.getRequestType(method.getAnnotation(RequestType.class),
+                                              method.getAnnotation(Grpc.RequestType.class),
+                                              Object.class),
+                   equalTo(Long.class));
+        assertThat(ModelHelper.getResponseType(method.getAnnotation(ResponseType.class),
+                                               method.getAnnotation(Grpc.ResponseType.class),
+                                               Object.class),
+                   equalTo(String.class));
+    }
+
+    @Test
+    void shouldRejectConflictingMessageTypeAnnotations() throws Exception {
+        Method method = ModelHelperTest.class.getMethod("conflictingMessageTypes");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> ModelHelper.getRequestType(method.getAnnotation(RequestType.class),
+                                                      method.getAnnotation(Grpc.RequestType.class),
+                                                      Object.class));
+        assertThrows(IllegalArgumentException.class,
+                     () -> ModelHelper.getResponseType(method.getAnnotation(ResponseType.class),
+                                                       method.getAnnotation(Grpc.ResponseType.class),
+                                                       Object.class));
+    }
+
+    @Test
+    void shouldRejectConflictingMarshallerAnnotations() throws Exception {
+        Method method = ModelHelperTest.class.getMethod("conflictingMarshaller");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> ModelHelper.getMarshallerSupplier(method.getAnnotation(GrpcMarshaller.class),
+                                                             method.getAnnotation(Grpc.GrpcMarshaller.class)));
+    }
+
+    @Test
+    void shouldRejectNullMpMarshallerAnnotation() {
+        assertThrows(NullPointerException.class,
+                     () -> ModelHelper.getMpMarshallerSupplier(null));
+    }
+
     // ----- helper methods -------------------------------------------------
 
     @Grpc.GrpcMarshaller(Grpc.GrpcMarshaller.PROTO)
@@ -71,8 +116,23 @@ public class ModelHelperTest {
     public void explicitDefaultMarshaller() {
     }
 
-    private Grpc.GrpcMarshaller getAnnotation(String method) throws Exception {
-        return ModelHelperTest.class.getMethod(method).getAnnotation(Grpc.GrpcMarshaller.class);
+    @RequestType(Long.class)
+    @Grpc.RequestType(Long.class)
+    @ResponseType(String.class)
+    @Grpc.ResponseType(String.class)
+    public void matchingMessageTypes() {
+    }
+
+    @RequestType(Long.class)
+    @Grpc.RequestType(Integer.class)
+    @ResponseType(String.class)
+    @Grpc.ResponseType(CharSequence.class)
+    public void conflictingMessageTypes() {
+    }
+
+    @GrpcMarshaller("java")
+    @Grpc.GrpcMarshaller("proto")
+    public void conflictingMarshaller() {
     }
 
     @Grpc.GrpcService

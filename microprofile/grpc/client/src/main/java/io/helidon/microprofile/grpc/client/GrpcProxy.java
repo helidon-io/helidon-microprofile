@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
+package io.helidon.microprofile.grpc.client;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * Core gRPC MicroProfile classes and annotations.
- * <p>
- * Use {@link io.helidon.microprofile.grpc.core.GrpcMarshaller},
- * {@link io.helidon.microprofile.grpc.core.RequestType}, and
- * {@link io.helidon.microprofile.grpc.core.ResponseType} instead of their deprecated
- * {@code io.helidon.grpc.api.Grpc} predecessors. Both forms are recognized during migration; conflicting values are rejected.
+ * Marks an injection point for an MP gRPC service client proxy.
  */
-package io.helidon.microprofile.grpc.core;
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface GrpcProxy {
+}

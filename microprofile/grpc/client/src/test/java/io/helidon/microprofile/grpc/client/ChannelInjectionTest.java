@@ -31,7 +31,7 @@ class ChannelInjectionTest {
 
     private final Channel echoChannel2;
     @Inject
-    @Grpc.GrpcChannel("echo-channel")
+    @GrpcChannel("echo-channel")
     private Channel echoChannel1;
 
     @Inject

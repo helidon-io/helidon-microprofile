@@ -37,8 +37,8 @@ import io.helidon.grpc.core.MethodHandler;
 import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.InstanceSupplier;
-import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
@@ -381,8 +381,9 @@ public class GrpcServiceBuilder
                     .requestType(requestType)
                     .responseType(responseType);
 
-            if (method.isAnnotationPresent(Grpc.GrpcMarshaller.class)) {
-                rules.marshallerSupplier(ModelHelper.getMarshallerSupplier(method.getAnnotation(Grpc.GrpcMarshaller.class)));
+            if (method.isAnnotationPresent(GrpcMarshaller.class)
+                    || method.isAnnotationPresent(Grpc.GrpcMarshaller.class)) {
+                rules.marshallerSupplier(getMarshallerSupplier(method));
             }
 
             interceptors.forEach(rules::intercept);

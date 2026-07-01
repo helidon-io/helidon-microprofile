@@ -26,8 +26,8 @@ import io.helidon.grpc.core.MethodHandler;
 import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.InstanceSupplier;
-import io.helidon.microprofile.grpc.core.ModelHelper;
 
 import static java.lang.System.Logger.Level;
 
@@ -186,9 +186,9 @@ class GrpcClientBuilder extends AbstractServiceBuilder
                     .responseType(responseType)
                     .methodHandler(methodHandler);
 
-            if (method.isAnnotationPresent(Grpc.GrpcMarshaller.class)) {
-                config.marshallerSupplier(ModelHelper.getMarshallerSupplier(
-                        method.getAnnotation(Grpc.GrpcMarshaller.class)));
+            if (method.isAnnotationPresent(GrpcMarshaller.class)
+                    || method.isAnnotationPresent(Grpc.GrpcMarshaller.class)) {
+                config.marshallerSupplier(getMarshallerSupplier(method));
             }
         }
     }

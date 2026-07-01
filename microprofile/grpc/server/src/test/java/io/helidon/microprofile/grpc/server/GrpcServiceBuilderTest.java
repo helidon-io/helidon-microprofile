@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.grpc.api.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
@@ -297,10 +298,10 @@ public class GrpcServiceBuilderTest {
     }
 
     @Grpc.GrpcService
-    @Grpc.GrpcMarshaller("stub")
+    @GrpcMarshaller("stub")
     public static class ServiceFour {
         @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
-        @Grpc.GrpcMarshaller("stub")
+        @GrpcMarshaller("stub")
         public void unary(String param, StreamObserver<String> observer) {
         }
     }

@@ -806,8 +806,8 @@ public class UnaryMethodHandlerSupplierTest {
         void unaryFutureNoRequest(CompletableFuture<Long> future);
 
         @Grpc.Unary
-        @Grpc.RequestType(Long.class)
-        @Grpc.ResponseType(String.class)
+        @RequestType(Long.class)
+        @ResponseType(String.class)
         Number reqResp(StreamObserver observer);
 
         @Grpc.Unary

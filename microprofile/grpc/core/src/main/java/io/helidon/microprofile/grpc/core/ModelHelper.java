@@ -174,9 +174,69 @@ public final class ModelHelper {
      *
      * @param annotation the annotation specifying the {@link MarshallerSupplier}.
      * @return the {@link MarshallerSupplier} specified by the annotation
+     * @deprecated use {@link #getMpMarshallerSupplier(GrpcMarshaller)}
      */
+    @Deprecated(since = "5.0.0", forRemoval = true)
     public static MarshallerSupplier getMarshallerSupplier(Grpc.GrpcMarshaller annotation) {
         String name = annotation == null ? Grpc.GrpcMarshaller.DEFAULT : annotation.value();
+        return getMarshallerSupplier(name, annotation);
+    }
+
+    /**
+     * Obtain the named {@link MarshallerSupplier} specified by the MP annotation.
+     *
+     * @param annotation the annotation specifying the {@link MarshallerSupplier}
+     * @return the {@link MarshallerSupplier} specified by the annotation
+     */
+    public static MarshallerSupplier getMpMarshallerSupplier(GrpcMarshaller annotation) {
+        Objects.requireNonNull(annotation);
+        return getMarshallerSupplier(annotation.value(), annotation);
+    }
+
+    /**
+     * Obtain the named {@link MarshallerSupplier}, accepting both the MP annotation and its deprecated core predecessor.
+     * The MP annotation takes precedence; conflicting values are rejected.
+     *
+     * @param annotation MP marshaller annotation
+     * @param legacyAnnotation deprecated core marshaller annotation
+     * @return the selected {@link MarshallerSupplier}
+     */
+    static MarshallerSupplier getMarshallerSupplier(GrpcMarshaller annotation,
+                                                     Grpc.GrpcMarshaller legacyAnnotation) {
+        if (annotation != null
+                && legacyAnnotation != null
+                && !annotation.value().equals(legacyAnnotation.value())) {
+            throw new IllegalArgumentException("Conflicting @GrpcMarshaller annotations: '"
+                                                       + annotation.value()
+                                                       + "' and '"
+                                                       + legacyAnnotation.value()
+                                                       + "'");
+        }
+        if (annotation != null) {
+            return getMarshallerSupplier(annotation.value(), annotation);
+        }
+        return getMarshallerSupplier(legacyAnnotation);
+    }
+
+    static Class<?> getRequestType(RequestType annotation,
+                                   Grpc.RequestType legacyAnnotation,
+                                   Class<?> defaultType) {
+        return annotationValue("RequestType",
+                               annotation == null ? null : annotation.value(),
+                               legacyAnnotation == null ? null : legacyAnnotation.value(),
+                               defaultType);
+    }
+
+    static Class<?> getResponseType(ResponseType annotation,
+                                    Grpc.ResponseType legacyAnnotation,
+                                    Class<?> defaultType) {
+        return annotationValue("ResponseType",
+                               annotation == null ? null : annotation.value(),
+                               legacyAnnotation == null ? null : legacyAnnotation.value(),
+                               defaultType);
+    }
+
+    private static MarshallerSupplier getMarshallerSupplier(String name, Annotation annotation) {
 
         Instance<MarshallerSupplier> instance = null;
         try {
@@ -197,6 +257,21 @@ public final class ModelHelper {
         }
 
         return instance.get();
+    }
+
+    private static Class<?> annotationValue(String annotationName,
+                                            Class<?> value,
+                                            Class<?> legacyValue,
+                                            Class<?> defaultValue) {
+        if (value != null && legacyValue != null && !value.equals(legacyValue)) {
+            throw new IllegalArgumentException("Conflicting @"
+                                                       + annotationName
+                                                       + " annotations: "
+                                                       + value.getName()
+                                                       + " and "
+                                                       + legacyValue.getName());
+        }
+        return value == null ? Objects.requireNonNullElse(legacyValue, defaultValue) : value;
     }
 
     /**

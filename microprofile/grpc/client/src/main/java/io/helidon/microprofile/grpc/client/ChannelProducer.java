@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.config.Config;
-import io.helidon.grpc.api.Grpc;
 
 import io.grpc.Channel;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,14 +57,8 @@ public class ChannelProducer {
      */
     @Produces
     public Channel get(InjectionPoint injectionPoint) {
-        Grpc.GrpcChannel qualifier = injectionPoint.getAnnotated().getAnnotations()
-                .stream()
-                .filter(q -> q.annotationType().equals(Grpc.GrpcChannel.class))
-                .map(q -> (Grpc.GrpcChannel) q)
-                .findFirst()
-                .orElse(null);
-
-        String name = (qualifier == null) ? GrpcChannelsProvider.DEFAULT_CHANNEL_NAME : qualifier.value();
+        String name = GrpcClientAnnotations.channelName(injectionPoint.getAnnotated())
+                .orElse(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME);
         return findChannel(name);
     }
 

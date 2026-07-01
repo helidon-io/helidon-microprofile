@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddExtension;
@@ -51,12 +52,19 @@ class EchoServiceTest {
     private WebTarget webTarget;
 
     @Inject
-    @Grpc.GrpcProxy
+    @GrpcProxy
     private EchoServiceClient proxyClient;
+
+    @Inject
+    @Grpc.GrpcProxy
+    private EchoServiceClient legacyProxyClient;
 
     @BeforeEach
     void updatePort() {
         if (proxyClient instanceof GrpcConfigurablePort client) {
+            client.channelPort(webTarget.getUri().getPort());
+        }
+        if (legacyProxyClient instanceof GrpcConfigurablePort client) {
             client.channelPort(webTarget.getUri().getPort());
         }
     }
@@ -104,7 +112,15 @@ class EchoServiceTest {
     @Test
     void testEchoInject() throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<String> future = new CompletableFuture<>();
-        StreamObserver<String> observer = new StreamObserver<>() {
+        CompletableFuture<String> legacyFuture = new CompletableFuture<>();
+        proxyClient.echo("Howdy", observer(future));
+        legacyProxyClient.echo("Legacy", observer(legacyFuture));
+        assertThat(future.get(5, TimeUnit.SECONDS), is("Howdy"));
+        assertThat(legacyFuture.get(5, TimeUnit.SECONDS), is("Legacy"));
+    }
+
+    private static StreamObserver<String> observer(CompletableFuture<String> future) {
+        return new StreamObserver<>() {
             @Override
             public void onNext(String value) {
                 future.complete(value);
@@ -118,13 +134,11 @@ class EchoServiceTest {
             public void onCompleted() {
             }
         };
-        proxyClient.echo("Howdy", observer);
-        assertThat(future.get(5, TimeUnit.SECONDS), is("Howdy"));
     }
 
     @Grpc.GrpcService("EchoService")
-    @Grpc.GrpcMarshaller("java")
-    @Grpc.GrpcChannel("echo-channel")
+    @GrpcMarshaller("java")
+    @GrpcChannel("echo-channel")
     public interface EchoServiceClient {
 
         @Grpc.Unary("Echo")
