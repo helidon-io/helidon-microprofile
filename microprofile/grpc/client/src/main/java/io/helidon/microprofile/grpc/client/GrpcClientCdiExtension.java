@@ -20,8 +20,6 @@ import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.helidon.grpc.api.Grpc;
-
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Annotated;
@@ -53,7 +51,7 @@ public class GrpcClientCdiExtension implements Extension {
     /**
      * Process injection points.
      * <p>
-     * In this method injection points that have the {@link io.helidon.grpc.api.Grpc.GrpcProxy} are processed
+     * In this method injection points that have {@link GrpcProxy} are processed
      * and their types are stored so that in the {@link #afterBean(
      *jakarta.enterprise.inject.spi.AfterBeanDiscovery, jakarta.enterprise.inject.spi.BeanManager)}
      * we can manually create a producer for the correct service proxy type.
@@ -64,16 +62,16 @@ public class GrpcClientCdiExtension implements Extension {
      */
     public <T, X> void gatherApplications(@Observes ProcessInjectionPoint<T, X> pip) {
         Annotated annotated = pip.getInjectionPoint().getAnnotated();
-        if (annotated.isAnnotationPresent(Grpc.GrpcProxy.class)) {
+        if (GrpcClientAnnotations.isProxy(annotated)) {
             Type type = pip.getInjectionPoint().getType();
             proxyTypes.add(type);
         }
     }
 
     /**
-     * Process the previously captured {@link io.helidon.grpc.api.Grpc.GrpcProxy} injection points.
+     * Process the previously captured {@link GrpcProxy} injection points.
      * <p>
-     * For each {@link io.helidon.grpc.api.Grpc.GrpcProxy} injection point we create a producer bean
+     * For each {@link GrpcProxy} injection point we create a producer bean
      * for the required type.
      *
      * @param event       the {@link jakarta.enterprise.inject.spi.AfterBeanDiscovery} event
@@ -83,8 +81,8 @@ public class GrpcClientCdiExtension implements Extension {
         AnnotatedType<GrpcProxyProducer> producerType = beanManager.createAnnotatedType(GrpcProxyProducer.class);
         AnnotatedMethod<? super GrpcProxyProducer> producerMethod = producerType.getMethods()
                 .stream()
-                .filter(m -> m.isAnnotationPresent(Grpc.GrpcProxy.class))
-                .filter(m -> m.isAnnotationPresent(Grpc.GrpcChannel.class))
+                .filter(GrpcClientAnnotations::isProxy)
+                .filter(m -> GrpcClientAnnotations.channelName(m).isPresent())
                 .findFirst()
                 .orElse(null);
         if (producerMethod != null) {

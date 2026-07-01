@@ -32,7 +32,7 @@ module io.helidon.microprofile.grpc.server {
     requires io.helidon.config;
     requires io.helidon.microprofile.config.core;
     requires io.helidon.grpc.api;
-    requires io.helidon.microprofile.grpc.core;
+    requires transitive io.helidon.microprofile.grpc.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.grpc;
 

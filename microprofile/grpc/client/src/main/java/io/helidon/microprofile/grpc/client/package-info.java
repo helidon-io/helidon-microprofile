@@ -15,6 +15,11 @@
  */
 
 /**
- * Client gRPC microprofile classes.
+ * Client gRPC MicroProfile classes and injection annotations.
+ * <p>
+ * Use {@link io.helidon.microprofile.grpc.client.GrpcChannel} and
+ * {@link io.helidon.microprofile.grpc.client.GrpcProxy} instead of their deprecated
+ * {@code io.helidon.grpc.api.Grpc} predecessors. Both forms are recognized during migration; conflicting channel names are
+ * rejected.
  */
 package io.helidon.microprofile.grpc.client;

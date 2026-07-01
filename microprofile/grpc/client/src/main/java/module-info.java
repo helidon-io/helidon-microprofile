@@ -25,7 +25,7 @@ module io.helidon.microprofile.grpc.client {
     requires io.helidon.config;
     requires io.helidon.webclient.grpc;
     requires io.helidon.grpc.api;
-    requires io.helidon.microprofile.grpc.core;
+    requires transitive io.helidon.microprofile.grpc.core;
 
     requires io.grpc;
     requires jakarta.cdi;
