@@ -22,6 +22,7 @@ module io.helidon.microprofile.messaging.metrics {
 
     requires jakarta.cdi;
     requires jakarta.inject;
+    requires microprofile.metrics.api;
 
     requires transitive io.helidon.microprofile.messaging;
     requires transitive io.helidon.microprofile.metrics;
