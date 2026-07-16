@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.tyrus;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ProtocolConfigs;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.websocket.WsConfig;
@@ -27,9 +28,9 @@ import io.helidon.webserver.websocket.WsUpgradeProvider;
 public class TyrusUpgradeProvider extends WsUpgradeProvider {
 
     /**
-     * @deprecated This constructor is only to be used by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    @Deprecated()
+    @Api.Internal
     public TyrusUpgradeProvider() {
     }
 
