@@ -153,7 +153,9 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // Create method state using CCL to support multiples apps (like in TCKs)
         ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        Objects.requireNonNull(ccl);
+        if (ccl == null) {
+            ccl = MethodInvoker.class.getClassLoader();
+        }
         MethodStateKey methodStateKey = new MethodStateKey(ccl, context.getTarget().getClass(), method);
         this.methodState = METHOD_STATES.computeIfAbsent(methodStateKey, key -> {
             MethodState methodState = new MethodState();

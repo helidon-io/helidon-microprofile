@@ -83,14 +83,14 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig() {
-        return getConfig(Thread.currentThread().getContextClassLoader());
+        return getConfig(contextClassLoader());
     }
 
     @Override
     public Config getConfig(ClassLoader classLoader) {
         ClassLoader loader;
         if (classLoader == null) {
-            loader = Thread.currentThread().getContextClassLoader();
+            loader = contextClassLoader();
         } else {
             loader = classLoader;
         }
@@ -122,7 +122,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     public void registerConfig(Config config, ClassLoader classLoader) {
         ClassLoader usedClassloader;
         if (null == classLoader) {
-            usedClassloader = Thread.currentThread().getContextClassLoader();
+            usedClassloader = contextClassLoader();
         } else {
             usedClassloader = classLoader;
         }
@@ -220,7 +220,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         ConfigDelegate newConfig = new ConfigDelegate(config);
         CONFIGS.put(classLoader, newConfig);
 
-        if (classLoader == Thread.currentThread().getContextClassLoader()) {
+        if (classLoader == contextClassLoader()) {
             try {
                 Services.set(io.helidon.config.Config.class, newConfig);
             } catch (Exception ígnored) {
@@ -228,6 +228,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         }
 
         return newConfig;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MpConfigProviderResolver.class.getClassLoader() : classLoader;
     }
 
     /**

@@ -175,6 +175,9 @@ class JandexUtils {
     private List<URL> findIndexFiles(String indexFileName) throws IOException {
         List<URL> result = new ArrayList<>();
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        if (contextClassLoader == null) {
+            contextClassLoader = JandexUtils.class.getClassLoader();
+        }
         File file = new File(indexFile);
         if (file.isAbsolute()) {
             result.add(file.toPath().toUri().toURL());

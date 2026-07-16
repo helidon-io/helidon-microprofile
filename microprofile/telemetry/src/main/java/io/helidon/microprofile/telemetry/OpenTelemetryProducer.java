@@ -243,10 +243,14 @@ class OpenTelemetryProducer {
 
             //Initialize OpenTelemetry
             if (!isTelemetryDisabled()) {
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                if (classLoader == null) {
+                    classLoader = OpenTelemetryProducer.class.getClassLoader();
+                }
                 openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
-                        .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
+                        .setServiceClassLoader(classLoader)
                         .disableShutdownHook()
                         .build()
                         .getOpenTelemetrySdk();
