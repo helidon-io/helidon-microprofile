@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Api;
 import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
@@ -60,8 +61,9 @@ public class JaxRsCdiExtension implements Extension {
     private final AtomicBoolean setInStone = new AtomicBoolean(false);
 
     /**
-     * Default constructor is required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public JaxRsCdiExtension() {
     }
 

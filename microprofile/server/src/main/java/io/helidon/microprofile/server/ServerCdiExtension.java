@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -125,8 +126,9 @@ public class ServerCdiExtension implements Extension {
     private Context context;
 
     /**
-     * Default constructor required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public ServerCdiExtension() {
     }
 

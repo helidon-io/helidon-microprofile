@@ -19,6 +19,7 @@ import java.lang.System.Logger.Level;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
@@ -57,8 +58,9 @@ public class SecurityCdiExtension implements Extension {
     private SecurityFeatureConfig.Builder securityFeatureBuilder = SecurityFeature.builder();
 
     /**
-     * Public constructor required by service loader.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public SecurityCdiExtension() {
     }
 

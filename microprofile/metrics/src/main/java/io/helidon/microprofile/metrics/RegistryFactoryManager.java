@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
@@ -25,8 +26,9 @@ import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 public class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
 
     /**
-     * Constructor for service loading only.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public RegistryFactoryManager() {
     }
 

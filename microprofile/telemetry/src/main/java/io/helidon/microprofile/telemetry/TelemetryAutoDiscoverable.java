@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import io.helidon.common.Api;
+
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
@@ -23,8 +25,9 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class TelemetryAutoDiscoverable implements AutoDiscoverable {
 
     /**
-     * For service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public TelemetryAutoDiscoverable() {
     }
 

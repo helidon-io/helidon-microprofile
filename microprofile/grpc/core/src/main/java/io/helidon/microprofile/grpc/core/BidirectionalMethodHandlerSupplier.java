@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 
@@ -34,9 +35,9 @@ import io.grpc.stub.StreamObserver;
 public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
-     * Create a supplier of handlers for bi-directional streaming methods.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    // method is public because it is loaded via ServiceLoader
+    @Api.Internal
     public BidirectionalMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.BIDI_STREAMING);
     }

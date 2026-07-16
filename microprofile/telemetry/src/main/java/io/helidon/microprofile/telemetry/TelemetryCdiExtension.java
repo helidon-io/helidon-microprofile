@@ -17,6 +17,7 @@ package io.helidon.microprofile.telemetry;
 
 import java.lang.annotation.Annotation;
 
+import io.helidon.common.Api;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.Tracing;
@@ -44,8 +45,9 @@ public class TelemetryCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
 
     /**
-     * For service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public TelemetryCdiExtension() {
     }
 

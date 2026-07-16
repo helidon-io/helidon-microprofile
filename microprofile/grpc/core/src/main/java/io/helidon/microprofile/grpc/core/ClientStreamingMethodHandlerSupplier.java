@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.grpc.core.MethodHandler;
 
 import io.grpc.MethodDescriptor;
@@ -37,9 +38,9 @@ import static io.helidon.grpc.core.ResponseHelper.completeAsync;
 public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
-     * Create a supplier of handlers for client streaming methods.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
-    // method is public because it is loaded via ServiceLoader
+    @Api.Internal
     public ClientStreamingMethodHandlerSupplier() {
         super(MethodDescriptor.MethodType.CLIENT_STREAMING);
     }
