@@ -10,4 +10,4 @@ index:
 - [Adding Security](security.md)
 - [Security Providers](providers.md)
 - [Config Encryption](config-secrets.md)
-- [JEP-290](jep-290.md)
+- [JEP-290 serialization filtering (Helidon SE)](https://helidon.io/docs/latest/se/security/jep-290)
