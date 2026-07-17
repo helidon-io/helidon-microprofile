@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.Main;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.ResolvedType;
@@ -111,11 +112,9 @@ public class ServiceRegistryExtension implements Extension {
     private final Set<CdiServiceId> processedBeans = new HashSet<>();
 
     /**
-     * Creates a new {@link ServiceRegistryExtension}.
-     *
-     * @deprecated For CDI use only.
+     * Creates a new {@link ServiceRegistryExtension} for CDI use only.
      */
-    @Deprecated
+    @Api.Internal
     public ServiceRegistryExtension() {
         super();
     }

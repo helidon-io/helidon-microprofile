@@ -17,6 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
@@ -26,8 +27,9 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**
-     * Creates a new instance (explicit for style checking and service loading).
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public MpMetricsProgrammaticConfig() {
     }
 

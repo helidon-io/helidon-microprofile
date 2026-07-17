@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 import jakarta.annotation.Priority;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.core.Application;
@@ -51,8 +53,9 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
     private static final System.Logger LOGGER = System.getLogger(HelidonHK2InjectionManagerFactory.class.getName());
 
     /**
-     * Required by {@link java.util.ServiceLoader}.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public HelidonHK2InjectionManagerFactory() {
     }
 

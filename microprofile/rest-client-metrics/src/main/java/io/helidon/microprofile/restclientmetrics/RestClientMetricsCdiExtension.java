@@ -34,6 +34,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
@@ -97,8 +99,9 @@ public class RestClientMetricsCdiExtension implements Extension {
     private BeanManager beanManager;
 
     /**
-     * For service loading.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public RestClientMetricsCdiExtension() {
     }
 

@@ -18,6 +18,7 @@ package io.helidon.microprofile.restclientmetrics;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 
 import jakarta.enterprise.inject.spi.CDI;
@@ -39,8 +40,9 @@ public class RestClientMetricsClientListener implements RestClientListener {
     private final LazyValue<Listener> listener = LazyValue.create(Listener::new);
 
     /**
-     * For service discovery.
+     * Required public constructor for {@link java.util.ServiceLoader}.
      */
+    @Api.Internal
     public RestClientMetricsClientListener() {
     }
 
