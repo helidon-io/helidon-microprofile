@@ -213,11 +213,14 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
             config = delegate.delegate();
         }
 
-        if (null != currentConfig) {
+        ConfigDelegate newConfig;
+        if (null == currentConfig) {
+            newConfig = new ConfigDelegate(config);
+        } else {
             currentConfig.set(config);
+            newConfig = currentConfig;
         }
 
-        ConfigDelegate newConfig = new ConfigDelegate(config);
         CONFIGS.put(classLoader, newConfig);
 
         if (classLoader == Thread.currentThread().getContextClassLoader()) {
