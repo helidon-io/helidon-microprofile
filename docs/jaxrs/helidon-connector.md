@@ -118,8 +118,9 @@ ways to enable HTTP/2:
     upgrade negotiation. Naturally, this only works with secure connections, so
     TLS is a requirement here.
 3.  Using prior knowledge, where the client simply sends an HTTP/2 request
-    knowing *a priori* that the server is capable of handling it. This option
-    always requires TLS.
+    knowing *a priori* that the server is capable of handling it. Prior
+    knowledge works with either clear-text h2c or TLS, according to the target
+    endpoint.
 
 ## Examples
 
@@ -156,9 +157,7 @@ negotiate an HTTP/2 upgrade as shown below.
 
 ```java
 Tls tls = Tls.builder()
-        .trustAll(true)
         .addApplicationProtocol(Http2Client.PROTOCOL_ID)        // HTTP/2 upgrade
-        .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
         .build();
 
 ClientConfig clientConfig = new ClientConfig();
@@ -186,14 +185,8 @@ general mechanism supported by the connector; in this example, we take advantage
 of this mechanism to pre-configure the desired HTTP/2 support as shown next.
 
 ```java
-Tls tls = Tls.builder()
-        .trustAll(true)
-        .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-        .build();
-
 ClientConfig clientConfig = new ClientConfig();
 clientConfig.connectorProvider(HelidonConnectorProvider.create());
-clientConfig.property(HelidonProperties.TLS, tls);
 clientConfig.property(HelidonProperties.PROTOCOL_CONFIGS,
                       List.of(Http2ClientProtocolConfig.builder()
                                       .priorKnowledge(true)    // HTTP/2 knowledge
@@ -205,6 +198,10 @@ try (Response response = webTarget.request().get()) {
     // ...
 }
 ```
+
+For an HTTPS target, the connector uses normal certificate and hostname
+verification. Configure a trust store when the server certificate is not
+trusted by the default JVM trust store.
 
 The property `HelidonProperties.PROTOCOL_CONFIGS` accepts a list of protocol
 configurations that are passed directly to the underlying `WebClient` layer.

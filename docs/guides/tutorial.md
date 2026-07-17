@@ -127,7 +127,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
 
 > [!TIP]
 > MicroProfile contains features like Metrics, Health Check, Streams Operators,
-> Open Tracing, OpenAPI, REST client, and fault tolerance. You can find detailed
+> Telemetry with OpenTelemetry, OpenAPI, REST client, and fault tolerance. You can find detailed
 > information about MicroProfile on the [Eclipse MicroProfile][eclipse-micropro]
 > site.
 
@@ -609,7 +609,7 @@ obtain the application metrics as follows:
 Checking the application metrics:
 
 ```shell [Terminal]
-curl -H "Accept: application/json" http://localhost:8080/metrics/application
+curl -H "Accept: application/json" 'http://localhost:8080/metrics?scope=application'
 ```
 
 ```json [Response]
@@ -1131,5 +1131,5 @@ Helidon application development.
 [curl]: https://curl.se/download.html
 [eclipse-micropro]: https://projects.eclipse.org/projects/technology.microprofile
 [specification]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
-[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.1.html
-[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.html##_protocol_and_wireformat
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.1.html#_protocol_and_wireformat

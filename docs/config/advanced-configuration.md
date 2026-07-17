@@ -181,7 +181,7 @@ sources:
   - type: "hocon" # <12>
     classpath: "custom-application.conf" # <13>
   - type: "json" # <14>
-    path: "path: conf/custom-application.json" # <15>
+    path: "conf/custom-application.json" # <15>
 ```
 1. If configured to `true`, config sources discovered through service loader will
    be added

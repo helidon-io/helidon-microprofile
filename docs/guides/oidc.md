@@ -543,37 +543,6 @@ Create a Client), and `authorization code` by the code value in the query
 parameter. Send the request by pressing `Send`. Keycloak returns an access token
 and a refresh token.
 
-#### Resource Owner Password Credentials Grant (Direct Access Grants)
-
-The Direct Access Grants flow is used by REST clients that want to request
-tokens on behalf of a user. To use Postman to make this request on behalf of
-`myUser`, select the GET method and enter this URL:
-`http://localhost:7987/greet/`. Under `Authorization` tab, select authorization
-type `OAuth 2.0`. Under it, complete the sentence `Add authorization data to`
-with `Request Headers`, and complete the required fields.
-
-Enter the following information:
-
-```json
-[
-    {"key":"Header Prefix","value":"bearer"},
-    {"key":"Grant type","value":"Password  Credentials"},
-    {"key":"Access Token URL","value":"http://localhost:8080/realms/myRealm/protocol/openid-connect/token"},
-    {"key":"Client ID","value":"myClientID"},
-    {"key":"Client Secret","value":"client secret"},
-    {"key":"Username","value":"myUser"},
-    {"key":"Password","value":"password"},
-    {"key":"Scope","value":"openid"},
-    {"key":"Client Authentication","value":"Send as Basic Auth Header"}
-]
-```
-
-Again, make sure to replace `client secret` by the actual client secret. Click
-on `Get New Access Token`. A popup window appears with Authentication complete,
-click on proceed to display access, refresh and identity token. Copy and paste
-the access token to `Access Token` field and press `Send`. Helidon greeting
-application sends back `Hello World !`.
-
 ### Restrict Access to a Specific Role
 
 To give less access to a specific endpoint, it is possible to configure user

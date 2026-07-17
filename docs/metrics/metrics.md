@@ -1480,7 +1480,7 @@ kubectl delete -f ./metrics.yaml
 
 [microprofile-met]: https://github.com/eclipse/microprofile-metrics/releases/tag/5.1.1
 [longer-discussio]: #metric-type-for-gctime
-[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.1.html
+[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html
 [counter]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/Counter.html
 [counted]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/annotation/Counted.html
 [histogram]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/Histogram.html

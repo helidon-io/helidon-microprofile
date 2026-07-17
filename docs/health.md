@@ -554,7 +554,7 @@ Full example code is available [here][here].
 - [MicroProfile Health Specification][microprofile-hea]
 - [MicroProfile Health on GitHub][microprofile-hea-2]
 
-[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.html
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.1.html
 [here]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile
 [helidon-micropro]: https://helidon.io/docs/latest/apidocs/io.helidon.microprofile.health/module-summary.html
 [helidon-built-in]: https://helidon.io/docs/latest/apidocs/io.helidon.health.checks/module-summary.html

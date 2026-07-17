@@ -125,9 +125,9 @@ publisherStage
 - [MicroProfile Reactive Streams Operators Javadoc][microprofile-rea-2]
 - [MicroProfile Reactive Streams Operators on GitHub][microprofile-rea-3]
 
-[microprofile-rea]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.html
+[microprofile-rea]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.1.html
 [reactive-streams]: https://www.reactive-streams.org/
-[graphs]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.html#_graphs
-[stages]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.html#_stages
+[graphs]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.1.html#_graphs
+[stages]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/microprofile-reactive-streams-operators-spec-3.0.1.html#_stages
 [microprofile-rea-2]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0.1/apidocs
 [microprofile-rea-3]: https://github.com/eclipse/microprofile-reactive-streams-operators

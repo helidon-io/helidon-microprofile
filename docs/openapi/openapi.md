@@ -436,13 +436,13 @@ information and a complete project that indexes a dependency.
 - [MicroProfile OpenAPI Specification][microprofile-ope]
 
 [openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.1.html
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html
 [helidon-mp-opena]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi/basic
 [org-eclipse-micr]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs/org/eclipse/microprofile/openapi/OASModelReader.html
 [org-eclipse-micr-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs/org/eclipse/microprofile/openapi/OASFilter.html
-[configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.1.html#configuration
+[configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html#configuration
 [microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs
-[the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.1.html#_configuration
+[the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html#_configuration
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi
 [jandex-maven-plu]: https://github.com/smallrye/jandex/tree/3.3.0/maven-plugin
 [helidon-mp-opena-2]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi/expanded-jandex

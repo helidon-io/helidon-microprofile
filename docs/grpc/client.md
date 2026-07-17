@@ -28,8 +28,8 @@ Dependencies](../dependency-management.md)).
 
 The following annotations are used to work with Helidon MP gRPC clients:
 
-- `@Grpc.GrpcChannel` - an annotation used to inject a gRPC channel.
-- `@Grpc.GrpcProxy` - an annotation used to mark an injection point for a gRPC
+- `@GrpcChannel` - an annotation used to inject a gRPC channel.
+- `@GrpcProxy` - an annotation used to mark an injection point for a gRPC
   service client proxy.
 - `@Grpc.GrpcService` - an annotation used to specify the name of a gRPC service
   to connect to.
@@ -123,7 +123,7 @@ that is required is an interface as shown next:
 ```java
 @ApplicationScoped
 @Grpc.GrpcService("StringService")  // <1>
-@Grpc.GrpcChannel("string-channel")  // <2>
+@GrpcChannel("string-channel")  // <2>
 interface StringServiceClient {
 
     @Grpc.Unary
@@ -133,7 +133,7 @@ interface StringServiceClient {
 1. The `@Grpc.GrpcService` annotation is necessary to provide the name of the
    gRPC service when it differs from the interface name, as it is the case in
    this example.
-2. The `@Grpc.GrpcChannel` annotation is the qualifier that supplies the channel
+2. The `@GrpcChannel` annotation is the qualifier that supplies the channel
    name. This is the same name as used in the channel configuration in the
    examples provided in the [Configuration section](#configuration).
 <!--@mdc :: -->
@@ -149,7 +149,7 @@ but this does not need to be the case. For example, it can use a
 ```java
 @ApplicationScoped
 @Grpc.GrpcService("StringService")
-@Grpc.GrpcChannel("string-channel")
+@GrpcChannel("string-channel")
 interface StringServiceClient {
 
     @Grpc.Unary
@@ -171,12 +171,12 @@ field.
 public class MyAppBean {
 
     @Inject  // <1>
-    @Grpc.GrpcProxy  // <2>
+    @GrpcProxy  // <2>
     private StringServiceClient stringServiceClient;
 }
 ```
 1. The `@Inject` annotation tells CDI to inject the client implementation.
-2. The `@Grpc.GrpcProxy` annotation is used by the CDI container to match the
+2. The `@GrpcProxy` annotation is used by the CDI container to match the
    injection point to the gRPC MP API provider.
 <!--@mdc :: -->
 
@@ -199,11 +199,11 @@ follows:
 <!--@mdc ::code-callout -->
 ```java
 @Inject  // <1>
-@Grpc.GrpcChannel("string-channel")  // <2>
+@GrpcChannel("string-channel")  // <2>
 private Channel channel;
 ```
 1. The `@Inject` annotation tells CDI to inject the channel.
-2. The `@Grpc.GrpcChannel` annotation supplies the channel name. This is the same
+2. The `@GrpcChannel` annotation supplies the channel name. This is the same
    name as used in the channel configuration in the examples provided in the
    [Configuration section](#configuration).
 <!--@mdc :: -->

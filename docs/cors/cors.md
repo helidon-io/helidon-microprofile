@@ -164,8 +164,14 @@ example enhanced for CORS.
 The discussion below describes the changes in the application which:
 
 - permit unrestricted sharing of the resource `/greet`, and
-- restrict sharing of the resource `/greet/greeting` so that only the origins
-  `http://foo.com` and `http://there.com` can change the greeting.
+- restrict browser cross-origin access to `/greet/greeting` to the origins
+  `http://foo.com` and `http://there.com`.
+
+> [!IMPORTANT]
+> CORS is a browser-enforced cross-origin policy, not an authorization
+> mechanism. Direct clients can still invoke the endpoint. Use authentication
+> and authorization, and CSRF protection where applicable, to protect changes
+> to the greeting.
 
 ### Adding Annotations
 

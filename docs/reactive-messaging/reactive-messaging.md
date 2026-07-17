@@ -551,10 +551,10 @@ public void consume(String value) {
 - [MicroProfile Reactive Messaging Specification][microprofile-rea]
 - [MicroProfile Reactive Messaging on GitHub][microprofile-rea-2]
 
-[microprofile-rea]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.html
-[channel]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.html#_channel
-[methods]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.html#_method_consuming_and_producing
-[message]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.html#_message
-[message-acknowle]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.html#_message_acknowledgement_and_negative_acknowledgement
+[microprofile-rea]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.1.html
+[channel]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.1.html#_channel
+[methods]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.1.html#_method_consuming_and_producing
+[message]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.1.html#_message
+[message-acknowle]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0.1/microprofile-reactive-messaging-spec-3.0.1.html#_message_acknowledgement_and_negative_acknowledgement
 [helidon-micropro]: https://helidon.io/docs/latest/apidocs/io.helidon.microprofile.messaging/module-summary.html
 [microprofile-rea-2]: https://github.com/eclipse/microprofile-reactive-messaging

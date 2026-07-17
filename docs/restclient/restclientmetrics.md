@@ -332,7 +332,7 @@ class name.
 - [MicroProfile RestClient specification][microprofile-res-2]
 - [MicroProfile Metrics specification][microprofile-met-2]
 
-[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.1.html#annotated-naming-convention
-[microprofile-res]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.html#_microprofile_rest_client
-[microprofile-res-2]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.html
-[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.1.html
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html#annotated-naming-convention
+[microprofile-res]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.1.html#_microprofile_rest_client
+[microprofile-res-2]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.1.html
+[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html

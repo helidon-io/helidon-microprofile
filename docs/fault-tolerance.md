@@ -85,7 +85,7 @@ Defines an upper bound on a method’s execution time. Default value is 1 second
     delay=5000,
     delayUnit=ChronoUnit.MILLIS,
     requestVolumeThreshold=20,
-    failureRation=.50,
+    failureRatio=.50,
     successThreshold=1
 )</code></pre>
 </td>
@@ -138,28 +138,6 @@ Typically used to avoid blocking the calling thread on I/O or on a long-running 
 </tr>
 </tbody>
 </table>
-
-## Configuration
-
-Helidon’s implementation uses two types of thread pools: normal and scheduled.
-The default core size of these executors is 20; however, that can be configured
-using an `application.yaml` file as follows:
-
-```yaml
-executor:
-  core-pool-size: 32
-
-scheduled-executor:
-  core-pool-size: 32
-```
-
-> [!NOTE]
-> There is currently *no support* to configure these executor properties via a
-> `microprofile-config.properties` file.
-
-For a complete set of properties available to configure these executors, see
-[ThreadPoolConfig][threadpoolconfig].
-[ScheduledThreadPoolConfig][scheduledthreadp].
 
 ## Examples
 
@@ -216,7 +194,5 @@ Javadocs][microprofile-fau].
 
 - [MicroProfile Fault Tolerance][microprofile-fau-2]
 
-[threadpoolconfig]: https://helidon.io/docs/latest/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolConfig.html
-[scheduledthreadp]: https://helidon.io/docs/latest/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolConfig.html
 [microprofile-fau]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/apidocs
 [microprofile-fau-2]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html

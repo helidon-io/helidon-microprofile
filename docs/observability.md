@@ -162,7 +162,7 @@ endpoints:
 |-----------------------------|----------|-------------------------------------|
 | `/log`                      | `GET`    | Stream logs (if enabled)            |
 | `/log/loggers`              | `GET`    | Returns all logger handlers         |
-| `/log/log/loggers/{logger}` | `GET`    | Returns the Logger by name `logger` |
+| `/log/loggers/{logger}`     | `GET`    | Returns the Logger by name `logger` |
 | `/log/loggers/{logger}`     | `POST`   | Set Logger level by name `logger`   |
 | `/log/loggers/{logger}`     | `DELETE` | Unset the specified logger `logger` |
 
@@ -191,11 +191,11 @@ Formats for `/metrics` output:
 | OpenMetrics (Prometheus) | default (`text/plain`)            |
 | JSON                     | Header `Accept: application/json` |
 
-Clients can also limit the report by appending the metric type to the path:
+Clients can also limit the report using the `scope` query parameter:
 
-- `/metrics/base`
-- `/metrics/vendor`
-- `/metrics/application`
+- `/metrics?scope=base`
+- `/metrics?scope=vendor`
+- `/metrics?scope=application`
 
 For more information, see the [MicroProfile Metrics](metrics/metrics.md) documentation.
 
@@ -241,5 +241,5 @@ registered on a path (that is left to the discretion of the feature developer).
 - [MicroProfile Health](health.md) documentation.
 
 [metrics-config]: metrics/metrics.md#configuration-options
-[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.0.0.pdf
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html
 [io-helidon-webse]: https://helidon.io/docs/latest/config/io.helidon.webserver.observe.ObserveFeature#configuration-options

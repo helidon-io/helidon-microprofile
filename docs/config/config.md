@@ -225,9 +225,10 @@ options, including addition of discovered sources and converters.
 See [MicroProfile Config Sources][microprofile-con] for detailed information.
 
 > [!NOTE]
-> For backward compatibility, we will support usage of Helidon SE
-> meta-configuration until version 3.0.0. Using this approach causes behavior
-> that is not compatible with MicroProfile Config specification.
+> Helidon MP continues to recognize Helidon SE meta-configuration for backward
+> compatibility. Its behavior is not compatible with the MicroProfile Config
+> specification; use the MP meta-configuration described here for new
+> applications.
 
 ## Configuration
 

@@ -681,6 +681,6 @@ Refer to the following references for additional information:
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.html
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.1.html
 [microprofile-hea-2]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/apidocs
 [helidon-javadoc]: https://helidon.io/docs/latest/apidocs/index.html?overview-summary.html

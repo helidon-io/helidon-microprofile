@@ -204,7 +204,7 @@ Helidon quickstart.
 - [MicroProfile RestClient Specification][rest-client-for]
 - [MicroProfile RestClient on GitHub][microprofile-res]
 
-[rest-client-for]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.html
+[rest-client-for]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0.1/microprofile-rest-client-spec-3.0.1.html
 [creating-new-cli]: #creating-a-new-client-using-a-builder
 [helidon-micropro]: https://helidon.io/docs/latest/apidocs/io.helidon.microprofile.restclient/module-summary.html
 [microprofile-res]: https://github.com/eclipse/microprofile-rest-client

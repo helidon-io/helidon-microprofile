@@ -388,8 +388,8 @@ A full configuration example (YAML):
 server:
   port: 8080
   sockets:
-   management:
-   port: 8090
+    management:
+      port: 8090
 
 io.helidon.examples.AdminApplication:
   routing-name:
@@ -460,8 +460,11 @@ Retrieving Requested URI Information:
 public class MyFilter implements ContainerRequestFilter {
 
     @Override
+    @SuppressWarnings("unchecked")
     public void filter(ContainerRequestContext requestContext) {
-        UriInfo uriInfo = (UriInfo) requestContext.getProperty("io.helidon.jaxrs.requested-uri");
+        Supplier<UriInfo> requestedUri = (Supplier<UriInfo>)
+                requestContext.getProperty(UriInfo.class.getName());
+        UriInfo uriInfo = requestedUri.get();
         // ...
     }
 }
