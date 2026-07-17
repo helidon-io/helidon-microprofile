@@ -84,7 +84,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
     private final List<OrdinalSource> sources = new LinkedList<>();
     private final List<OrdinalConverter> converters = new LinkedList<>();
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader = fallbackClassLoader(Thread.currentThread().getContextClassLoader());
 
     private boolean useDefaultSources = false;
     private boolean useDiscoveredSources = false;
@@ -114,7 +114,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
     @Override
     public ConfigBuilder forClassLoader(ClassLoader loader) {
-        this.classLoader = loader;
+        this.classLoader = fallbackClassLoader(loader);
         return this;
     }
 
@@ -459,6 +459,10 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
     private <T> void addBuiltIn(List<OrdinalConverter> converters, Class<T> clazz, Converter<T> converter) {
         converters.add(new OrdinalConverter(converter, clazz, 1));
+    }
+
+    private static ClassLoader fallbackClassLoader(ClassLoader classLoader) {
+        return classLoader == null ? MpConfigBuilder.class.getClassLoader() : classLoader;
     }
 
     private static class OrdinalSource {

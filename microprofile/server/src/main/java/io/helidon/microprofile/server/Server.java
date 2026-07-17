@@ -165,6 +165,9 @@ public interface Server {
 
             // configuration must be initialized before we start the container
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            if (classLoader == null) {
+                classLoader = Server.class.getClassLoader();
+            }
 
             if (null == config) {
                 this.config = ConfigProviderResolver.instance().getConfig(classLoader);

@@ -54,6 +54,9 @@ class FaultToleranceParameter {
     private static String getProperty(String name) {
         try {
             ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            if (ccl == null) {
+                ccl = FaultToleranceParameter.class.getClassLoader();
+            }
             String value = ConfigProvider.getConfig(ccl).getValue(name, String.class);
             LOGGER.log(Level.DEBUG, () -> "Found config property '" + name + "' value '" + value + "'");
             return value;

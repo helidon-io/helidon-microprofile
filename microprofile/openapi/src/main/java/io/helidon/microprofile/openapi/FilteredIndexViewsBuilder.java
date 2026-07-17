@@ -212,10 +212,14 @@ class FilteredIndexViewsBuilder {
 
     private static List<URL> findIndexFiles(List<String> paths) {
         List<URL> result = new ArrayList<>();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = FilteredIndexViewsBuilder.class.getClassLoader();
+        }
         for (String path : paths) {
             Enumeration<URL> urls;
             try {
-                urls = Thread.currentThread().getContextClassLoader().getResources(path);
+                urls = classLoader.getResources(path);
                 while (urls.hasMoreElements()) {
                     result.add(urls.nextElement());
                 }

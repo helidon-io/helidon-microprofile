@@ -155,6 +155,9 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
     private static Collection<URL> resources(String name) {
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl == null) {
+                cl = HelidonTestConfigSynthetic.class.getClassLoader();
+            }
             Map<String, URL> urls = new HashMap<>();
             cl.getResources(name).asIterator()
                     .forEachRemaining(u -> urls.put(u.toString(), u));

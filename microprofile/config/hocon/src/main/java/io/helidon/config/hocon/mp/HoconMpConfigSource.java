@@ -160,7 +160,7 @@ public class HoconMpConfigSource implements ConfigSource {
     public static List<ConfigSource> classPath(String resource) {
         List<ConfigSource> sources = new LinkedList<>();
         try {
-            Thread.currentThread().getContextClassLoader().getResources(resource)
+            contextClassLoader().getResources(resource)
                     .asIterator()
                     .forEachRemaining(it -> sources.add(create(it)));
         } catch (IOException e) {
@@ -181,7 +181,7 @@ public class HoconMpConfigSource implements ConfigSource {
         Objects.requireNonNull(profile, "Profile must be defined");
 
         List<ConfigSource> sources = new LinkedList<>();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = contextClassLoader();
 
         try {
             Enumeration<URL> baseResources = classLoader.getResources(resource);
@@ -380,5 +380,10 @@ public class HoconMpConfigSource implements ConfigSource {
             return resource.substring(0, i) + "-" + profile + resource.substring(i);
         }
         return resource + "-" + profile;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? HoconMpConfigSource.class.getClassLoader() : classLoader;
     }
 }

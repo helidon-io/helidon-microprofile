@@ -164,7 +164,7 @@ public class YamlMpConfigSource implements ConfigSource {
     public static List<ConfigSource> classPath(String resource) {
         List<ConfigSource> sources = new LinkedList<>();
         try {
-            Thread.currentThread().getContextClassLoader().getResources(resource)
+            contextClassLoader().getResources(resource)
                     .asIterator()
                     .forEachRemaining(it -> sources.add(create(it)));
         } catch (IOException e) {
@@ -182,7 +182,7 @@ public class YamlMpConfigSource implements ConfigSource {
      * @return list of config sources discovered (may be zero length)
      */
     public static List<ConfigSource> classPath(String resource, String profile) {
-        return classPathConfigSources(resource, profile, Thread.currentThread().getContextClassLoader());
+        return classPathConfigSources(resource, profile, contextClassLoader());
     }
 
     /**
@@ -382,5 +382,10 @@ public class YamlMpConfigSource implements ConfigSource {
             return resource.substring(0, i) + "-" + profile + resource.substring(i);
         }
         return resource + "-" + profile;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? YamlMpConfigSource.class.getClassLoader() : classLoader;
     }
 }

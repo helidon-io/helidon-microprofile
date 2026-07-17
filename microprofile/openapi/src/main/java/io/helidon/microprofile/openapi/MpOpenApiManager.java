@@ -83,6 +83,9 @@ final class MpOpenApiManager implements OpenApiManager<OpenAPI> {
     @Override
     public OpenAPI load(String content) {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        if (contextClassLoader == null) {
+            contextClassLoader = MpOpenApiManager.class.getClassLoader();
+        }
         OpenApiDocument.INSTANCE.reset();
         OpenApiDocument.INSTANCE.config(openApiConfig);
         OpenApiDocument.INSTANCE.modelFromReader(OpenApiProcessor.modelFromReader(openApiConfig, contextClassLoader));

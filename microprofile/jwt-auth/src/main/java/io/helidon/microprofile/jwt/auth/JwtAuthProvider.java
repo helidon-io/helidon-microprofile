@@ -1309,11 +1309,15 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         private InputStream locateStream(String uri) throws IOException {
             InputStream is;
 
-            URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            if (classLoader == null) {
+                classLoader = JwtAuthProvider.class.getClassLoader();
+            }
+            URL url = classLoader.getResource(uri);
             if (url == null) {
                 // if uri starts with "/", remove it
                 if (uri.startsWith("/")) {
-                    url = Thread.currentThread().getContextClassLoader().getResource(uri.substring(1));
+                    url = classLoader.getResource(uri.substring(1));
                 }
             }
 

@@ -34,7 +34,8 @@ class ThinClientClassLoader extends URLClassLoader {
 
     ThinClientClassLoader() {
         super("thinClientClassLoader", new URL[0], null);
-        contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        contextClassLoader = classLoader == null ? ThinClientClassLoader.class.getClassLoader() : classLoader;
         try {
 
             File currDirFile = Path.of("", thinJarLocation).toFile();
