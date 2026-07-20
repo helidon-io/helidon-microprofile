@@ -41,6 +41,7 @@
         <module>client</module>
         <module>connector</module>
         <module>server</module>
+        <module>json-binding</module>
         <module>jsonp</module>
         <module>common</module>
         <module>webserver</module>
