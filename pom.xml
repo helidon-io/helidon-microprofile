@@ -74,8 +74,10 @@
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.9.1</version.lib.asm>
+        <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.checkstyle>13.3.0</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
+        <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.jinjava>2.8.1</version.lib.jinjava>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
@@ -106,8 +108,11 @@
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.weld-junit>3.0.0.Final</version.lib.weld-junit>
         <version.lib.jmh>1.23</version.lib.jmh>
+        <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
+        <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
         <version.lib.commons-text>1.11.0</version.lib.commons-text>
         <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
@@ -118,6 +123,8 @@
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
         <version.lib.groovy>2.4.16</version.lib.groovy>
         <version.lib.testcontainers>1.19.8</version.lib.testcontainers>
+        <version.lib.typesafe-config>1.4.4</version.lib.typesafe-config>
+        <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
 
         <!--
         !Version statement! - end
