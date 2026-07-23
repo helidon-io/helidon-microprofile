@@ -40,13 +40,9 @@
         -->
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
-        <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
-        <version.lib.commons-io>2.16.1</version.lib.commons-io>
-        <version.lib.commons-logging>1.3.5</version.lib.commons-logging>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.expressly>5.0.0</version.lib.expressly>
         <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
-        <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
@@ -69,12 +65,9 @@
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
-        <version.lib.javassist>3.30.2-GA</version.lib.javassist>
         <version.lib.jboss.classfilewriter>1.3.1.Final</version.lib.jboss.classfilewriter>
         <version.lib.jersey>3.1.11</version.lib.jersey>
         <version.lib.kafka>3.9.2</version.lib.kafka>
-        <!-- Kotlin: dependency convergence requirement, we never use this directly -->
-        <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.microprofile-config>3.1</version.lib.microprofile-config>
         <!-- FIXME upgrade to 4.1 when it is released in Maven -->
         <version.lib.microprofile-fault-tolerance-api>4.0.2</version.lib.microprofile-fault-tolerance-api>
@@ -89,8 +82,7 @@
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
-        <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
-        <version.lib.parsson>1.1.7</version.lib.parsson>
+        <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
@@ -242,19 +234,6 @@
                 <groupId>org.eclipse.parsson</groupId>
                 <artifactId>parsson-media</artifactId>
                 <version>${version.lib.parsson}</version>
-            </dependency>
-
-            <!-- Dependency convergence. Should align with version used by io.grpc -->
-            <dependency>
-                <groupId>io.perfmark</groupId>
-                <artifactId>perfmark-api</artifactId>
-                <version>${version.lib.perfmark-api}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${version.lib.javassist}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.websocket</groupId>
@@ -503,21 +482,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib</artifactId>
-                <version>${version.lib.kotlin}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-common</artifactId>
-                <version>${version.lib.kotlin}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-stdlib-jdk8</artifactId>
-                <version>${version.lib.kotlin}</version>
-            </dependency>
             <!-- Jersey -->
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
@@ -583,13 +547,6 @@
                 <artifactId>reactive-streams-tck</artifactId>
                 <version>${version.lib.reactivestreams}</version>
             </dependency>
-<!--
-            <dependency>
-                <groupId>org.crac</groupId>
-                <artifactId>crac</artifactId>
-                <version>${version.lib.crac}</version>
-            </dependency>
--->
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
@@ -598,24 +555,6 @@
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
-            <dependency>
-                <!-- Required for dependency convergence google-api-client -->
-                <groupId>commons-logging</groupId>
-                <artifactId>commons-logging</artifactId>
-                <version>${version.lib.commons-logging}</version>
-            </dependency>
-            <dependency>
-                <!-- Required for dependency convergence google-api-client -->
-                <groupId>commons-codec</groupId>
-                <artifactId>commons-codec</artifactId>
-                <version>${version.lib.commons-codec}</version>
-            </dependency>
-            <dependency>
-                <!-- version managed to align with commons-compress version above -->
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${version.lib.commons-io}</version>
-            </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->
