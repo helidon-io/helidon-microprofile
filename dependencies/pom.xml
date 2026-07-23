@@ -88,10 +88,6 @@
         <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
-        <version.lib.narayana>7.1.0.Final</version.lib.narayana>
-        <!-- Force upgrade okhttp3 for dependency convergence -->
-        <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
-        <version.lib.opentelemetry>1.58.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.24.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
         <version.lib.parsson>1.1.7</version.lib.parsson>
@@ -168,11 +164,6 @@
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-instrumentation-annotations</artifactId>
                 <version>${version.lib.opentelemetry.instrumentation.annotations}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-instrumentation-api</artifactId>
-                <version>${version.lib.opentelemetry}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
@@ -471,11 +462,6 @@
                 <version>${version.lib.hibernate-validator}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.narayana.jta</groupId>
-                <artifactId>cdi</artifactId>
-                <version>${version.lib.narayana}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-api</artifactId>
                 <version>${version.lib.weld-api}</version>
@@ -495,21 +481,6 @@
                 <artifactId>weld-lite-extension-translator</artifactId>
                 <version>${version.lib.weld}</version>
                 <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.weld</groupId>
-                        <artifactId>weld-core-impl</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.weld.module</groupId>
-                <artifactId>weld-jta</artifactId>
-                <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                        <artifactId>jboss-transaction-api_1.3_spec</artifactId>
-                    </exclusion>
                     <exclusion>
                         <groupId>org.jboss.weld</groupId>
                         <artifactId>weld-core-impl</artifactId>
@@ -628,12 +599,6 @@
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
             <dependency>
-                <!-- if needed (as excluded from weld) -->
-                <groupId>org.codehaus.groovy</groupId>
-                <artifactId>groovy-all</artifactId>
-                <version>${version.lib.groovy-all}</version>
-            </dependency>
-            <dependency>
                 <!-- Required for dependency convergence google-api-client -->
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
@@ -650,12 +615,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
-            </dependency>
-            <dependency>
-                <!-- Force upgrade okhttp3 for dependency convergence -->
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${version.lib.okhttp3}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
