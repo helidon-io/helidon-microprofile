@@ -15,7 +15,7 @@
 
 # Helidon MicroProfile
 
-Implementation of Eclipse [MicroProfile 6.0](https://github.com/eclipse/microprofile/releases/tag/6.0) specifications.
+Implementation of Eclipse [MicroProfile](https://microprofile.io/) specifications.
 
 Java 26 is required to use Helidon MicroProfile 5.
 
@@ -90,10 +90,8 @@ $ mvn verify -Pspotbugs
 
 **Documentation**
 
-```bash
-# in the docs directory
-$ mvn package -Pjavadoc
-```
+The documentation source is Markdown in the [`docs`](./docs) directory and is
+built using the Helidon documentation tooling.
 
 **Build Scripts**
 
