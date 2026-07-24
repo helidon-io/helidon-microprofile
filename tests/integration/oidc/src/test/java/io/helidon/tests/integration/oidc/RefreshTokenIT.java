@@ -45,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
 @AddConfig(key = "security.providers.1.oidc.token-signature-validation", value = "false")
+@AddConfig(key = "security.providers.1.oidc.cookie-encryption-enabled", value = "false")
 class RefreshTokenIT extends CommonLoginBase {
 
     @Test
