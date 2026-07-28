@@ -18,7 +18,9 @@ package io.helidon.jersey.media.json.binding;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -30,7 +32,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.GenericType;
 
 import jakarta.annotation.Priority;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.NoContentException;
@@ -40,6 +45,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,11 +57,11 @@ class JsonBindingProviderTest {
     void readsAndWritesGeneratedJsonEntity() throws Exception {
         assertThat(provider.isWriteable(JsonBindingEntity.class,
                                        JsonBindingEntity.class,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(true));
         assertThat(provider.isReadable(JsonBindingEntity.class,
                                       JsonBindingEntity.class,
-                                      new java.lang.annotation.Annotation[0],
+                                      new Annotation[0],
                                       MediaType.APPLICATION_JSON_TYPE), is(true));
 
         JsonBindingEntity entity = new JsonBindingEntity("hello");
@@ -63,7 +69,7 @@ class JsonBindingProviderTest {
         provider.writeTo(entity,
                          JsonBindingEntity.class,
                          JsonBindingEntity.class,
-                         new java.lang.annotation.Annotation[0],
+                         new Annotation[0],
                          MediaType.APPLICATION_JSON_TYPE,
                          new MultivaluedHashMap<>(),
                          output);
@@ -75,7 +81,7 @@ class JsonBindingProviderTest {
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
         JsonBindingEntity result = (JsonBindingEntity) provider.readFrom(entityType,
                                                                            JsonBindingEntity.class,
-                                                                           new java.lang.annotation.Annotation[0],
+                                                                           new Annotation[0],
                                                                            MediaType.APPLICATION_JSON_TYPE,
                                                                            new MultivaluedHashMap<>(),
                                                                            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
@@ -107,51 +113,51 @@ class JsonBindingProviderTest {
 
         assertThat(provider.isReadable(List.class,
                                        generatedEntityList,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(true));
         assertThat(provider.isWriteable(List.class,
                                         generatedEntityList,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(true));
         assertThat(provider.isReadable(List[].class,
                                        generatedEntityGenericArray,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isWriteable(List[].class,
                                         generatedEntityGenericArray,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isReadable(List.class,
                                        jsonbOnlyEntityList,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isWriteable(List.class,
                                         jsonbOnlyEntityList,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isWriteable(Map.class,
                                         generatedEntityMap,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(true));
         assertThat(provider.isWriteable(Map.class,
                                         unsupportedKeyMap,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isReadable(List.class,
                                        wildcardEntityList,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isReadable(Object.class,
                                        Object.class,
-                                       new java.lang.annotation.Annotation[0],
+                                       new Annotation[0],
                                        MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isWriteable(List.class,
                                         List.class,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isWriteable(Map.class,
                                         Map.class,
-                                        new java.lang.annotation.Annotation[0],
+                                        new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
     }
 
@@ -163,7 +169,7 @@ class JsonBindingProviderTest {
         assertThrows(NoContentException.class,
                      () -> provider.readFrom(entityType,
                                              JsonBindingEntity.class,
-                                             new java.lang.annotation.Annotation[0],
+                                             new Annotation[0],
                                              MediaType.APPLICATION_JSON_TYPE,
                                              new MultivaluedHashMap<>(),
                                              new ByteArrayInputStream(new byte[0])));
@@ -177,7 +183,7 @@ class JsonBindingProviderTest {
         provider.writeTo(entity,
                          JsonBindingEntity.class,
                          JsonBindingEntity.class,
-                         new java.lang.annotation.Annotation[0],
+                         new Annotation[0],
                          mediaType,
                          new MultivaluedHashMap<>(),
                          output);
@@ -189,13 +195,112 @@ class JsonBindingProviderTest {
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
         JsonBindingEntity result = (JsonBindingEntity) provider.readFrom(entityType,
                                                                           JsonBindingEntity.class,
-                                                                          new java.lang.annotation.Annotation[0],
+                                                                          new Annotation[0],
                                                                           mediaType,
                                                                           new MultivaluedHashMap<>(),
                                                                           new ByteArrayInputStream(
                                                                                   json.getBytes(
                                                                                           StandardCharsets.ISO_8859_1)));
         assertThat(result, is(entity));
+    }
+
+    @Test
+    void keepsApplicationJsonUtf8() throws Exception {
+        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        for (MediaType mediaType : List.of(MediaType.valueOf("application/json;charset=ISO-8859-1"),
+                                           MediaType.valueOf("application/problem+json;charset=ISO-8859-1"))) {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            provider.writeTo(entity,
+                             JsonBindingEntity.class,
+                             JsonBindingEntity.class,
+                             new Annotation[0],
+                             mediaType,
+                             new MultivaluedHashMap<>(),
+                             output);
+
+            String json = output.toString(StandardCharsets.UTF_8);
+            assertThat(json, containsString("\"message\":\"héllo\""));
+            JsonBindingEntity result = (JsonBindingEntity) provider.readFrom(entityType,
+                                                                              JsonBindingEntity.class,
+                                                                              new Annotation[0],
+                                                                              mediaType,
+                                                                              new MultivaluedHashMap<>(),
+                                                                              new ByteArrayInputStream(
+                                                                                      output.toByteArray()));
+            assertThat(result, is(entity));
+        }
+    }
+
+    @Test
+    void rejectsMalformedDeclaredCharsetInput() {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=US-ASCII");
+        byte[] malformedJson = "{\"message\":\"héllo\"}".getBytes(StandardCharsets.ISO_8859_1);
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> provider.readFrom(entityType,
+                                        JsonBindingEntity.class,
+                                        new Annotation[0],
+                                        mediaType,
+                                        new MultivaluedHashMap<>(),
+                                        new ByteArrayInputStream(malformedJson)));
+        assertThat(exception.getCause(), instanceOf(CharacterCodingException.class));
+    }
+
+    @Test
+    void rejectsUnmappableDeclaredCharsetOutput() {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=US-ASCII");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+
+        assertThrows(CharacterCodingException.class,
+                     () -> provider.writeTo(entity,
+                                            JsonBindingEntity.class,
+                                            JsonBindingEntity.class,
+                                            new Annotation[0],
+                                            mediaType,
+                                            new MultivaluedHashMap<>(),
+                                            new ByteArrayOutputStream()));
+    }
+
+    @Test
+    void rejectsUnsupportedRequestCharset() {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=no-such-charset");
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        assertThrows(NotSupportedException.class,
+                     () -> provider.readFrom(entityType,
+                                             JsonBindingEntity.class,
+                                             new Annotation[0],
+                                             mediaType,
+                                             new MultivaluedHashMap<>(),
+                                             new ByteArrayInputStream(
+                                                     "{\"message\":\"hello\"}".getBytes(StandardCharsets.UTF_8))));
+    }
+
+    @Test
+    void fallsBackToUtf8ForUnsupportedResponseCharset() throws Exception {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=no-such-charset");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        provider.writeTo(entity,
+                         JsonBindingEntity.class,
+                         JsonBindingEntity.class,
+                         new Annotation[0],
+                         mediaType,
+                         headers,
+                         output);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), containsString("\"message\":\"héllo\""));
+        assertThat(headers.getFirst(HttpHeaders.CONTENT_TYPE),
+                   is(mediaType.withCharset(StandardCharsets.UTF_8.name())));
     }
 
     @Test
@@ -213,7 +318,7 @@ class JsonBindingProviderTest {
                     start.await();
                     freshProvider.readFrom(listType,
                                            nestedListType,
-                                           new java.lang.annotation.Annotation[0],
+                                           new Annotation[0],
                                            MediaType.APPLICATION_JSON_TYPE,
                                            new MultivaluedHashMap<>(),
                                            new ByteArrayInputStream("[[\"value\"]]".getBytes(StandardCharsets.UTF_8)));
@@ -227,7 +332,7 @@ class JsonBindingProviderTest {
                     freshProvider.writeTo(List.of(List.of("value")),
                                           List.class,
                                           nestedListType,
-                                          new java.lang.annotation.Annotation[0],
+                                          new Annotation[0],
                                           MediaType.APPLICATION_JSON_TYPE,
                                           new MultivaluedHashMap<>(),
                                           new ByteArrayOutputStream());
