@@ -91,7 +91,7 @@ jobs:
           setup-latest-java: true
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}-latest-java
           run: |
-            mvn --version
+            mvn ${MVN_ARGS} --version
             mvn ${MVN_ARGS} \
               -DreactorRule=tests \
               -DmoduleSet=${{ matrix.moduleSet }} \

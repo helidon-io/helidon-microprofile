@@ -175,12 +175,14 @@ class KafkaMpTest extends AbstractKafkaTest {
         // This is correctly processed
         List<String> testData = Arrays.asList("10");
         produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testData);
+        kafkaConsumingBean.restart();
         // This will throw a run time error in KafkaSampleBean#error
         testData = Arrays.asList("error");
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, Arrays.asList("10"));
-        // After an error, it cannot receive new data
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, Collections.emptyList(), 1);
+        kafkaConsumingBean.restart();
+        // After an error, processing resumes
         testData = Arrays.asList("20");
-        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, Arrays.asList("10"));
+        produceAndCheck(kafkaConsumingBean, testData, TEST_TOPIC_3, testData);
     }
 
     @Test

@@ -176,6 +176,7 @@ runs:
       env:
         MVN_ARGS: |
           ${{ env.MVN_ARGS }}
+          -ntp
           -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
       run: ${{ inputs.run }}
       shell: bash
