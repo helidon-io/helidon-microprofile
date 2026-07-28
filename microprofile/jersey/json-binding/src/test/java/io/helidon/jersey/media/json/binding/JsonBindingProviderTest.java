@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -290,6 +291,27 @@ class JsonBindingProviderTest {
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
+        provider.writeTo(entity,
+                         JsonBindingEntity.class,
+                         JsonBindingEntity.class,
+                         new Annotation[0],
+                         mediaType,
+                         headers,
+                         output);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), containsString("\"message\":\"héllo\""));
+        assertThat(headers.getFirst(HttpHeaders.CONTENT_TYPE),
+                   is(mediaType.withCharset(StandardCharsets.UTF_8.name())));
+    }
+
+    @Test
+    void fallsBackToUtf8ForDecodeOnlyResponseCharset() throws Exception {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=x-JISAutoDetect");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        assertThat(Charset.forName("x-JISAutoDetect").canEncode(), is(false));
         provider.writeTo(entity,
                          JsonBindingEntity.class,
                          JsonBindingEntity.class,

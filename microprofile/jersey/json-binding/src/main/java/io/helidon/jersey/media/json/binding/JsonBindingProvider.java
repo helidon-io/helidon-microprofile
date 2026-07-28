@@ -133,9 +133,15 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                         MultivaluedMap<String, Object> httpHeaders,
                         OutputStream entityStream) throws IOException, WebApplicationException {
         Charset charset;
+        boolean fallback;
         try {
             charset = charset(mediaType, false);
+            fallback = !StandardCharsets.UTF_8.equals(charset) && !charset.canEncode();
         } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
+            charset = StandardCharsets.UTF_8;
+            fallback = true;
+        }
+        if (fallback) {
             charset = StandardCharsets.UTF_8;
             httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, mediaType.withCharset(charset.name()));
         }
