@@ -20,9 +20,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.GenericType;
 
@@ -30,6 +33,7 @@ import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.NoContentException;
 
 import org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable;
 import org.junit.jupiter.api.Test;
@@ -37,6 +41,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonBindingProviderTest {
     private final JsonBindingProvider provider = JsonBindingProvider.create();
@@ -93,6 +99,7 @@ class JsonBindingProviderTest {
     @Test
     void supportsOnlyBindableGenericTypes() {
         Type generatedEntityList = new GenericType<List<JsonBindingEntity>>() { }.type();
+        Type generatedEntityGenericArray = new GenericType<List<JsonBindingEntity>[]>() { }.type();
         Type jsonbOnlyEntityList = new GenericType<List<JsonbOnlyEntity>>() { }.type();
         Type generatedEntityMap = new GenericType<Map<String, JsonBindingEntity>>() { }.type();
         Type unsupportedKeyMap = new GenericType<Map<JsonBindingEntity, JsonBindingEntity>>() { }.type();
@@ -106,6 +113,14 @@ class JsonBindingProviderTest {
                                         generatedEntityList,
                                         new java.lang.annotation.Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(true));
+        assertThat(provider.isReadable(List[].class,
+                                       generatedEntityGenericArray,
+                                       new java.lang.annotation.Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(false));
+        assertThat(provider.isWriteable(List[].class,
+                                        generatedEntityGenericArray,
+                                        new java.lang.annotation.Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
         assertThat(provider.isReadable(List.class,
                                        jsonbOnlyEntityList,
                                        new java.lang.annotation.Annotation[0],
@@ -138,6 +153,96 @@ class JsonBindingProviderTest {
                                         Map.class,
                                         new java.lang.annotation.Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
+    void rejectsEmptyInput() {
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        assertThrows(NoContentException.class,
+                     () -> provider.readFrom(entityType,
+                                             JsonBindingEntity.class,
+                                             new java.lang.annotation.Annotation[0],
+                                             MediaType.APPLICATION_JSON_TYPE,
+                                             new MultivaluedHashMap<>(),
+                                             new ByteArrayInputStream(new byte[0])));
+    }
+
+    @Test
+    void honorsDeclaredCharset() throws Exception {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=ISO-8859-1");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.writeTo(entity,
+                         JsonBindingEntity.class,
+                         JsonBindingEntity.class,
+                         new java.lang.annotation.Annotation[0],
+                         mediaType,
+                         new MultivaluedHashMap<>(),
+                         output);
+
+        String json = output.toString(StandardCharsets.ISO_8859_1);
+        assertThat(json, containsString("\"message\":\"héllo\""));
+
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+        JsonBindingEntity result = (JsonBindingEntity) provider.readFrom(entityType,
+                                                                          JsonBindingEntity.class,
+                                                                          new java.lang.annotation.Annotation[0],
+                                                                          mediaType,
+                                                                          new MultivaluedHashMap<>(),
+                                                                          new ByteArrayInputStream(
+                                                                                  json.getBytes(
+                                                                                          StandardCharsets.ISO_8859_1)));
+        assertThat(result, is(entity));
+    }
+
+    @Test
+    void supportsConcurrentReaderAndWriterFirstUse() throws Exception {
+        Type nestedListType = new GenericType<List<List<String>>>() { }.type();
+        @SuppressWarnings("unchecked")
+        Class<Object> listType = (Class<Object>) (Class<?>) List.class;
+
+        for (int i = 0; i < 20; i++) {
+            JsonBindingProvider freshProvider = JsonBindingProvider.create();
+            CyclicBarrier start = new CyclicBarrier(2);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread reader = Thread.ofPlatform().daemon().unstarted(() -> {
+                try {
+                    start.await();
+                    freshProvider.readFrom(listType,
+                                           nestedListType,
+                                           new java.lang.annotation.Annotation[0],
+                                           MediaType.APPLICATION_JSON_TYPE,
+                                           new MultivaluedHashMap<>(),
+                                           new ByteArrayInputStream("[[\"value\"]]".getBytes(StandardCharsets.UTF_8)));
+                } catch (Throwable e) {
+                    failure.compareAndSet(null, e);
+                }
+            });
+            Thread writer = Thread.ofPlatform().daemon().unstarted(() -> {
+                try {
+                    start.await();
+                    freshProvider.writeTo(List.of(List.of("value")),
+                                          List.class,
+                                          nestedListType,
+                                          new java.lang.annotation.Annotation[0],
+                                          MediaType.APPLICATION_JSON_TYPE,
+                                          new MultivaluedHashMap<>(),
+                                          new ByteArrayOutputStream());
+                } catch (Throwable e) {
+                    failure.compareAndSet(null, e);
+                }
+            });
+
+            reader.start();
+            writer.start();
+
+            assertThat("concurrent read did not complete", reader.join(Duration.ofSeconds(2)), is(true));
+            assertThat("concurrent write did not complete", writer.join(Duration.ofSeconds(2)), is(true));
+            assertThat("concurrent binding failed", failure.get(), is(nullValue()));
+        }
     }
 
     private record JsonbOnlyEntity(String message) {
