@@ -254,6 +254,28 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void rejectsMalformedJsonWithoutExposingRequestContent() {
+        byte[] malformedUtf8 = "{\"message\":\"x\"}".getBytes(StandardCharsets.UTF_8);
+        malformedUtf8[12] = (byte) 0xFF;
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        for (byte[] malformedJson : List.of("{\"message\":}".getBytes(StandardCharsets.UTF_8), malformedUtf8)) {
+            BadRequestException exception = assertThrows(
+                    BadRequestException.class,
+                    () -> provider.readFrom(entityType,
+                                            JsonBindingEntity.class,
+                                            new Annotation[0],
+                                            MediaType.APPLICATION_JSON_TYPE,
+                                            new MultivaluedHashMap<>(),
+                                            new ByteArrayInputStream(malformedJson)));
+            assertThat(exception.getResponse().getStatus(), is(400));
+            assertThat(exception.getMessage(), is("Invalid JSON request body"));
+            assertThat(exception.getCause(), nullValue());
+        }
+    }
+
+    @Test
     void rejectsUnmappableDeclaredCharsetOutput() {
         MediaType mediaType = MediaType.valueOf("text/json;charset=US-ASCII");
         JsonBindingEntity entity = new JsonBindingEntity("héllo");

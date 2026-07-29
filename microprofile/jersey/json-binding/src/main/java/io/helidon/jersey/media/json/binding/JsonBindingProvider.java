@@ -44,6 +44,7 @@ import java.util.Set;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.LruCache;
+import io.helidon.json.JsonException;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonSerializer;
@@ -101,16 +102,18 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
         inputStream.unread(firstByte);
         Charset charset = charset(mediaType, true);
-        if (StandardCharsets.UTF_8.equals(charset)) {
-            return deserializerBinding.deserialize(inputStream, GenericType.create(genericType));
-        }
         try {
+            if (StandardCharsets.UTF_8.equals(charset)) {
+                return deserializerBinding.deserialize(inputStream, GenericType.create(genericType));
+            }
             return deserializerBinding.deserialize(
                     new InputStreamReader(inputStream,
                                           charset.newDecoder()
                                                   .onMalformedInput(CodingErrorAction.REPORT)
                                                   .onUnmappableCharacter(CodingErrorAction.REPORT)),
                     GenericType.create(genericType));
+        } catch (JsonException _) {
+            throw new BadRequestException("Invalid JSON request body");
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof CharacterCodingException codingException) {
                 throw new BadRequestException("Invalid JSON encoding for charset " + charset.name(), codingException);
