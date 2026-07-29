@@ -112,7 +112,11 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                                                   .onMalformedInput(CodingErrorAction.REPORT)
                                                   .onUnmappableCharacter(CodingErrorAction.REPORT)),
                     GenericType.create(genericType));
-        } catch (JsonException _) {
+        } catch (JsonException e) {
+            if (e.getCause() instanceof IOException ioException
+                    && !(ioException instanceof CharacterCodingException)) {
+                throw ioException;
+            }
             throw new BadRequestException("Invalid JSON request body");
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof CharacterCodingException codingException) {

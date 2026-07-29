@@ -18,6 +18,8 @@ package io.helidon.jersey.media.json.binding;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
@@ -49,6 +51,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonBindingProviderTest {
@@ -288,6 +291,35 @@ class JsonBindingProviderTest {
             assertThat(exception.getMessage(), is("Invalid JSON request body"));
             assertThat(exception.getCause(), nullValue());
         }
+    }
+
+    @Test
+    void propagatesRequestStreamFailures() {
+        byte[] partialJson = "{\"message\":\"\\u".getBytes(StandardCharsets.UTF_8);
+        IOException expected = new IOException("Request stream failed");
+        InputStream inputStream = new InputStream() {
+            private int index;
+
+            @Override
+            public int read() throws IOException {
+                if (index == partialJson.length) {
+                    throw expected;
+                }
+                return partialJson[index++];
+            }
+        };
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        IOException actual = assertThrows(
+                IOException.class,
+                () -> provider.readFrom(entityType,
+                                        JsonBindingEntity.class,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE,
+                                        new MultivaluedHashMap<>(),
+                                        inputStream));
+        assertThat(actual, sameInstance(expected));
     }
 
     @Test
