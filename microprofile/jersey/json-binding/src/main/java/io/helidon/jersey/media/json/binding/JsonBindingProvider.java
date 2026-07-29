@@ -169,7 +169,9 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     }
 
     private static boolean supportsMediaType(MediaType mediaType) {
-        return mediaType.getSubtype().equals("json") || mediaType.getSubtype().endsWith("+json");
+        String subtype = mediaType.getSubtype();
+        return subtype.equalsIgnoreCase("json")
+                || subtype.regionMatches(true, subtype.length() - 5, "+json", 0, 5);
     }
 
     private static Charset charset(MediaType mediaType, boolean request) {

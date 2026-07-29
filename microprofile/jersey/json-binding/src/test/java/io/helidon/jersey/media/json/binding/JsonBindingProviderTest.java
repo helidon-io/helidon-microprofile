@@ -163,6 +163,21 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void supportsJsonMediaTypesCaseInsensitively() {
+        for (MediaType mediaType : List.of(MediaType.valueOf("Application/JSON"),
+                                           MediaType.valueOf("application/vnd.example+JSON"))) {
+            assertThat(provider.isReadable(JsonBindingEntity.class,
+                                           JsonBindingEntity.class,
+                                           new Annotation[0],
+                                           mediaType), is(true));
+            assertThat(provider.isWriteable(JsonBindingEntity.class,
+                                            JsonBindingEntity.class,
+                                            new Annotation[0],
+                                            mediaType), is(true));
+        }
+    }
+
+    @Test
     void rejectsEmptyInput() {
         @SuppressWarnings("unchecked")
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
