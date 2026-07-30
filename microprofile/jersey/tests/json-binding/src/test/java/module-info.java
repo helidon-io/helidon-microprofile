@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-/**
- * Jersey integration with Helidon JSON Binding.
- */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
-module io.helidon.jersey.media.json.binding {
-    requires io.helidon.common;
-    requires io.helidon.json.binding;
-    requires jakarta.annotation;
-    requires transitive jakarta.ws.rs;
-    requires jersey.common;
-
-    opens io.helidon.jersey.media.json.binding to org.glassfish.hk2.locator;
-
-    provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
-            with io.helidon.jersey.media.json.binding.JsonBindingAutoDiscoverable;
+@SuppressWarnings("requires-automatic")
+open module io.helidon.jersey.tests.media.json.binding {
+    requires io.helidon.jersey.media.json.binding;
+    requires jakarta.inject;
+    requires jakarta.ws.rs;
+    requires jersey.client;
+    requires jersey.hk2;
+    requires org.junit.jupiter.api;
 }
