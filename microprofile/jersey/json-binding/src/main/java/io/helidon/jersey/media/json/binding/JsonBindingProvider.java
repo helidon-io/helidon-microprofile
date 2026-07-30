@@ -36,6 +36,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.DateTimeException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return supportsRead(genericType) && supportsMediaType(mediaType);
+        return supportsMediaType(mediaType) && supportsRead(genericType);
     }
 
     @Override
@@ -133,7 +134,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 throw ioException;
             }
             throw invalidJsonBody();
-        } catch (IllegalArgumentException _) {
+        } catch (IllegalArgumentException | DateTimeException _) {
             throw invalidJsonBody();
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof CharacterCodingException codingException) {
@@ -149,7 +150,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return supportsWrite(effectiveWriteType(type, genericType)) && supportsMediaType(mediaType);
+        return supportsMediaType(mediaType) && supportsWrite(effectiveWriteType(type, genericType));
     }
 
     @Override
@@ -174,23 +175,25 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             charset = StandardCharsets.UTF_8;
             httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, mediaType.withCharset(charset.name()));
         }
-        if (StandardCharsets.UTF_8.equals(charset)) {
-            serializerBinding.serialize(entityStream, object, GenericType.create(effectiveType));
-        } else {
-            OutputStreamWriter writer = new OutputStreamWriter(
-                    entityStream,
-                    charset.newEncoder()
-                            .onMalformedInput(CodingErrorAction.REPORT)
-                            .onUnmappableCharacter(CodingErrorAction.REPORT));
-            try {
+        try {
+            if (StandardCharsets.UTF_8.equals(charset)) {
+                serializerBinding.serialize(entityStream, object, GenericType.create(effectiveType));
+            } else {
+                OutputStreamWriter writer = new OutputStreamWriter(
+                        entityStream,
+                        charset.newEncoder()
+                                .onMalformedInput(CodingErrorAction.REPORT)
+                                .onUnmappableCharacter(CodingErrorAction.REPORT));
                 serializerBinding.serialize(writer, object, GenericType.create(effectiveType));
                 writer.flush();
-            } catch (UncheckedIOException e) {
-                if (e.getCause() instanceof CharacterCodingException codingException) {
-                    throw codingException;
-                }
-                throw e;
             }
+        } catch (JsonException e) {
+            if (e.getCause() instanceof IOException ioException) {
+                throw ioException;
+            }
+            throw e;
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 
@@ -288,7 +291,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
         boolean genericFactory = serializerBinding.prototype().bindingFactories().stream()
                 .map(JsonBindingFactory::supportedTypes)
-                .flatMap(java.util.Set::stream)
+                .flatMap(Set::stream)
                 .anyMatch(supportedType -> supportedType == rawType
                         || rawType.isArray() && supportedType == Array.class
                         || rawType.isEnum() && supportedType == Enum.class);

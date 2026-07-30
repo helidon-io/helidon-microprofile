@@ -20,14 +20,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -295,6 +298,35 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void rejectsNonJsonBeforeInspectingType() {
+        Type inaccessibleType = new ParameterizedType() {
+            @Override
+            public Type[] getActualTypeArguments() {
+                throw new AssertionError("Non-JSON type arguments must not be inspected");
+            }
+
+            @Override
+            public Type getRawType() {
+                throw new AssertionError("Non-JSON raw type must not be inspected");
+            }
+
+            @Override
+            public Type getOwnerType() {
+                throw new AssertionError("Non-JSON owner type must not be inspected");
+            }
+        };
+
+        assertThat(provider.isReadable(Object.class,
+                                       inaccessibleType,
+                                       new Annotation[0],
+                                       MediaType.TEXT_PLAIN_TYPE), is(false));
+        assertThat(provider.isWriteable(Object.class,
+                                        inaccessibleType,
+                                        new Annotation[0],
+                                        MediaType.TEXT_PLAIN_TYPE), is(false));
+    }
+
+    @Test
     void rejectsEmptyInput() {
         @SuppressWarnings("unchecked")
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
@@ -446,6 +478,37 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void rejectsInvalidDateWithoutExposingContent() {
+        @SuppressWarnings("unchecked")
+        Class<Object> dateType = (Class<Object>) (Class<?>) LocalDate.class;
+        byte[] invalidDate = "\"a-sensitive-invalid-date\"".getBytes(StandardCharsets.UTF_8);
+
+        BadRequestException serverException = assertThrows(
+                BadRequestException.class,
+                () -> provider.readFrom(dateType,
+                                        LocalDate.class,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE,
+                                        new MultivaluedHashMap<>(),
+                                        new ByteArrayInputStream(invalidDate)));
+        assertThat(serverException.getResponse().getStatus(), is(400));
+        assertThat(serverException.getMessage(), is("Invalid JSON request body"));
+        assertThat(serverException.getCause(), nullValue());
+
+        ProcessingException clientException = assertThrows(
+                ProcessingException.class,
+                () -> clientProvider.readFrom(dateType,
+                                              LocalDate.class,
+                                              new Annotation[0],
+                                              MediaType.APPLICATION_JSON_TYPE,
+                                              new MultivaluedHashMap<>(),
+                                              new ByteArrayInputStream(invalidDate)));
+        assertEquals(ProcessingException.class, clientException.getClass());
+        assertThat(clientException.getMessage(), is("Invalid JSON response body"));
+        assertThat(clientException.getCause(), nullValue());
+    }
+
+    @Test
     void mapsMalformedClientResponseToProcessingException() {
         @SuppressWarnings("unchecked")
         Class<Object> uuidType = (Class<Object>) (Class<?>) UUID.class;
@@ -508,6 +571,51 @@ class JsonBindingProviderTest {
                                             new MultivaluedHashMap<>(),
                                             inputStream));
             assertThat(actual, sameInstance(expected));
+        }
+    }
+
+    @Test
+    void propagatesResponseStreamFailures() {
+        JsonBindingEntity entity = new JsonBindingEntity("hello", null);
+
+        for (MediaType mediaType : List.of(MediaType.APPLICATION_JSON_TYPE,
+                                           MediaType.valueOf("text/json;charset=ISO-8859-1"))) {
+            for (boolean failOnWrite : List.of(true, false)) {
+                IOException expected = new IOException(failOnWrite ? "Response write failed" : "Response flush failed");
+                OutputStream outputStream = new OutputStream() {
+                    @Override
+                    public void write(int value) throws IOException {
+                        if (failOnWrite) {
+                            throw expected;
+                        }
+                    }
+
+                    @Override
+                    public void write(byte[] bytes, int offset, int length) throws IOException {
+                        if (failOnWrite) {
+                            throw expected;
+                        }
+                    }
+
+                    @Override
+                    public void flush() throws IOException {
+                        if (!failOnWrite) {
+                            throw expected;
+                        }
+                    }
+                };
+
+                IOException actual = assertThrows(
+                        IOException.class,
+                        () -> provider.writeTo(entity,
+                                               JsonBindingEntity.class,
+                                               JsonBindingEntity.class,
+                                               new Annotation[0],
+                                               mediaType,
+                                               new MultivaluedHashMap<>(),
+                                               outputStream));
+                assertThat(actual, sameInstance(expected));
+            }
         }
     }
 
