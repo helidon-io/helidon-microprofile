@@ -75,6 +75,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     private final JsonBinding deserializerBinding = JsonBinding.create();
     private final JsonBinding serializerBinding = JsonBinding.create();
     private final LruCache<Type, Boolean> supportedTypes = LruCache.create(1_000);
+    private final LruCache<Type, Boolean> supportedWriteTypes = LruCache.create(1_000);
 
     private JsonBindingProvider() {
     }
@@ -128,7 +129,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return supports(effectiveWriteType(type, genericType)) && supportsMediaType(mediaType);
+        return supportsWrite(effectiveWriteType(type, genericType)) && supportsMediaType(mediaType);
     }
 
     @Override
@@ -202,6 +203,32 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     private boolean supports(Type type) {
         return supportedTypes.computeValue(type, () -> Optional.of(supportsType(type))).orElseThrow();
+    }
+
+    private boolean supportsWrite(Type type) {
+        return supportedWriteTypes.computeValue(type, () -> {
+            if (supports(type)) {
+                return Optional.of(true);
+            }
+            if (!(type instanceof ParameterizedType parameterizedType)) {
+                return Optional.of(false);
+            }
+            Class<?> rawType = GenericType.create(type).rawType();
+            if (!List.class.isAssignableFrom(rawType)
+                    && !Map.class.isAssignableFrom(rawType)
+                    && !Set.class.isAssignableFrom(rawType)) {
+                return Optional.of(false);
+            }
+            Type[] typeArguments = parameterizedType.getActualTypeArguments();
+            if (!Arrays.stream(typeArguments).allMatch(this::supportsWrite)) {
+                return Optional.of(false);
+            }
+            boolean supported = !Map.class.isAssignableFrom(rawType)
+                    || serializerBinding.prototype().serializers().stream()
+                            .filter(serializer -> serializer.type().equals(GenericType.create(typeArguments[0])))
+                            .anyMatch(JsonSerializer::isMapKeySerializer);
+            return Optional.of(supported);
+        }).orElseThrow();
     }
 
     private boolean supportsType(Type type) {
