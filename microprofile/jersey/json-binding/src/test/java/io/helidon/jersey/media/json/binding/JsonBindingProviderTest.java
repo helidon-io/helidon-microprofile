@@ -25,6 +25,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +41,8 @@ import jakarta.annotation.Priority;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -55,10 +58,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonBindingProviderTest {
-    private final JsonBindingProvider provider = JsonBindingProvider.create();
+    private final JsonBindingProvider provider = JsonBindingProvider.create(RuntimeType.SERVER);
+    private final JsonBindingProvider clientProvider = JsonBindingProvider.create(RuntimeType.CLIENT);
 
     @Test
     void readsAndWritesGeneratedJsonEntity() throws Exception {
@@ -321,6 +326,26 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void mapsMalformedClientResponseEncodingToProcessingException() {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=US-ASCII");
+        byte[] malformedJson = "{\"message\":\"héllo\"}".getBytes(StandardCharsets.ISO_8859_1);
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        ProcessingException exception = assertThrows(
+                ProcessingException.class,
+                () -> clientProvider.readFrom(entityType,
+                                              JsonBindingEntity.class,
+                                              new Annotation[0],
+                                              mediaType,
+                                              new MultivaluedHashMap<>(),
+                                              new ByteArrayInputStream(malformedJson)));
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertThat(exception.getMessage(), is("Invalid JSON response encoding for charset US-ASCII"));
+        assertThat(exception.getCause(), instanceOf(CharacterCodingException.class));
+    }
+
+    @Test
     void rejectsMalformedJsonWithoutExposingRequestContent() {
         byte[] malformedUtf8 = "{\"message\":\"x\"}".getBytes(StandardCharsets.UTF_8);
         malformedUtf8[12] = (byte) 0xFF;
@@ -357,6 +382,24 @@ class JsonBindingProviderTest {
                                         new ByteArrayInputStream("\"not-a-uuid\"".getBytes(StandardCharsets.UTF_8))));
         assertThat(exception.getResponse().getStatus(), is(400));
         assertThat(exception.getMessage(), is("Invalid JSON request body"));
+        assertThat(exception.getCause(), nullValue());
+    }
+
+    @Test
+    void mapsMalformedClientResponseToProcessingException() {
+        @SuppressWarnings("unchecked")
+        Class<Object> uuidType = (Class<Object>) (Class<?>) UUID.class;
+
+        ProcessingException exception = assertThrows(
+                ProcessingException.class,
+                () -> clientProvider.readFrom(uuidType,
+                                              UUID.class,
+                                              new Annotation[0],
+                                              MediaType.APPLICATION_JSON_TYPE,
+                                              new MultivaluedHashMap<>(),
+                                              new ByteArrayInputStream("{".getBytes(StandardCharsets.UTF_8))));
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertThat(exception.getMessage(), is("Invalid JSON response body"));
         assertThat(exception.getCause(), nullValue());
     }
 
@@ -421,6 +464,26 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void mapsUnsupportedClientResponseCharsetToProcessingException() {
+        MediaType mediaType = MediaType.valueOf("text/json;charset=no-such-charset");
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
+
+        ProcessingException exception = assertThrows(
+                ProcessingException.class,
+                () -> clientProvider.readFrom(entityType,
+                                              JsonBindingEntity.class,
+                                              new Annotation[0],
+                                              mediaType,
+                                              new MultivaluedHashMap<>(),
+                                              new ByteArrayInputStream(
+                                                      "{\"message\":\"hello\"}".getBytes(StandardCharsets.UTF_8))));
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertThat(exception.getMessage(), is("Unsupported JSON response charset: no-such-charset"));
+        assertThat(exception.getCause(), instanceOf(UnsupportedCharsetException.class));
+    }
+
+    @Test
     void fallsBackToUtf8ForUnsupportedResponseCharset() throws Exception {
         MediaType mediaType = MediaType.valueOf("text/json;charset=no-such-charset");
         JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
@@ -468,7 +531,7 @@ class JsonBindingProviderTest {
         Class<Object> listType = (Class<Object>) (Class<?>) List.class;
 
         for (int i = 0; i < 20; i++) {
-            JsonBindingProvider freshProvider = JsonBindingProvider.create();
+            JsonBindingProvider freshProvider = JsonBindingProvider.create(RuntimeType.SERVER);
             CyclicBarrier start = new CyclicBarrier(2);
             AtomicReference<Throwable> failure = new AtomicReference<>();
             Thread reader = Thread.ofPlatform().daemon().unstarted(() -> {

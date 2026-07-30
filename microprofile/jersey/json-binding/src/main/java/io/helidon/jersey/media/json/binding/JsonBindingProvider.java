@@ -39,6 +39,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -54,7 +55,9 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.Priorities;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -72,16 +75,18 @@ import jakarta.ws.rs.ext.Provider;
 @Consumes({ "application/json", "text/json", "*/*" })
 @Produces({ "application/json", "text/json", "*/*" })
 public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBodyWriter<Object> {
+    private final RuntimeType runtimeType;
     private final JsonBinding deserializerBinding = JsonBinding.create();
     private final JsonBinding serializerBinding = JsonBinding.create();
     private final LruCache<Type, Boolean> supportedTypes = LruCache.create(1_000);
     private final LruCache<Type, Boolean> supportedWriteTypes = LruCache.create(1_000);
 
-    private JsonBindingProvider() {
+    private JsonBindingProvider(RuntimeType runtimeType) {
+        this.runtimeType = Objects.requireNonNull(runtimeType);
     }
 
-    static JsonBindingProvider create() {
-        return new JsonBindingProvider();
+    static JsonBindingProvider create(RuntimeType runtimeType) {
+        return new JsonBindingProvider(runtimeType);
     }
 
     @Override
@@ -102,7 +107,15 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             throw new NoContentException("No content to deserialize");
         }
         inputStream.unread(firstByte);
-        Charset charset = charset(mediaType, true);
+        Charset charset;
+        try {
+            charset = charset(mediaType, runtimeType == RuntimeType.SERVER);
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
+            throw new ProcessingException(
+                    "Unsupported JSON response charset: "
+                            + mediaType.getParameters().get(MediaType.CHARSET_PARAMETER),
+                    e);
+        }
         try {
             if (StandardCharsets.UTF_8.equals(charset)) {
                 return deserializerBinding.deserialize(inputStream, GenericType.create(genericType));
@@ -118,12 +131,16 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                     && !(ioException instanceof CharacterCodingException)) {
                 throw ioException;
             }
-            throw new BadRequestException("Invalid JSON request body");
+            throw invalidJsonBody();
         } catch (IllegalArgumentException _) {
-            throw new BadRequestException("Invalid JSON request body");
+            throw invalidJsonBody();
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof CharacterCodingException codingException) {
-                throw new BadRequestException("Invalid JSON encoding for charset " + charset.name(), codingException);
+                if (runtimeType == RuntimeType.SERVER) {
+                    throw new BadRequestException("Invalid JSON encoding for charset " + charset.name(), codingException);
+                }
+                throw new ProcessingException("Invalid JSON response encoding for charset " + charset.name(),
+                                              codingException);
             }
             throw e;
         }
@@ -184,6 +201,13 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         String subtype = mediaType.getSubtype();
         return subtype.equalsIgnoreCase("json")
                 || subtype.regionMatches(true, subtype.length() - 5, "+json", 0, 5);
+    }
+
+    private RuntimeException invalidJsonBody() {
+        if (runtimeType == RuntimeType.SERVER) {
+            return new BadRequestException("Invalid JSON request body");
+        }
+        return new ProcessingException("Invalid JSON response body");
     }
 
     private static Charset charset(MediaType mediaType, boolean request) {

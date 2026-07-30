@@ -16,14 +16,24 @@
 
 package io.helidon.jersey.tests.media.json.binding;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.UUID;
+
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonBindingModulePathTest {
@@ -38,6 +48,43 @@ class JsonBindingModulePathTest {
                         .request()
                         .get()) {
             assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    void mapsMalformedResponseToProcessingException() {
+        ProcessingException exception = assertThrows(
+                ProcessingException.class,
+                () -> readUuid("{", MediaType.APPLICATION_JSON_TYPE));
+
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertEquals("Invalid JSON response body", exception.getMessage());
+        assertNull(exception.getCause());
+    }
+
+    @Test
+    void mapsUnsupportedResponseCharsetToProcessingException() {
+        ProcessingException exception = assertThrows(
+                ProcessingException.class,
+                () -> readUuid("\"00000000-0000-0000-0000-000000000000\"",
+                               MediaType.valueOf("text/json;charset=no-such-charset")));
+
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertEquals("Unsupported JSON response charset: no-such-charset", exception.getMessage());
+        assertInstanceOf(UnsupportedCharsetException.class, exception.getCause());
+    }
+
+    private static UUID readUuid(String json, MediaType mediaType) {
+        try (Client client = ClientBuilder.newClient();
+                Response response = client.target("http://localhost")
+                        .register((ClientRequestFilter) request -> request.abortWith(
+                                Response.ok(new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)))
+                                        .type(mediaType)
+                                        .build()))
+                        .request()
+                        .get()) {
+            assertEquals(200, response.getStatus());
+            return response.readEntity(UUID.class);
         }
     }
 }

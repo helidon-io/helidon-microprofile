@@ -36,7 +36,8 @@ public class JsonBindingAutoDiscoverable implements ForcedAutoDiscoverable {
     @Override
     public void configure(FeatureContext context) {
         if (!context.getConfiguration().isRegistered(JsonBindingProvider.class)) {
-            context.register(JsonBindingProvider.create(), Priorities.ENTITY_CODER);
+            context.register(JsonBindingProvider.create(context.getConfiguration().getRuntimeType()),
+                             Priorities.ENTITY_CODER);
         }
     }
 }
