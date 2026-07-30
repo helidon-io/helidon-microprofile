@@ -128,7 +128,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return supports(genericType) && supportsMediaType(mediaType);
+        return supports(effectiveWriteType(type, genericType)) && supportsMediaType(mediaType);
     }
 
     @Override
@@ -139,6 +139,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                         MediaType mediaType,
                         MultivaluedMap<String, Object> httpHeaders,
                         OutputStream entityStream) throws IOException, WebApplicationException {
+        Type effectiveType = effectiveWriteType(type, genericType);
         Charset charset;
         boolean fallback;
         try {
@@ -153,7 +154,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             httpHeaders.putSingle(HttpHeaders.CONTENT_TYPE, mediaType.withCharset(charset.name()));
         }
         if (StandardCharsets.UTF_8.equals(charset)) {
-            serializerBinding.serialize(entityStream, object, GenericType.create(genericType));
+            serializerBinding.serialize(entityStream, object, GenericType.create(effectiveType));
         } else {
             OutputStreamWriter writer = new OutputStreamWriter(
                     entityStream,
@@ -161,7 +162,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                             .onMalformedInput(CodingErrorAction.REPORT)
                             .onUnmappableCharacter(CodingErrorAction.REPORT));
             try {
-                serializerBinding.serialize(writer, object, GenericType.create(genericType));
+                serializerBinding.serialize(writer, object, GenericType.create(effectiveType));
                 writer.flush();
             } catch (UncheckedIOException e) {
                 if (e.getCause() instanceof CharacterCodingException codingException) {
@@ -170,6 +171,10 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 throw e;
             }
         }
+    }
+
+    private static Type effectiveWriteType(Class<?> type, Type genericType) {
+        return genericType == Object.class ? type : genericType;
     }
 
     private static boolean supportsMediaType(MediaType mediaType) {

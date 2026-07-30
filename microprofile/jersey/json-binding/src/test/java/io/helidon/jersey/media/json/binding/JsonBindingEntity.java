@@ -19,5 +19,5 @@ package io.helidon.jersey.media.json.binding;
 import io.helidon.json.binding.Json;
 
 @Json.Entity
-record JsonBindingEntity(String message) {
+record JsonBindingEntity(String message, @Json.Ignore String secret) {
 }

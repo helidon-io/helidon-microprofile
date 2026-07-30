@@ -50,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,7 +69,7 @@ class JsonBindingProviderTest {
                                       new Annotation[0],
                                       MediaType.APPLICATION_JSON_TYPE), is(true));
 
-        JsonBindingEntity entity = new JsonBindingEntity("hello");
+        JsonBindingEntity entity = new JsonBindingEntity("hello", null);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         provider.writeTo(entity,
                          JsonBindingEntity.class,
@@ -90,6 +91,28 @@ class JsonBindingProviderTest {
                                                                            new MultivaluedHashMap<>(),
                                                                            new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
         assertThat(result, is(entity));
+    }
+
+    @Test
+    void writesRuntimeTypeWhenDeclaredAsObject() throws Exception {
+        assertThat(provider.isWriteable(JsonBindingEntity.class,
+                                       Object.class,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(true));
+
+        JsonBindingEntity entity = new JsonBindingEntity("hello", "do-not-serialize");
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.writeTo(entity,
+                         JsonBindingEntity.class,
+                         Object.class,
+                         new Annotation[0],
+                         MediaType.APPLICATION_JSON_TYPE,
+                         new MultivaluedHashMap<>(),
+                         output);
+
+        String json = output.toString(StandardCharsets.UTF_8);
+        assertThat(json, containsString("\"message\":\"hello\""));
+        assertThat(json, not(containsString("do-not-serialize")));
     }
 
     @Test
@@ -197,7 +220,7 @@ class JsonBindingProviderTest {
     @Test
     void honorsDeclaredCharset() throws Exception {
         MediaType mediaType = MediaType.valueOf("text/json;charset=ISO-8859-1");
-        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         provider.writeTo(entity,
                          JsonBindingEntity.class,
@@ -225,7 +248,7 @@ class JsonBindingProviderTest {
 
     @Test
     void keepsApplicationJsonUtf8() throws Exception {
-        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
         @SuppressWarnings("unchecked")
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
 
@@ -325,7 +348,7 @@ class JsonBindingProviderTest {
     @Test
     void rejectsUnmappableDeclaredCharsetOutput() {
         MediaType mediaType = MediaType.valueOf("text/json;charset=US-ASCII");
-        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
 
         assertThrows(CharacterCodingException.class,
                      () -> provider.writeTo(entity,
@@ -356,7 +379,7 @@ class JsonBindingProviderTest {
     @Test
     void fallsBackToUtf8ForUnsupportedResponseCharset() throws Exception {
         MediaType mediaType = MediaType.valueOf("text/json;charset=no-such-charset");
-        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
@@ -376,7 +399,7 @@ class JsonBindingProviderTest {
     @Test
     void fallsBackToUtf8ForDecodeOnlyResponseCharset() throws Exception {
         MediaType mediaType = MediaType.valueOf("text/json;charset=x-JISAutoDetect");
-        JsonBindingEntity entity = new JsonBindingEntity("héllo");
+        JsonBindingEntity entity = new JsonBindingEntity("héllo", null);
         MultivaluedHashMap<String, Object> headers = new MultivaluedHashMap<>();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
