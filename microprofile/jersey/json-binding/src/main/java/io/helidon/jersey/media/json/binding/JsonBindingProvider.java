@@ -48,6 +48,7 @@ import io.helidon.common.LruCache;
 import io.helidon.json.JsonException;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.json.binding.JsonBindingFactory;
+import io.helidon.json.binding.JsonComponent;
 import io.helidon.json.binding.JsonSerializer;
 
 import jakarta.annotation.Priority;
@@ -78,7 +79,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     private final RuntimeType runtimeType;
     private final JsonBinding deserializerBinding = JsonBinding.create();
     private final JsonBinding serializerBinding = JsonBinding.create();
-    private final LruCache<Type, Boolean> supportedTypes = LruCache.create(1_000);
+    private final LruCache<Type, Boolean> supportedReadTypes = LruCache.create(1_000);
     private final LruCache<Type, Boolean> supportedWriteTypes = LruCache.create(1_000);
 
     private JsonBindingProvider(RuntimeType runtimeType) {
@@ -91,7 +92,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return supports(genericType) && supportsMediaType(mediaType);
+        return supportsRead(genericType) && supportsMediaType(mediaType);
     }
 
     @Override
@@ -227,13 +228,16 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
     }
 
-    private boolean supports(Type type) {
-        return supportedTypes.computeValue(type, () -> Optional.of(supportsType(type))).orElseThrow();
+    private boolean supportsRead(Type type) {
+        return supportedReadTypes.computeValue(
+                type,
+                () -> Optional.of(supportsType(type, deserializerBinding.prototype().deserializers())))
+                .orElseThrow();
     }
 
     private boolean supportsWrite(Type type) {
         return supportedWriteTypes.computeValue(type, () -> {
-            if (supports(type)) {
+            if (supportsType(type, serializerBinding.prototype().serializers())) {
                 return Optional.of(true);
             }
             if (!(type instanceof ParameterizedType parameterizedType)) {
@@ -246,7 +250,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 return Optional.of(false);
             }
             Type[] typeArguments = parameterizedType.getActualTypeArguments();
-            if (!Arrays.stream(typeArguments).allMatch(this::supportsWrite)) {
+            if (!Arrays.stream(typeArguments).allMatch(this::supportsBoth)) {
                 return Optional.of(false);
             }
             boolean supported = !Map.class.isAssignableFrom(rawType)
@@ -257,7 +261,12 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }).orElseThrow();
     }
 
-    private boolean supportsType(Type type) {
+    private boolean supportsBoth(Type type) {
+        return supportsType(type, serializerBinding.prototype().serializers())
+                && supportsType(type, deserializerBinding.prototype().deserializers());
+    }
+
+    private boolean supportsType(Type type, List<? extends JsonComponent<?>> components) {
         if (type instanceof TypeVariable<?> || type instanceof WildcardType || type instanceof GenericArrayType) {
             return false;
         }
@@ -271,10 +280,8 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 || Set.class.isAssignableFrom(rawType))) {
             return false;
         }
-        boolean registeredConverter = serializerBinding.prototype().serializers().stream()
-                .anyMatch(serializer -> serializer.type().equals(genericType))
-                && deserializerBinding.prototype().deserializers().stream()
-                        .anyMatch(deserializer -> deserializer.type().equals(genericType));
+        boolean registeredConverter = components.stream()
+                .anyMatch(component -> component.type().equals(genericType));
         if (registeredConverter) {
             return true;
         }
@@ -290,7 +297,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
         if (type instanceof ParameterizedType parameterizedType) {
             Type[] typeArguments = parameterizedType.getActualTypeArguments();
-            if (!Arrays.stream(typeArguments).allMatch(this::supports)) {
+            if (!Arrays.stream(typeArguments).allMatch(this::supportsBoth)) {
                 return false;
             }
             return !Map.class.isAssignableFrom(rawType)
@@ -298,6 +305,6 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                             .filter(serializer -> serializer.type().equals(GenericType.create(typeArguments[0])))
                             .anyMatch(JsonSerializer::isMapKeySerializer);
         }
-        return !rawType.isArray() || supports(rawType.getComponentType());
+        return !rawType.isArray() || supportsBoth(rawType.getComponentType());
     }
 }

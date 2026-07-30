@@ -148,6 +148,65 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void supportsSerializerOnlyType() throws Exception {
+        assertThat(provider.isWriteable(SerializerOnlyEntity.class,
+                                       SerializerOnlyEntity.class,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(true));
+        assertThat(provider.isReadable(SerializerOnlyEntity.class,
+                                      SerializerOnlyEntity.class,
+                                      new Annotation[0],
+                                      MediaType.APPLICATION_JSON_TYPE), is(false));
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.writeTo(new SerializerOnlyEntity("hello"),
+                         SerializerOnlyEntity.class,
+                         SerializerOnlyEntity.class,
+                         new Annotation[0],
+                         MediaType.APPLICATION_JSON_TYPE,
+                         new MultivaluedHashMap<>(),
+                         output);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), is("\"hello\""));
+
+        Type listType = new GenericType<List<SerializerOnlyEntity>>() { }.type();
+        assertThat(provider.isWriteable(List.class,
+                                        listType,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
+    void supportsDeserializerOnlyType() throws Exception {
+        assertThat(provider.isReadable(DeserializerOnlyEntity.class,
+                                      DeserializerOnlyEntity.class,
+                                      new Annotation[0],
+                                      MediaType.APPLICATION_JSON_TYPE), is(true));
+        assertThat(provider.isWriteable(DeserializerOnlyEntity.class,
+                                       DeserializerOnlyEntity.class,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(false));
+
+        @SuppressWarnings("unchecked")
+        Class<Object> entityType = (Class<Object>) (Class<?>) DeserializerOnlyEntity.class;
+        DeserializerOnlyEntity entity = (DeserializerOnlyEntity) provider.readFrom(
+                entityType,
+                DeserializerOnlyEntity.class,
+                new Annotation[0],
+                MediaType.APPLICATION_JSON_TYPE,
+                new MultivaluedHashMap<>(),
+                new ByteArrayInputStream("\"hello\"".getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(entity, is(new DeserializerOnlyEntity("hello")));
+
+        Type listType = new GenericType<List<DeserializerOnlyEntity>>() { }.type();
+        assertThat(provider.isReadable(List.class,
+                                       listType,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
     void autoDiscoverableIsRegistered() {
         boolean discovered = ServiceLoader.load(ForcedAutoDiscoverable.class).stream()
                 .map(ServiceLoader.Provider::get)
