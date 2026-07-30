@@ -17,6 +17,9 @@
 package io.helidon.jersey.tests.media.json.binding;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.UUID;
@@ -25,6 +28,7 @@ import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -33,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -72,6 +77,49 @@ class JsonBindingModulePathTest {
         assertEquals(ProcessingException.class, exception.getClass());
         assertEquals("Unsupported JSON response charset: no-such-charset", exception.getMessage());
         assertInstanceOf(UnsupportedCharsetException.class, exception.getCause());
+    }
+
+    @Test
+    void mapsNonUtf8ResponseStreamFailureToProcessingException() {
+        byte[] partialJson = "\"00000000-0000-0000-".getBytes(StandardCharsets.UTF_8);
+        IOException expected = new IOException("Response stream failed");
+        InputStream inputStream = new InputStream() {
+            private int index;
+
+            @Override
+            public int read() throws IOException {
+                if (index == partialJson.length) {
+                    throw expected;
+                }
+                return partialJson[index++];
+            }
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) throws IOException {
+                throw new UncheckedIOException(expected);
+            }
+        };
+
+        ProcessingException exception = assertThrows(
+                ProcessingException.class, () -> {
+                    MediaType mediaType = MediaType.valueOf("text/json;charset=ISO-8859-1");
+                    try (Client client = ClientBuilder.newClient();
+                            Response response = client.target("http://localhost")
+                                    .register((ClientRequestFilter) request -> request.abortWith(
+                                            Response.ok("{}")
+                                                    .type(mediaType)
+                                                    .build()))
+                                    .register((ClientResponseFilter) (request, responseContext) ->
+                                            responseContext.setEntityStream(inputStream))
+                                    .request()
+                                    .get()) {
+                        assertEquals(200, response.getStatus());
+                        response.readEntity(UUID.class);
+                    }
+                });
+
+        assertEquals(ProcessingException.class, exception.getClass());
+        assertSame(expected, exception.getCause());
     }
 
     private static UUID readUuid(String json, MediaType mediaType) {

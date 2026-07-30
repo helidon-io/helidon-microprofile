@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
@@ -406,30 +407,49 @@ class JsonBindingProviderTest {
     @Test
     void propagatesRequestStreamFailures() {
         byte[] partialJson = "{\"message\":\"\\u".getBytes(StandardCharsets.UTF_8);
-        IOException expected = new IOException("Request stream failed");
-        InputStream inputStream = new InputStream() {
-            private int index;
-
-            @Override
-            public int read() throws IOException {
-                if (index == partialJson.length) {
-                    throw expected;
-                }
-                return partialJson[index++];
-            }
-        };
         @SuppressWarnings("unchecked")
         Class<Object> entityType = (Class<Object>) (Class<?>) JsonBindingEntity.class;
 
-        IOException actual = assertThrows(
-                IOException.class,
-                () -> provider.readFrom(entityType,
-                                        JsonBindingEntity.class,
-                                        new Annotation[0],
-                                        MediaType.APPLICATION_JSON_TYPE,
-                                        new MultivaluedHashMap<>(),
-                                        inputStream));
-        assertThat(actual, sameInstance(expected));
+        for (MediaType mediaType : List.of(MediaType.APPLICATION_JSON_TYPE,
+                                           MediaType.valueOf("text/json;charset=ISO-8859-1"))) {
+            IOException expected = new IOException("Request stream failed");
+            boolean wrapped = !MediaType.APPLICATION_JSON_TYPE.equals(mediaType);
+            InputStream inputStream = new InputStream() {
+                private int index;
+
+                @Override
+                public int read() throws IOException {
+                    if (index == partialJson.length) {
+                        throw expected;
+                    }
+                    return partialJson[index++];
+                }
+
+                @Override
+                public int read(byte[] bytes, int offset, int length) throws IOException {
+                    if (wrapped) {
+                        throw new UncheckedIOException(expected);
+                    }
+                    if (index == partialJson.length) {
+                        throw expected;
+                    }
+                    int count = Math.min(length, partialJson.length - index);
+                    System.arraycopy(partialJson, index, bytes, offset, count);
+                    index += count;
+                    return count;
+                }
+            };
+
+            IOException actual = assertThrows(
+                    IOException.class,
+                    () -> provider.readFrom(entityType,
+                                            JsonBindingEntity.class,
+                                            new Annotation[0],
+                                            mediaType,
+                                            new MultivaluedHashMap<>(),
+                                            inputStream));
+            assertThat(actual, sameInstance(expected));
+        }
     }
 
     @Test

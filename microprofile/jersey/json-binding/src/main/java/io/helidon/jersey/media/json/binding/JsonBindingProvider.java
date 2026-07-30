@@ -142,7 +142,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 throw new ProcessingException("Invalid JSON response encoding for charset " + charset.name(),
                                               codingException);
             }
-            throw e;
+            throw e.getCause();
         }
     }
 
