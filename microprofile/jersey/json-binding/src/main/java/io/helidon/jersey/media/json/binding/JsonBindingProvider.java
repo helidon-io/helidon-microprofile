@@ -119,6 +119,8 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 throw ioException;
             }
             throw new BadRequestException("Invalid JSON request body");
+        } catch (IllegalArgumentException _) {
+            throw new BadRequestException("Invalid JSON request body");
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof CharacterCodingException codingException) {
                 throw new BadRequestException("Invalid JSON encoding for charset " + charset.name(), codingException);

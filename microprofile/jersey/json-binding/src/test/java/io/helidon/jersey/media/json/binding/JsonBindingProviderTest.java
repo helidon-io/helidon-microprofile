@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -339,6 +340,24 @@ class JsonBindingProviderTest {
             assertThat(exception.getMessage(), is("Invalid JSON request body"));
             assertThat(exception.getCause(), nullValue());
         }
+    }
+
+    @Test
+    void rejectsInvalidUuidWithoutExposingRequestContent() {
+        @SuppressWarnings("unchecked")
+        Class<Object> uuidType = (Class<Object>) (Class<?>) UUID.class;
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> provider.readFrom(uuidType,
+                                        UUID.class,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE,
+                                        new MultivaluedHashMap<>(),
+                                        new ByteArrayInputStream("\"not-a-uuid\"".getBytes(StandardCharsets.UTF_8))));
+        assertThat(exception.getResponse().getStatus(), is(400));
+        assertThat(exception.getMessage(), is("Invalid JSON request body"));
+        assertThat(exception.getCause(), nullValue());
     }
 
     @Test
