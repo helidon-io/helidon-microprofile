@@ -16,5 +16,26 @@
 
 /**
  * Jersey integration with Helidon JSON Binding.
+ * <p>
+ * Add the following dependency to automatically register the Helidon JSON Binding entity provider with Jersey server
+ * and client runtimes:
+ * <pre>
+ * &lt;dependency&gt;
+ *     &lt;groupId&gt;io.helidon.jersey&lt;/groupId&gt;
+ *     &lt;artifactId&gt;helidon-jersey-media-json-binding&lt;/artifactId&gt;
+ * &lt;/dependency&gt;
+ * </pre>
+ *
+ * <h2>Provider selection</h2>
+ * The provider handles {@code application/json}, {@code text/json}, and structured-syntax-suffix media types such as
+ * {@code application/problem+json}. It claims an entity only when Helidon JSON Binding has the component or factory
+ * required for the read or write direction. Unsupported erased or generic shapes remain available to other Jersey
+ * providers, including JSON-B.
+ *
+ * <h2>Encoding and failures</h2>
+ * Application JSON media types use UTF-8. Declared character sets are honored for other JSON media types when
+ * supported; unsupported output character sets fall back to UTF-8. Invalid server request bodies are reported as
+ * {@link jakarta.ws.rs.BadRequestException}, while invalid client response bodies are reported as
+ * {@link jakarta.ws.rs.ProcessingException}. Transport failures remain {@link java.io.IOException} instances.
  */
 package io.helidon.jersey.media.json.binding;

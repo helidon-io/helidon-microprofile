@@ -16,6 +16,12 @@
 
 /**
  * Jersey integration with Helidon JSON Binding.
+ * <p>
+ * The Maven artifact {@code io.helidon.jersey:helidon-jersey-media-json-binding} automatically registers the
+ * Helidon JSON Binding entity provider with Jersey server and client runtimes. The provider handles JSON media only
+ * for entity types supported by Helidon JSON Binding and leaves unsupported types to other Jersey providers.
+ *
+ * @see io.helidon.jersey.media.json.binding.JsonBindingProvider
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.jersey.media.json.binding {
