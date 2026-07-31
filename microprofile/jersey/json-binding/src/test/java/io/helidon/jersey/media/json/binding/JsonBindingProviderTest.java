@@ -576,11 +576,10 @@ class JsonBindingProviderTest {
 
     @Test
     void propagatesResponseStreamFailures() {
-        JsonBindingEntity entity = new JsonBindingEntity("hello", null);
-
         for (MediaType mediaType : List.of(MediaType.APPLICATION_JSON_TYPE,
                                            MediaType.valueOf("text/json;charset=ISO-8859-1"))) {
             for (boolean failOnWrite : List.of(true, false)) {
+                JsonBindingEntity entity = new JsonBindingEntity(failOnWrite ? "x".repeat(8_192) : "hello", null);
                 IOException expected = new IOException(failOnWrite ? "Response write failed" : "Response flush failed");
                 OutputStream outputStream = new OutputStream() {
                     @Override
