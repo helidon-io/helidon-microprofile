@@ -16,10 +16,21 @@
 
 @SuppressWarnings("requires-automatic")
 open module io.helidon.jersey.tests.media.json.binding {
+    requires io.helidon.common;
+    requires io.helidon.common.buffers;
+    requires io.helidon.common.types;
+    requires io.helidon.config;
     requires io.helidon.jersey.media.json.binding;
+    requires io.helidon.jersey.webserver;
+    requires io.helidon.json;
+    requires io.helidon.json.binding;
+    requires io.helidon.service.registry;
+    requires io.helidon.webserver;
     requires jakarta.inject;
+    requires jakarta.validation;
     requires jakarta.ws.rs;
     requires jersey.client;
     requires jersey.hk2;
+    requires jersey.server;
     requires org.junit.jupiter.api;
 }

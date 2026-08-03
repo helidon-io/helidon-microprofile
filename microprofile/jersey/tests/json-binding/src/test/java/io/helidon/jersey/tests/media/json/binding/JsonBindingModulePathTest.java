@@ -24,14 +24,25 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.UUID;
 
+import io.helidon.config.Config;
+import io.helidon.jersey.webserver.JaxRsService;
+import io.helidon.json.binding.Json;
+import io.helidon.webserver.WebServer;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseFilter;
+import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class JsonBindingModulePathTest {
+public class JsonBindingModulePathTest {
 
     @Test
     void initializesProviderFromNamedModule() {
@@ -53,6 +64,28 @@ class JsonBindingModulePathTest {
                         .request()
                         .get()) {
             assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
+    void readsAndWritesGeneratedEntityThroughServer() {
+        ResourceConfig resourceConfig = new ResourceConfig(JsonBindingResource.class);
+        WebServer webServer = WebServer.builder()
+                .host("127.0.0.1")
+                .routing(routing -> routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig)))
+                .build()
+                .start();
+        try {
+            try (Client client = ClientBuilder.newClient();
+                    Response response = client.target("http://127.0.0.1:" + webServer.port())
+                            .path("jersey/entity")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.entity("{\"json_message\":\"hello\"}", MediaType.APPLICATION_JSON_TYPE))) {
+                assertEquals(200, response.getStatus());
+                assertEquals("{\"json_message\":\"hello\"}", response.readEntity(String.class));
+            }
+        } finally {
+            webServer.stop();
         }
     }
 
@@ -134,5 +167,20 @@ class JsonBindingModulePathTest {
             assertEquals(200, response.getStatus());
             return response.readEntity(UUID.class);
         }
+    }
+
+    @Path("/entity")
+    public static class JsonBindingResource {
+        @POST
+        @Consumes(MediaType.APPLICATION_JSON)
+        @Produces(MediaType.APPLICATION_JSON)
+        public JsonBindingEntity echo(JsonBindingEntity entity) {
+            return new JsonBindingEntity(entity.message(), "do-not-serialize");
+        }
+    }
+
+    @Json.Entity
+    public record JsonBindingEntity(@Json.Property("json_message") String message,
+                                    @Json.Ignore String secret) {
     }
 }
