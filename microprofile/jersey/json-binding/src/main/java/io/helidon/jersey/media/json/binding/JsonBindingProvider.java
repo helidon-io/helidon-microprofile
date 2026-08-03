@@ -37,6 +37,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.DateTimeException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -243,13 +244,13 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     private boolean supportsRead(Type type) {
         return supportedReadTypes.computeValue(
                 type,
-                () -> Optional.of(supportsType(type, deserializerBinding.prototype().deserializers())))
+                () -> Optional.of(supportsType(type, deserializerBinding.prototype().deserializers(), false)))
                 .orElseThrow();
     }
 
     private boolean supportsWrite(Type type) {
         return supportedWriteTypes.computeValue(type, () -> {
-            if (supportsType(type, serializerBinding.prototype().serializers())) {
+            if (supportsType(type, serializerBinding.prototype().serializers(), true)) {
                 return Optional.of(true);
             }
             if (!(type instanceof ParameterizedType parameterizedType)) {
@@ -274,11 +275,11 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     }
 
     private boolean supportsBoth(Type type) {
-        return supportsType(type, serializerBinding.prototype().serializers())
-                && supportsType(type, deserializerBinding.prototype().deserializers());
+        return supportsType(type, serializerBinding.prototype().serializers(), true)
+                && supportsType(type, deserializerBinding.prototype().deserializers(), false);
     }
 
-    private boolean supportsType(Type type, List<? extends JsonComponent<?>> components) {
+    private boolean supportsType(Type type, List<? extends JsonComponent<?>> components, boolean searchInterfaces) {
         if (type instanceof TypeVariable<?> || type instanceof WildcardType || type instanceof GenericArrayType) {
             return false;
         }
@@ -304,6 +305,20 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 .anyMatch(supportedType -> supportedType == rawType
                         || rawType.isArray() && supportedType == Array.class
                         || rawType.isEnum() && supportedType == Enum.class);
+        if (!genericFactory && searchInterfaces) {
+            ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>(Arrays.asList(rawType.getInterfaces()));
+            while (!interfaceTypes.isEmpty()) {
+                Class<?> interfaceType = interfaceTypes.removeFirst();
+                GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
+                boolean registeredInterfaceSerializer = components.stream()
+                        .filter(component -> component.type().isClass())
+                        .anyMatch(component -> component.type().equals(interfaceGenericType));
+                if (registeredInterfaceSerializer) {
+                    return true;
+                }
+                interfaceTypes.addAll(Arrays.asList(interfaceType.getInterfaces()));
+            }
+        }
         if (!genericFactory) {
             return false;
         }

@@ -182,25 +182,44 @@ class JsonBindingProviderTest {
 
     @Test
     void supportsSerializerOnlyType() throws Exception {
-        assertThat(provider.isWriteable(SerializerOnlyEntity.class,
-                                       SerializerOnlyEntity.class,
-                                       new Annotation[0],
-                                       MediaType.APPLICATION_JSON_TYPE), is(true));
-        assertThat(provider.isReadable(SerializerOnlyEntity.class,
-                                      SerializerOnlyEntity.class,
-                                      new Annotation[0],
-                                      MediaType.APPLICATION_JSON_TYPE), is(false));
+        for (SerializerOnlyView entity : List.of(new SerializerOnlyEntity("hello", "do-not-serialize"),
+                                                  new NestedSerializerOnlyEntity("hello", "do-not-serialize"))) {
+            Class<?> entityType = entity.getClass();
+            assertThat("entity type " + entityType.getName(),
+                       provider.isWriteable(entityType,
+                                            entityType,
+                                            new Annotation[0],
+                                            MediaType.APPLICATION_JSON_TYPE),
+                       is(true));
+            assertThat("entity type " + entityType.getName(),
+                       provider.isReadable(entityType,
+                                           entityType,
+                                           new Annotation[0],
+                                           MediaType.APPLICATION_JSON_TYPE),
+                       is(false));
 
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        provider.writeTo(new SerializerOnlyEntity("hello"),
-                         SerializerOnlyEntity.class,
-                         SerializerOnlyEntity.class,
-                         new Annotation[0],
-                         MediaType.APPLICATION_JSON_TYPE,
-                         new MultivaluedHashMap<>(),
-                         output);
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            provider.writeTo(entity,
+                             entityType,
+                             entityType,
+                             new Annotation[0],
+                             MediaType.APPLICATION_JSON_TYPE,
+                             new MultivaluedHashMap<>(),
+                             output);
 
-        assertThat(output.toString(StandardCharsets.UTF_8), is("\"hello\""));
+            assertThat("entity type " + entityType.getName(),
+                       output.toString(StandardCharsets.UTF_8),
+                       is("\"hello\""));
+        }
+
+        assertThat(provider.isWriteable(InheritedSerializerOnlyEntity.class,
+                                        InheritedSerializerOnlyEntity.class,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
+        assertThat(provider.isWriteable(ParameterizedSerializerOnlyEntity.class,
+                                        ParameterizedSerializerOnlyEntity.class,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
 
         Type listType = new GenericType<List<SerializerOnlyEntity>>() { }.type();
         assertThat(provider.isWriteable(List.class,
