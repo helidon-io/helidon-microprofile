@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -124,6 +125,35 @@ class JsonBindingProviderTest {
         String json = output.toString(StandardCharsets.UTF_8);
         assertThat(json, containsString("\"message\":\"hello\""));
         assertThat(json, not(containsString("do-not-serialize")));
+    }
+
+    @Test
+    void writesRuntimeTypeWhenDeclaredAsSupertype() throws Exception {
+        SupertypeJsonBindingEntity entity = new SupertypeJsonBindingEntity("hello", "do-not-serialize");
+
+        for (Class<?> declaredType : List.of(JsonBindingMarker.class,
+                                              AbstractJsonBindingEntity.class,
+                                              Serializable.class)) {
+            assertThat("declared type " + declaredType.getName(),
+                       provider.isWriteable(SupertypeJsonBindingEntity.class,
+                                            declaredType,
+                                            new Annotation[0],
+                                            MediaType.APPLICATION_JSON_TYPE),
+                       is(true));
+
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            provider.writeTo(entity,
+                             SupertypeJsonBindingEntity.class,
+                             declaredType,
+                             new Annotation[0],
+                             MediaType.APPLICATION_JSON_TYPE,
+                             new MultivaluedHashMap<>(),
+                             output);
+
+            String json = output.toString(StandardCharsets.UTF_8);
+            assertThat("declared type " + declaredType.getName(), json, containsString("\"message\":\"hello\""));
+            assertThat("declared type " + declaredType.getName(), json, not(containsString("do-not-serialize")));
+        }
     }
 
     @Test
@@ -755,6 +785,12 @@ class JsonBindingProviderTest {
             assertThat("concurrent write did not complete", writer.join(Duration.ofSeconds(2)), is(true));
             assertThat("concurrent binding failed", failure.get(), is(nullValue()));
         }
+    }
+
+    interface JsonBindingMarker {
+    }
+
+    abstract static class AbstractJsonBindingEntity {
     }
 
     private record JsonbOnlyEntity(String message) {

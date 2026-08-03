@@ -197,8 +197,17 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
     }
 
-    private static Type effectiveWriteType(Class<?> type, Type genericType) {
-        return genericType == Object.class ? type : genericType;
+    private Type effectiveWriteType(Class<?> type, Type genericType) {
+        if (genericType == Object.class) {
+            return type;
+        }
+        if (genericType instanceof Class<?> declaredType
+                && declaredType != type
+                && declaredType.isAssignableFrom(type)
+                && !supportsWrite(genericType)) {
+            return type;
+        }
+        return genericType;
     }
 
     private static boolean supportsMediaType(MediaType mediaType) {
