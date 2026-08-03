@@ -183,7 +183,8 @@ class JsonBindingProviderTest {
     @Test
     void supportsSerializerOnlyType() throws Exception {
         for (SerializerOnlyView entity : List.of(new SerializerOnlyEntity("hello", "do-not-serialize"),
-                                                  new NestedSerializerOnlyEntity("hello", "do-not-serialize"))) {
+                                                  new NestedSerializerOnlyEntity("hello", "do-not-serialize"),
+                                                  new DiamondSerializerOnlyEntity("hello", "do-not-serialize"))) {
             Class<?> entityType = entity.getClass();
             assertThat("entity type " + entityType.getName(),
                        provider.isWriteable(entityType,

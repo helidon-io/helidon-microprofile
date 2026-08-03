@@ -30,10 +30,22 @@ interface SerializerOnlyView {
 interface NestedSerializerOnlyView extends SerializerOnlyView {
 }
 
+interface LeftSerializerOnlyView extends SerializerOnlyView {
+}
+
+interface RightSerializerOnlyView extends SerializerOnlyView {
+}
+
+interface DiamondSerializerOnlyView extends LeftSerializerOnlyView, RightSerializerOnlyView {
+}
+
 record SerializerOnlyEntity(String value, String secret) implements SerializerOnlyView {
 }
 
 record NestedSerializerOnlyEntity(String value, String secret) implements NestedSerializerOnlyView {
+}
+
+record DiamondSerializerOnlyEntity(String value, String secret) implements DiamondSerializerOnlyView {
 }
 
 class SerializerOnlyBase implements SerializerOnlyView {

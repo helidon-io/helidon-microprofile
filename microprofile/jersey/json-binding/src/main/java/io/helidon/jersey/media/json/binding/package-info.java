@@ -29,8 +29,9 @@
  * <h2>Provider selection</h2>
  * The provider handles {@code application/json}, {@code text/json}, and structured-syntax-suffix media types such as
  * {@code application/problem+json}. It claims an entity only when Helidon JSON Binding has the component or factory
- * required for the read or write direction. Unsupported erased or generic shapes remain available to other Jersey
- * providers, including JSON-B.
+ * required for the read or write direction. Reads use the declared type. For writes, an unsupported declared class
+ * supertype falls back to a supported runtime type. Other unsupported erased or generic shapes remain available to
+ * other Jersey providers, including JSON-B.
  *
  * <h2>Encoding and failures</h2>
  * Application JSON media types use UTF-8. Declared character sets are honored for other JSON media types when

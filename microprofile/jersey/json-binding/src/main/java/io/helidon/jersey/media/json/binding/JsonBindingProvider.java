@@ -39,6 +39,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.time.DateTimeException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -307,8 +308,12 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                         || rawType.isEnum() && supportedType == Enum.class);
         if (!genericFactory && searchInterfaces) {
             ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>(Arrays.asList(rawType.getInterfaces()));
+            Set<Class<?>> visitedInterfaces = new HashSet<>();
             while (!interfaceTypes.isEmpty()) {
                 Class<?> interfaceType = interfaceTypes.removeFirst();
+                if (!visitedInterfaces.add(interfaceType)) {
+                    continue;
+                }
                 GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
                 boolean registeredInterfaceSerializer = components.stream()
                         .filter(component -> component.type().isClass())
