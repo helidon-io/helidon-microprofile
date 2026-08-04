@@ -357,6 +357,27 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void supportsInterfaceMapKeySerializer() throws Exception {
+        Type type = new GenericType<Map<SafeKey, String>>() { }.type();
+        assertThat(provider.isWriteable(Map.class,
+                                        type,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(true));
+
+        Map<SafeKey, String> entity = Map.of(new SafeKey("public", "do-not-serialize"), "value");
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.writeTo(entity,
+                         Map.class,
+                         type,
+                         new Annotation[0],
+                         MediaType.APPLICATION_JSON_TYPE,
+                         new MultivaluedHashMap<>(),
+                         output);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), is("{\"public\":\"value\"}"));
+    }
+
+    @Test
     void supportsJsonMediaTypesCaseInsensitively() {
         for (MediaType mediaType : List.of(MediaType.valueOf("Application/JSON"),
                                            MediaType.valueOf("application/vnd.example+JSON"))) {

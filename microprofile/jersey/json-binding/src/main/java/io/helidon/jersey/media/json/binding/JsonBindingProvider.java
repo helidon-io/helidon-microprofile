@@ -276,9 +276,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 return Optional.of(false);
             }
             boolean supported = !Map.class.isAssignableFrom(rawType)
-                    || serializerBinding.prototype().serializers().stream()
-                            .filter(serializer -> serializer.type().equals(GenericType.create(typeArguments[0])))
-                            .anyMatch(JsonSerializer::isMapKeySerializer);
+                    || supportsMapKey(typeArguments[0]);
             return Optional.of(supported);
         }).orElseThrow();
     }
@@ -286,6 +284,16 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     private boolean supportsBoth(Type type) {
         return supportsType(type, serializerBinding.prototype().serializers(), true)
                 && supportsType(type, deserializerBinding.prototype().deserializers(), false);
+    }
+
+    private boolean supportsMapKey(Type type) {
+        GenericType<?> genericType = GenericType.create(type);
+        List<JsonSerializer<?>> mapKeySerializers = serializerBinding.prototype().serializers().stream()
+                .filter(JsonSerializer::isMapKeySerializer)
+                .toList();
+        return mapKeySerializers.stream()
+                       .anyMatch(serializer -> serializer.type().equals(genericType))
+                || supportsInterfaceComponent(genericType.rawType(), mapKeySerializers);
     }
 
     private boolean supportsType(Type type, List<? extends JsonComponent<?>> components, boolean searchInterfaces) {
@@ -314,23 +322,8 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 .anyMatch(supportedType -> supportedType == rawType
                         || rawType.isArray() && supportedType == Array.class
                         || rawType.isEnum() && supportedType == Enum.class);
-        if (!genericFactory && searchInterfaces) {
-            ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>(Arrays.asList(rawType.getInterfaces()));
-            Set<Class<?>> visitedInterfaces = new HashSet<>();
-            while (!interfaceTypes.isEmpty()) {
-                Class<?> interfaceType = interfaceTypes.removeFirst();
-                if (!visitedInterfaces.add(interfaceType)) {
-                    continue;
-                }
-                GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
-                boolean registeredInterfaceSerializer = components.stream()
-                        .filter(component -> component.type().isClass())
-                        .anyMatch(component -> component.type().equals(interfaceGenericType));
-                if (registeredInterfaceSerializer) {
-                    return true;
-                }
-                interfaceTypes.addAll(Arrays.asList(interfaceType.getInterfaces()));
-            }
+        if (!genericFactory && searchInterfaces && supportsInterfaceComponent(rawType, components)) {
+            return true;
         }
         if (!genericFactory) {
             return false;
@@ -341,10 +334,29 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 return false;
             }
             return !Map.class.isAssignableFrom(rawType)
-                    || serializerBinding.prototype().serializers().stream()
-                            .filter(serializer -> serializer.type().equals(GenericType.create(typeArguments[0])))
-                            .anyMatch(JsonSerializer::isMapKeySerializer);
+                    || supportsMapKey(typeArguments[0]);
         }
         return !rawType.isArray() || supportsBoth(rawType.getComponentType());
+    }
+
+    private static boolean supportsInterfaceComponent(Class<?> rawType,
+                                                       List<? extends JsonComponent<?>> components) {
+        ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>(Arrays.asList(rawType.getInterfaces()));
+        Set<Class<?>> visitedInterfaces = new HashSet<>();
+        while (!interfaceTypes.isEmpty()) {
+            Class<?> interfaceType = interfaceTypes.removeFirst();
+            if (!visitedInterfaces.add(interfaceType)) {
+                continue;
+            }
+            GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
+            boolean registeredInterfaceSerializer = components.stream()
+                    .filter(component -> component.type().isClass())
+                    .anyMatch(component -> component.type().equals(interfaceGenericType));
+            if (registeredInterfaceSerializer) {
+                return true;
+            }
+            interfaceTypes.addAll(Arrays.asList(interfaceType.getInterfaces()));
+        }
+        return false;
     }
 }

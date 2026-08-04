@@ -74,6 +74,13 @@ interface ParameterizedSerializerOnlyView<T> {
 record ParameterizedSerializerOnlyEntity(String value) implements ParameterizedSerializerOnlyView<String> {
 }
 
+interface SafeKeyView {
+    String safe();
+}
+
+record SafeKey(String safe, String secret) implements SafeKeyView {
+}
+
 @Service.Singleton
 final class SerializerOnlyEntitySerializer implements JsonSerializer<SerializerOnlyView> {
     private static final GenericType<SerializerOnlyView> TYPE = GenericType.create(SerializerOnlyView.class);
@@ -118,6 +125,46 @@ final class ParameterizedSerializerOnlyEntitySerializer
 
     @Override
     public GenericType<ParameterizedSerializerOnlyView<String>> type() {
+        return TYPE;
+    }
+}
+
+@Service.Singleton
+final class SafeKeySerializer implements JsonSerializer<SafeKeyView> {
+    private static final GenericType<SafeKeyView> TYPE = GenericType.create(SafeKeyView.class);
+
+    @Override
+    public void serialize(JsonGenerator generator, SafeKeyView instance, boolean writeNulls) {
+        generator.write(instance.safe());
+    }
+
+    @Override
+    public boolean isMapKeySerializer() {
+        return true;
+    }
+
+    @Override
+    public String serializeAsMapKey(SafeKeyView instance) {
+        return instance.safe();
+    }
+
+    @Override
+    public GenericType<SafeKeyView> type() {
+        return TYPE;
+    }
+}
+
+@Service.Singleton
+final class SafeKeyDeserializer implements JsonDeserializer<SafeKey> {
+    private static final GenericType<SafeKey> TYPE = GenericType.create(SafeKey.class);
+
+    @Override
+    public SafeKey deserialize(JsonParser parser) {
+        return new SafeKey(parser.readString(), null);
+    }
+
+    @Override
+    public GenericType<SafeKey> type() {
         return TYPE;
     }
 }
