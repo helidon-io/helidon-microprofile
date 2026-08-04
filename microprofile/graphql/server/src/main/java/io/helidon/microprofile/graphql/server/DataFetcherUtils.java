@@ -157,11 +157,11 @@ class DataFetcherUtils {
                                                                          argument.originalArrayType(),
                                                                          environment.getArgument(argument.argumentName()),
                                                                          argument.format()));
-                        } catch (DateTimeParseException e) {
+                        } catch (DateTimeArgumentException e) {
                             // Preserve the client input error while keeping other runtime failures masked.
                             throw new GraphQLException(new ExceptionWhileDataFetching(
                                     environment.getExecutionStepInfo().getPath(),
-                                    e,
+                                    e.getCause(),
                                     environment.getField().getSourceLocation()).getMessage());
                         }
                     }
@@ -445,7 +445,13 @@ class DataFetcherUtils {
                             // must be java.util.Date
                             return new SimpleDateFormat(format[0]).parse(rawValue.toString());
                         }
-                        return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
+                        TemporalAccessor parsedValue;
+                        try {
+                            parsedValue = dateFormatter.parse(rawValue.toString());
+                        } catch (DateTimeParseException e) {
+                            throw new DateTimeArgumentException(e);
+                        }
+                        return getOriginalDateTimeValue(originalType, parsedValue);
                     } else {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                            format[1], format[0]);
@@ -563,6 +569,12 @@ class DataFetcherUtils {
             return LocalTime.from(value);
         } else {
             return null;
+        }
+    }
+
+    private static final class DateTimeArgumentException extends RuntimeException {
+        private DateTimeArgumentException(DateTimeParseException cause) {
+            super(cause);
         }
     }
 
