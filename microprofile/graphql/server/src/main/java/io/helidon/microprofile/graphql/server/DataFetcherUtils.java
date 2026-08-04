@@ -572,12 +572,6 @@ class DataFetcherUtils {
         }
     }
 
-    private static final class DateTimeArgumentException extends RuntimeException {
-        private DateTimeArgumentException(DateTimeParseException cause) {
-            super(cause);
-        }
-    }
-
     /**
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
@@ -670,6 +664,12 @@ class DataFetcherUtils {
             return dateTimeFormatter != null
                     ? formatDate(super.get(environment), dateTimeFormatter)
                     : formatDate(super.get(environment), simpleDateFormat);
+        }
+    }
+
+    private static final class DateTimeArgumentException extends RuntimeException {
+        private DateTimeArgumentException(DateTimeParseException cause) {
+            super(cause);
         }
     }
 }
