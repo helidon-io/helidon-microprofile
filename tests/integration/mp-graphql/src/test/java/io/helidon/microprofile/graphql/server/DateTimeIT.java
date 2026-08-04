@@ -33,6 +33,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.graphql.server.GraphQlConstants.ERRORS;
+import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATETIME_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.DATE_SCALAR;
 import static io.helidon.microprofile.graphql.server.SchemaGeneratorHelper.FORMATTED_DATE_SCALAR;
@@ -259,6 +260,8 @@ class DateTimeIT extends AbstractGraphQlCdiIT {
         List<Map<String, Object>> listErrors = (List<Map<String, Object>>) results.get(ERRORS);
         assertThat(listErrors, is(notNullValue()));
         assertThat(listErrors.size(), is(1));
+        assertThat(listErrors.get(0).get(MESSAGE),
+                   is("Exception while fetching data (/echoLocalDate) : Text 'Today' could not be parsed at index 0"));
 
         mapResults = getAndAssertResult(executionContext.execute("mutation { echoLocalTime(time: \"15:13:00\") }"));
         assertThat(mapResults.size(), is(1));

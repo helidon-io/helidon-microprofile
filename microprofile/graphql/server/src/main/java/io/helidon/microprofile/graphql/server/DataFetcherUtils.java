@@ -32,6 +32,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import java.util.function.Supplier;
 
 import io.helidon.graphql.server.ExecutionContext;
 
+import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -149,11 +151,19 @@ class DataFetcherUtils {
                             throw new GraphQlConfigurationException(MULTI_LEVEL_ARRAY_MESSAGE);
                         }
 
-                        listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
-                                                                     argument.originalType(),
-                                                                     argument.originalArrayType(),
-                                                                     environment.getArgument(argument.argumentName()),
-                                                                     argument.format()));
+                        try {
+                            listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
+                                                                         argument.originalType(),
+                                                                         argument.originalArrayType(),
+                                                                         environment.getArgument(argument.argumentName()),
+                                                                         argument.format()));
+                        } catch (DateTimeParseException e) {
+                            // Preserve the client input error while keeping other runtime failures masked.
+                            throw new GraphQLException(new ExceptionWhileDataFetching(
+                                    environment.getExecutionStepInfo().getPath(),
+                                    e,
+                                    environment.getField().getSourceLocation()).getMessage());
+                        }
                     }
                 }
             }
