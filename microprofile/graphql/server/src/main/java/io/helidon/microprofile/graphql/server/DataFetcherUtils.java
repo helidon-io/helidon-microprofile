@@ -32,6 +32,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +47,7 @@ import java.util.function.Supplier;
 
 import io.helidon.graphql.server.ExecutionContext;
 
+import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -149,11 +151,19 @@ class DataFetcherUtils {
                             throw new GraphQlConfigurationException(MULTI_LEVEL_ARRAY_MESSAGE);
                         }
 
-                        listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
-                                                                     argument.originalType(),
-                                                                     argument.originalArrayType(),
-                                                                     environment.getArgument(argument.argumentName()),
-                                                                     argument.format()));
+                        try {
+                            listArgumentValues.add(generateArgumentValue(schema, argument.argumentType(),
+                                                                         argument.originalType(),
+                                                                         argument.originalArrayType(),
+                                                                         environment.getArgument(argument.argumentName()),
+                                                                         argument.format()));
+                        } catch (DateTimeArgumentException e) {
+                            // Preserve the client input error while keeping other runtime failures masked.
+                            throw new GraphQLException(new ExceptionWhileDataFetching(
+                                    environment.getExecutionStepInfo().getPath(),
+                                    e.getCause(),
+                                    environment.getField().getSourceLocation()).getMessage());
+                        }
                     }
                 }
             }
@@ -435,7 +445,13 @@ class DataFetcherUtils {
                             // must be java.util.Date
                             return new SimpleDateFormat(format[0]).parse(rawValue.toString());
                         }
-                        return getOriginalDateTimeValue(originalType, dateFormatter.parse(rawValue.toString()));
+                        TemporalAccessor parsedValue;
+                        try {
+                            parsedValue = dateFormatter.parse(rawValue.toString());
+                        } catch (DateTimeParseException e) {
+                            throw new DateTimeArgumentException(e);
+                        }
+                        return getOriginalDateTimeValue(originalType, parsedValue);
                     } else {
                         NumberFormat numberFormat = getCorrectNumberFormat(originalType.getName(),
                                                                            format[1], format[0]);
@@ -648,6 +664,12 @@ class DataFetcherUtils {
             return dateTimeFormatter != null
                     ? formatDate(super.get(environment), dateTimeFormatter)
                     : formatDate(super.get(environment), simpleDateFormat);
+        }
+    }
+
+    private static final class DateTimeArgumentException extends RuntimeException {
+        private DateTimeArgumentException(DateTimeParseException cause) {
+            super(cause);
         }
     }
 }
