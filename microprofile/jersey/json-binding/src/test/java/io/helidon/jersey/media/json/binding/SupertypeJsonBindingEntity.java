@@ -23,7 +23,9 @@ import io.helidon.json.binding.Json;
 
 @Json.Entity
 class SupertypeJsonBindingEntity extends JsonBindingProviderTest.AbstractJsonBindingEntity
-        implements JsonBindingProviderTest.JsonBindingMarker, Serializable {
+        implements JsonBindingProviderTest.JsonBindingMarker,
+        JsonBindingProviderTest.ParameterizedJsonBindingMarker<String>,
+        Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 

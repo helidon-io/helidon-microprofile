@@ -157,6 +157,30 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void writesRuntimeTypeWhenDeclaredAsParameterizedSupertype() throws Exception {
+        Type declaredType = new GenericType<ParameterizedJsonBindingMarker<String>>() { }.type();
+        SupertypeJsonBindingEntity entity = new SupertypeJsonBindingEntity("hello", "do-not-serialize");
+
+        assertThat(provider.isWriteable(SupertypeJsonBindingEntity.class,
+                                       declaredType,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(true));
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        provider.writeTo(entity,
+                         SupertypeJsonBindingEntity.class,
+                         declaredType,
+                         new Annotation[0],
+                         MediaType.APPLICATION_JSON_TYPE,
+                         new MultivaluedHashMap<>(),
+                         output);
+
+        String json = output.toString(StandardCharsets.UTF_8);
+        assertThat(json, containsString("\"message\":\"hello\""));
+        assertThat(json, not(containsString("do-not-serialize")));
+    }
+
+    @Test
     void writesConcreteCollectionType() throws Exception {
         Type type = new GenericType<LinkedHashMap<String, JsonBindingEntity>>() { }.type();
         assertThat(provider.isWriteable(LinkedHashMap.class,
@@ -808,6 +832,9 @@ class JsonBindingProviderTest {
     }
 
     interface JsonBindingMarker {
+    }
+
+    interface ParameterizedJsonBindingMarker<T> {
     }
 
     abstract static class AbstractJsonBindingEntity {

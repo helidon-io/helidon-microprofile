@@ -203,8 +203,16 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         if (genericType == Object.class) {
             return type;
         }
-        if (genericType instanceof Class<?> declaredType
-                && declaredType != type
+        Class<?> declaredType;
+        if (genericType instanceof Class<?> clazz) {
+            declaredType = clazz;
+        } else if (genericType instanceof ParameterizedType parameterizedType
+                && parameterizedType.getRawType() instanceof Class<?> clazz) {
+            declaredType = clazz;
+        } else {
+            return genericType;
+        }
+        if (declaredType != type
                 && declaredType.isAssignableFrom(type)
                 && !supportsWrite(genericType)) {
             return type;

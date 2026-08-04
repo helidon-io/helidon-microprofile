@@ -30,6 +30,7 @@ import io.helidon.json.binding.Json;
 import io.helidon.webserver.WebServer;
 
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.ProcessingException;
@@ -81,6 +82,28 @@ public class JsonBindingModulePathTest {
                             .path("jersey/entity")
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .post(Entity.entity("{\"json_message\":\"hello\"}", MediaType.APPLICATION_JSON_TYPE))) {
+                assertEquals(200, response.getStatus());
+                assertEquals("{\"json_message\":\"hello\"}", response.readEntity(String.class));
+            }
+        } finally {
+            webServer.stop();
+        }
+    }
+
+    @Test
+    void writesGeneratedEntityThroughParameterizedDeclaredType() {
+        ResourceConfig resourceConfig = new ResourceConfig(JsonBindingResource.class);
+        WebServer webServer = WebServer.builder()
+                .host("127.0.0.1")
+                .routing(routing -> routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig)))
+                .build()
+                .start();
+        try {
+            try (Client client = ClientBuilder.newClient();
+                    Response response = client.target("http://127.0.0.1:" + webServer.port())
+                            .path("jersey/entity/view")
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get()) {
                 assertEquals(200, response.getStatus());
                 assertEquals("{\"json_message\":\"hello\"}", response.readEntity(String.class));
             }
@@ -171,6 +194,13 @@ public class JsonBindingModulePathTest {
 
     @Path("/entity")
     public static class JsonBindingResource {
+        @GET
+        @Path("view")
+        @Produces(MediaType.APPLICATION_JSON)
+        public JsonBindingView<String> view() {
+            return new JsonBindingEntity("hello", "do-not-serialize");
+        }
+
         @POST
         @Consumes(MediaType.APPLICATION_JSON)
         @Produces(MediaType.APPLICATION_JSON)
@@ -179,8 +209,12 @@ public class JsonBindingModulePathTest {
         }
     }
 
+    public interface JsonBindingView<T> {
+        T message();
+    }
+
     @Json.Entity
     public record JsonBindingEntity(@Json.Property("json_message") String message,
-                                    @Json.Ignore String secret) {
+                                    @Json.Ignore String secret) implements JsonBindingView<String> {
     }
 }
