@@ -285,6 +285,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         return supportsWrite(type) && supportsRead(type);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> boolean supportsMapKey(Type type) {
         GenericType<T> genericType = GenericType.create(type);
         List<JsonSerializer<?>> serializers = serializerBinding.prototype().serializers();
@@ -297,7 +298,10 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
         JsonBindingFactory<T> bindingFactory = bindingFactory(genericType.rawType());
         if (bindingFactory != null) {
-            return bindingFactory.createSerializer(genericType).isMapKeySerializer();
+            serializer = type instanceof Class<?> clazz
+                    ? bindingFactory.createSerializer((Class<? extends T>) clazz)
+                    : bindingFactory.createSerializer(genericType);
+            return serializer.isMapKeySerializer();
         }
 
         ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>();

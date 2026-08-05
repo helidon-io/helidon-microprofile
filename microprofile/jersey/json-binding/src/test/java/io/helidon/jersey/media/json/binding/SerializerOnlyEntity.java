@@ -16,12 +16,14 @@
 
 package io.helidon.jersey.media.json.binding;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
 import io.helidon.json.binding.JsonDeserializer;
+import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonSerializer;
 import io.helidon.service.registry.Service;
 
@@ -134,6 +136,72 @@ enum FactoryKey implements SafeKeyView {
     @Override
     public String safe() {
         return name();
+    }
+}
+
+record FactoryOverloadKey(String value) {
+}
+
+@Service.Singleton
+final class FactoryOverloadKeyBindingFactory implements JsonBindingFactory<FactoryOverloadKey> {
+    @Override
+    public JsonDeserializer<FactoryOverloadKey> createDeserializer(Class<? extends FactoryOverloadKey> type) {
+        return new FactoryOverloadKeyConverter(false);
+    }
+
+    @Override
+    public JsonDeserializer<FactoryOverloadKey> createDeserializer(GenericType<? extends FactoryOverloadKey> type) {
+        return new FactoryOverloadKeyConverter(false);
+    }
+
+    @Override
+    public JsonSerializer<FactoryOverloadKey> createSerializer(Class<? extends FactoryOverloadKey> type) {
+        return new FactoryOverloadKeyConverter(false);
+    }
+
+    @Override
+    public JsonSerializer<FactoryOverloadKey> createSerializer(GenericType<? extends FactoryOverloadKey> type) {
+        return new FactoryOverloadKeyConverter(true);
+    }
+
+    @Override
+    public Set<Class<?>> supportedTypes() {
+        return Set.of(FactoryOverloadKey.class);
+    }
+}
+
+final class FactoryOverloadKeyConverter
+        implements JsonDeserializer<FactoryOverloadKey>, JsonSerializer<FactoryOverloadKey> {
+    private static final GenericType<FactoryOverloadKey> TYPE = GenericType.create(FactoryOverloadKey.class);
+    private final boolean mapKeySerializer;
+
+    FactoryOverloadKeyConverter(boolean mapKeySerializer) {
+        this.mapKeySerializer = mapKeySerializer;
+    }
+
+    @Override
+    public void serialize(JsonGenerator generator, FactoryOverloadKey instance, boolean writeNulls) {
+        generator.write(instance.value());
+    }
+
+    @Override
+    public FactoryOverloadKey deserialize(JsonParser parser) {
+        return new FactoryOverloadKey(parser.readString());
+    }
+
+    @Override
+    public boolean isMapKeySerializer() {
+        return mapKeySerializer;
+    }
+
+    @Override
+    public String serializeAsMapKey(FactoryOverloadKey instance) {
+        return instance.value();
+    }
+
+    @Override
+    public GenericType<FactoryOverloadKey> type() {
+        return TYPE;
     }
 }
 

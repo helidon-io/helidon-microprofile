@@ -433,6 +433,16 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void rejectsMapKeyWhenFactoryClassOverloadIsNotMapKeySerializer() {
+        Type type = new GenericType<Map<FactoryOverloadKey, String>>() { }.type();
+
+        assertThat(provider.isWriteable(Map.class,
+                                        type,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
     void deduplicatesMapKeyInterfaceTraversal() {
         Type type = new GenericType<Map<DiamondKey, String>>() { }.type();
         SafeKeySerializer.resetTypeAccesses();
