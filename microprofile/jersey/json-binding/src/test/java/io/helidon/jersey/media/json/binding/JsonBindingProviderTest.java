@@ -433,6 +433,18 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void deduplicatesMapKeyInterfaceTraversal() {
+        Type type = new GenericType<Map<DiamondKey, String>>() { }.type();
+        SafeKeySerializer.resetTypeAccesses();
+
+        assertThat(provider.isWriteable(Map.class,
+                                        type,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(true));
+        assertThat(SafeKeySerializer.typeAccesses(), lessThanOrEqualTo(40));
+    }
+
+    @Test
     void supportsJsonMediaTypesCaseInsensitively() {
         for (MediaType mediaType : List.of(MediaType.valueOf("Application/JSON"),
                                            MediaType.valueOf("application/vnd.example+JSON"))) {

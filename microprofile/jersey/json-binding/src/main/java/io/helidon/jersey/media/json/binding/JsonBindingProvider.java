@@ -301,12 +301,16 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         }
 
         ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>();
+        Set<Class<?>> visitedInterfaces = new HashSet<>();
         Class<?>[] interfaces = genericType.rawType().getInterfaces();
         for (int i = interfaces.length - 1; i >= 0; i--) {
             interfaceTypes.addFirst(interfaces[i]);
         }
         while (!interfaceTypes.isEmpty()) {
             Class<?> interfaceType = interfaceTypes.removeFirst();
+            if (!visitedInterfaces.add(interfaceType)) {
+                continue;
+            }
             GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
             serializer = serializers.stream()
                     .filter(component -> component.type().isClass())

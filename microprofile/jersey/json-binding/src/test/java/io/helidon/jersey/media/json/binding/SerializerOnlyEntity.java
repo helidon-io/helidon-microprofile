@@ -16,6 +16,8 @@
 
 package io.helidon.jersey.media.json.binding;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
@@ -78,10 +80,52 @@ interface SafeKeyView {
     String safe();
 }
 
+interface SharedKeyView {
+}
+
+interface LeftKeyView1 extends SharedKeyView {
+}
+
+interface RightKeyView1 extends SharedKeyView {
+}
+
+interface DiamondKeyView1 extends LeftKeyView1, RightKeyView1 {
+}
+
+interface LeftKeyView2 extends DiamondKeyView1 {
+}
+
+interface RightKeyView2 extends DiamondKeyView1 {
+}
+
+interface DiamondKeyView2 extends LeftKeyView2, RightKeyView2 {
+}
+
+interface LeftKeyView3 extends DiamondKeyView2 {
+}
+
+interface RightKeyView3 extends DiamondKeyView2 {
+}
+
+interface DiamondKeyView3 extends LeftKeyView3, RightKeyView3 {
+}
+
+interface LeftKeyView4 extends DiamondKeyView3 {
+}
+
+interface RightKeyView4 extends DiamondKeyView3 {
+}
+
+interface DiamondKeyView4 extends LeftKeyView4, RightKeyView4 {
+}
+
 record SafeKey(String safe, String secret) implements SafeKeyView {
 }
 
 record ConflictingKey(String value, String safe) implements SerializerOnlyView, SafeKeyView {
+}
+
+record DiamondKey(String safe) implements DiamondKeyView4, SafeKeyView {
 }
 
 enum FactoryKey implements SafeKeyView {
@@ -144,6 +188,15 @@ final class ParameterizedSerializerOnlyEntitySerializer
 @Service.Singleton
 final class SafeKeySerializer implements JsonSerializer<SafeKeyView> {
     private static final GenericType<SafeKeyView> TYPE = GenericType.create(SafeKeyView.class);
+    private static final AtomicInteger TYPE_ACCESSES = new AtomicInteger();
+
+    static void resetTypeAccesses() {
+        TYPE_ACCESSES.set(0);
+    }
+
+    static int typeAccesses() {
+        return TYPE_ACCESSES.get();
+    }
 
     @Override
     public void serialize(JsonGenerator generator, SafeKeyView instance, boolean writeNulls) {
@@ -162,6 +215,7 @@ final class SafeKeySerializer implements JsonSerializer<SafeKeyView> {
 
     @Override
     public GenericType<SafeKeyView> type() {
+        TYPE_ACCESSES.incrementAndGet();
         return TYPE;
     }
 }
@@ -192,6 +246,21 @@ final class ConflictingKeyDeserializer implements JsonDeserializer<ConflictingKe
 
     @Override
     public GenericType<ConflictingKey> type() {
+        return TYPE;
+    }
+}
+
+@Service.Singleton
+final class DiamondKeyDeserializer implements JsonDeserializer<DiamondKey> {
+    private static final GenericType<DiamondKey> TYPE = GenericType.create(DiamondKey.class);
+
+    @Override
+    public DiamondKey deserialize(JsonParser parser) {
+        return new DiamondKey(parser.readString());
+    }
+
+    @Override
+    public GenericType<DiamondKey> type() {
         return TYPE;
     }
 }
