@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.GenericType;
@@ -60,6 +61,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -354,6 +356,39 @@ class JsonBindingProviderTest {
                                         Map.class,
                                         new Annotation[0],
                                         MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
+    void cachesNestedGenericEligibilityChecks() {
+        AtomicInteger typeArgumentReads = new AtomicInteger();
+        Type nestedType = JsonBindingEntity.class;
+        int depth = 8;
+        for (int i = 0; i < depth; i++) {
+            Type componentType = nestedType;
+            nestedType = new ParameterizedType() {
+                @Override
+                public Type[] getActualTypeArguments() {
+                    typeArgumentReads.incrementAndGet();
+                    return new Type[] {componentType};
+                }
+
+                @Override
+                public Type getRawType() {
+                    return List.class;
+                }
+
+                @Override
+                public Type getOwnerType() {
+                    return null;
+                }
+            };
+        }
+
+        assertThat(provider.isWriteable(List.class,
+                                        nestedType,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(true));
+        assertThat(typeArgumentReads.get(), lessThanOrEqualTo(depth * 2));
     }
 
     @Test

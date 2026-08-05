@@ -282,8 +282,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     }
 
     private boolean supportsBoth(Type type) {
-        return supportsType(type, serializerBinding.prototype().serializers(), true)
-                && supportsType(type, deserializerBinding.prototype().deserializers(), false);
+        return supportsWrite(type) && supportsRead(type);
     }
 
     private boolean supportsMapKey(Type type) {
