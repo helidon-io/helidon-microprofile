@@ -680,6 +680,20 @@ accomplish this is to deal with metrics in a method that observes the Helidon
 To control how the Helidon metrics subsystem behaves, add a `metrics` section to
 your `META-INF/microprofile-config.properties` file.
 
+For MicroProfile Metrics global tags and the application name, use the
+MicroProfile configuration keys directly:
+
+```properties
+mp.metrics.tags=region=west,env=prod
+mp.metrics.appName=orders
+```
+
+`mp.metrics.tags` is a comma-separated list of `name=value` pairs. The
+`mp.metrics.appName` value is reported using the Helidon MP application tag
+name (`mp_app` by default). If both MicroProfile keys and the corresponding
+Helidon SE-style keys are present, Helidon MP gives the MicroProfile keys
+precedence over `metrics.tags` and `metrics.app-name`.
+
 See [Configuration options][io-helidon-metri-3].
 
 Default Values Specific to Helidon MP:

@@ -33,6 +33,7 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.metrics.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
+    requires io.helidon.service.registry;
     requires jakarta.annotation;
     requires jakarta.inject;
     requires microprofile.metrics.api;

@@ -180,6 +180,19 @@ how the Helidon metrics subsystem behaves in any of several ways.
   metrics][key-performance].
 - Control reporting of [virtual threads metrics][virtual-threads].
 
+Helidon MP also honors the MicroProfile Metrics global tag and application name
+keys:
+
+```properties
+mp.metrics.tags=region=west,env=prod
+mp.metrics.appName=orders
+```
+
+`mp.metrics.tags` is a comma-separated list of `name=value` pairs. If both
+MicroProfile keys and the corresponding Helidon SE-style keys are present,
+Helidon MP gives the MicroProfile keys precedence over `metrics.tags` and
+`metrics.app-name`.
+
 #### Disabling Metrics Subsystem Entirely
 
 You can disable the metrics subsystem entirely using configuration:

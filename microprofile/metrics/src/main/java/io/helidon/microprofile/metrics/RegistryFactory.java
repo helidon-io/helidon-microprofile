@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -83,7 +83,7 @@ public class RegistryFactory {
         if (result == null) {
             LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
                     + " before it has been initialized; using default Helidon meter registry and continuing");
-            result = new RegistryFactory(MetricsFactory.getInstance().globalRegistry());
+            result = new RegistryFactory(Services.get(MeterRegistry.class));
             REGISTRY_FACTORY.set(result);
         }
         return result;

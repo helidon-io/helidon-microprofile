@@ -17,11 +17,14 @@
 package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -30,8 +33,11 @@ import java.util.stream.Stream;
 
 import io.helidon.Main;
 import io.helidon.common.Api;
+import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -50,6 +56,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
+import io.helidon.spi.HelidonShutdownHandler;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -109,6 +116,24 @@ public class ServiceRegistryExtension implements Extension {
     private static final int SYNTHETIC_BEAN_PRIORITY = 0;
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
+    private static final String GLOBAL_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
+    private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";
+    private static final String REGISTRY_SHUTDOWN_MESSAGE = "Helidon MP service registry is shut down.";
+    private static final AtomicReference<RegistryShutdownHandler> REGISTRY_SHUTDOWN_HANDLER = new AtomicReference<>();
+    private static final ServiceRegistry SHUTDOWN_REGISTRY = (ServiceRegistry) Proxy.newProxyInstance(
+            ServiceRegistry.class.getClassLoader(),
+            new Class<?>[] {ServiceRegistry.class},
+            (proxy, method, arguments) -> {
+                if (method.getDeclaringClass() == Object.class) {
+                    return switch (method.getName()) {
+                        case "equals" -> proxy == arguments[0];
+                        case "hashCode" -> System.identityHashCode(proxy);
+                        case "toString" -> REGISTRY_SHUTDOWN_MESSAGE;
+                        default -> throw new UnsupportedOperationException(method.toString());
+                    };
+                }
+                throw new ServiceRegistryException(REGISTRY_SHUTDOWN_MESSAGE);
+            });
     private final Set<CdiServiceId> processedBeans = new HashSet<>();
 
     /**
@@ -121,7 +146,7 @@ public class ServiceRegistryExtension implements Extension {
 
     @SuppressWarnings("unchecked")
     void registerTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
-        var registry = GlobalServiceRegistry.registry();
+        var registry = registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
@@ -167,7 +192,7 @@ public class ServiceRegistryExtension implements Extension {
 
     void registryToCdi(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) AfterBeanDiscovery abd,
                        BeanManager bm) {
-        var registry = GlobalServiceRegistry.registry();
+        var registry = registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();
 
@@ -197,17 +222,53 @@ public class ServiceRegistryExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .beanClass(ServiceRegistry.class)
                 .addType(ServiceRegistry.class)
-                .createWith(context -> GlobalServiceRegistry.registry());
+                .createWith(context -> registry());
     }
 
     /*
-    When the application scope is closed, we must re-create a new service registry, as otherwise we may
-    start CDI again with stale registry services
+    When the application scope is closed, we must close the current service registry, as otherwise
+    we may start CDI again with stale registry services.
      */
     void resetRegistry(@Observes @Destroyed(ApplicationScoped.class) Object event) {
+        RegistryShutdownHandler previous = REGISTRY_SHUTDOWN_HANDLER.get();
+        if (previous != null) {
+            Main.removeShutdownHandler(previous);
+            previous.shutdown();
+        }
+    }
+
+    private static ServiceRegistry registry() {
+        Optional<ServiceRegistry> contextualRegistry = Contexts.context()
+                .flatMap(context -> context.get(GLOBAL_CONTEXT_CLASSIFIER, Context.class))
+                .filter(context -> context != Contexts.globalContext())
+                .flatMap(context -> context.get(GLOBAL_REGISTRY_CLASSIFIER, ServiceRegistry.class));
+        if (contextualRegistry.isPresent()) {
+            return contextualRegistry.get();
+        }
+
+        RegistryShutdownHandler handler = REGISTRY_SHUTDOWN_HANDLER.get();
+        if (handler != null) {
+            if (!handler.shutdown.get()) {
+                return handler.registry();
+            }
+            throw new ServiceRegistryException(REGISTRY_SHUTDOWN_MESSAGE);
+        }
+
         ServiceRegistryManager manager = ServiceRegistryManager.create();
-        GlobalServiceRegistry.registry(manager::registry);
-        Main.addShutdownHandler(manager::shutdown);
+        ServiceRegistry registry = manager.registry();
+        handler = new RegistryShutdownHandler(manager, registry);
+        if (REGISTRY_SHUTDOWN_HANDLER.compareAndSet(null, handler)) {
+            GlobalServiceRegistry.registry(registry);
+            Main.addShutdownHandler(handler);
+            return registry;
+        }
+
+        manager.shutdown();
+        RegistryShutdownHandler current = REGISTRY_SHUTDOWN_HANDLER.get();
+        if (current == null || current.shutdown.get()) {
+            throw new ServiceRegistryException(REGISTRY_SHUTDOWN_MESSAGE);
+        }
+        return current.registry();
     }
 
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {
@@ -688,6 +749,41 @@ public class ServiceRegistryExtension implements Extension {
                                Type contract,
                                Set<Annotation> annotations,
                                Set<Qualifier> qualifiers) {
+    }
+
+    @Weight(Weighted.DEFAULT_WEIGHT + 10)
+    private static final class RegistryShutdownHandler implements HelidonShutdownHandler {
+        private final ServiceRegistryManager manager;
+        private final ServiceRegistry registry;
+        private final AtomicBoolean shutdown = new AtomicBoolean();
+
+        private RegistryShutdownHandler(ServiceRegistryManager manager, ServiceRegistry registry) {
+            this.manager = manager;
+            this.registry = registry;
+        }
+
+        @Override
+        public void shutdown() {
+            if (shutdown.compareAndSet(false, true)) {
+                try {
+                    GlobalServiceRegistry.registry(SHUTDOWN_REGISTRY);
+                    manager.shutdown();
+                } catch (Exception e) {
+                    LOGGER.log(System.Logger.Level.ERROR, "Failed to shutdown Helidon MP Service Registry", e);
+                } finally {
+                    REGISTRY_SHUTDOWN_HANDLER.compareAndSet(this, null);
+                }
+            }
+        }
+
+        private ServiceRegistry registry() {
+            return registry;
+        }
+
+        @Override
+        public String toString() {
+            return "Helidon MP service registry shutdown handler";
+        }
     }
 
     private static class CdiProducerDescriptor implements ServiceDescriptor<Object> {

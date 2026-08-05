@@ -15,15 +15,23 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.Service;
+
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * MP implementation of metrics programmatic settings.
  */
+@Service.Singleton
 public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**
@@ -46,5 +54,21 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
     @Override
     public Optional<String> scopeDefaultValue() {
         return Optional.of(Meter.Scope.DEFAULT);
+    }
+
+    @Override
+    public MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
+        MetricsProgrammaticConfig.super.apply(builder);
+
+        org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
+        mpConfig.getOptionalValue("mp.metrics.tags", String.class)
+                .ifPresent(tags -> {
+                    Config tagsConfig = Config.just(ConfigSources.create(Map.of("tags", tags)));
+                    builder.tags(MetricsConfig.create(tagsConfig).tags());
+                });
+        mpConfig.getOptionalValue("mp.metrics.appName", String.class)
+                .ifPresent(builder::appName);
+
+        return builder;
     }
 }

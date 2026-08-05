@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -37,7 +37,7 @@ class MetricFactory {
     }
 
     static MetricFactory create() {
-        return new MetricFactory(MetricsFactory.getInstance().globalRegistry());
+        return new MetricFactory(Services.get(MeterRegistry.class));
     }
 
     static MetricFactory create(MeterRegistry meterRegistry) {

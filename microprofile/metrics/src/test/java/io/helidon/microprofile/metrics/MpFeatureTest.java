@@ -33,6 +33,8 @@ import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @AddConfig(key = "metrics.permit-all", value = "true")
+@AddConfig(key = "mp.metrics.tags", value = "region=west,env=prod")
+@AddConfig(key = "mp.metrics.appName", value = "orders")
 public class MpFeatureTest {
 
     @Inject
@@ -49,11 +51,16 @@ public class MpFeatureTest {
                 .accept(MediaType.TEXT_PLAIN)
                 .get(String.class);
 
-        Pattern pattern = Pattern.compile(".*^endpointCounter_total\\{.*?mp_scope=\"application\".*?}\\s*(\\S*).*?",
-                                          Pattern.DOTALL + Pattern.MULTILINE);
+        Pattern pattern = Pattern.compile("^endpointCounter_total\\{"
+                                                  + "(?=[^}]*env=\"prod\")"
+                                                  + "(?=[^}]*mp_app=\"orders\")"
+                                                  + "(?=[^}]*mp_scope=\"application\")"
+                                                  + "(?=[^}]*region=\"west\")"
+                                                  + "[^}]*}\\s*(\\S*)",
+                                          Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(metricsResponse);
 
-        assertThat("/metrics response", matcher.matches(), is(true));
+        assertThat("/metrics response", matcher.find(), is(true));
         assertThat("Captured groups", matcher.groupCount(), is(1));
 
         /*
