@@ -285,8 +285,8 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         return supportsWrite(type) && supportsRead(type);
     }
 
-    private boolean supportsMapKey(Type type) {
-        GenericType<?> genericType = GenericType.create(type);
+    private <T> boolean supportsMapKey(Type type) {
+        GenericType<T> genericType = GenericType.create(type);
         List<JsonSerializer<?>> serializers = serializerBinding.prototype().serializers();
         JsonSerializer<?> serializer = serializers.stream()
                 .filter(component -> component.type().equals(genericType))
@@ -294,6 +294,10 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                 .orElse(null);
         if (serializer != null) {
             return serializer.isMapKeySerializer();
+        }
+        JsonBindingFactory<T> bindingFactory = bindingFactory(genericType.rawType());
+        if (bindingFactory != null) {
+            return bindingFactory.createSerializer(genericType).isMapKeySerializer();
         }
 
         ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>();
@@ -340,12 +344,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             return true;
         }
 
-        boolean genericFactory = serializerBinding.prototype().bindingFactories().stream()
-                .map(JsonBindingFactory::supportedTypes)
-                .flatMap(Set::stream)
-                .anyMatch(supportedType -> supportedType == rawType
-                        || rawType.isArray() && supportedType == Array.class
-                        || rawType.isEnum() && supportedType == Enum.class);
+        boolean genericFactory = bindingFactory(rawType) != null;
         if (!genericFactory && searchInterfaces && supportsInterfaceComponent(rawType, components)) {
             return true;
         }
@@ -361,6 +360,36 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
                     || supportsMapKey(typeArguments[0]);
         }
         return !rawType.isArray() || supportsBoth(rawType.getComponentType());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> JsonBindingFactory<T> bindingFactory(Class<?> rawType) {
+        List<JsonBindingFactory<?>> bindingFactories = serializerBinding.prototype().bindingFactories();
+        JsonBindingFactory<?> bindingFactory = bindingFactories.stream()
+                .filter(factory -> factory.supportedTypes().contains(rawType))
+                .findFirst()
+                .orElse(null);
+        if (bindingFactory != null) {
+            return (JsonBindingFactory<T>) bindingFactory;
+        }
+        Class<?> factoryType;
+        if (rawType.isArray()) {
+            factoryType = Array.class;
+        } else if (rawType.isEnum()) {
+            factoryType = Enum.class;
+        } else if (List.class.isAssignableFrom(rawType)) {
+            factoryType = List.class;
+        } else if (Map.class.isAssignableFrom(rawType)) {
+            factoryType = Map.class;
+        } else if (Set.class.isAssignableFrom(rawType)) {
+            factoryType = Set.class;
+        } else {
+            return null;
+        }
+        return (JsonBindingFactory<T>) bindingFactories.stream()
+                .filter(factory -> factory.supportedTypes().contains(factoryType))
+                .findFirst()
+                .orElse(null);
     }
 
     private static boolean supportsInterfaceComponent(Class<?> rawType,

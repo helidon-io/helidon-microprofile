@@ -84,6 +84,15 @@ record SafeKey(String safe, String secret) implements SafeKeyView {
 record ConflictingKey(String value, String safe) implements SerializerOnlyView, SafeKeyView {
 }
 
+enum FactoryKey implements SafeKeyView {
+    KEY;
+
+    @Override
+    public String safe() {
+        return name();
+    }
+}
+
 @Service.Singleton
 final class SerializerOnlyEntitySerializer implements JsonSerializer<SerializerOnlyView> {
     private static final GenericType<SerializerOnlyView> TYPE = GenericType.create(SerializerOnlyView.class);
