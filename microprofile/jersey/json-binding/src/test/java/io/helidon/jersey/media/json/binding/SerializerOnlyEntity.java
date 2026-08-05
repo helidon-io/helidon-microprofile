@@ -81,6 +81,9 @@ interface SafeKeyView {
 record SafeKey(String safe, String secret) implements SafeKeyView {
 }
 
+record ConflictingKey(String value, String safe) implements SerializerOnlyView, SafeKeyView {
+}
+
 @Service.Singleton
 final class SerializerOnlyEntitySerializer implements JsonSerializer<SerializerOnlyView> {
     private static final GenericType<SerializerOnlyView> TYPE = GenericType.create(SerializerOnlyView.class);
@@ -165,6 +168,21 @@ final class SafeKeyDeserializer implements JsonDeserializer<SafeKey> {
 
     @Override
     public GenericType<SafeKey> type() {
+        return TYPE;
+    }
+}
+
+@Service.Singleton
+final class ConflictingKeyDeserializer implements JsonDeserializer<ConflictingKey> {
+    private static final GenericType<ConflictingKey> TYPE = GenericType.create(ConflictingKey.class);
+
+    @Override
+    public ConflictingKey deserialize(JsonParser parser) {
+        return new ConflictingKey(parser.readString(), null);
+    }
+
+    @Override
+    public GenericType<ConflictingKey> type() {
         return TYPE;
     }
 }

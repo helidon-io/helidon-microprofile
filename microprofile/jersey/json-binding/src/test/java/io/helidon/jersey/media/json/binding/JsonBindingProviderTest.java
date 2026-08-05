@@ -378,6 +378,16 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void rejectsMapKeyWhenCoreSelectsOrdinaryInterfaceSerializerFirst() {
+        Type type = new GenericType<Map<ConflictingKey, String>>() { }.type();
+
+        assertThat(provider.isWriteable(Map.class,
+                                        type,
+                                        new Annotation[0],
+                                        MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
     void supportsJsonMediaTypesCaseInsensitively() {
         for (MediaType mediaType : List.of(MediaType.valueOf("Application/JSON"),
                                            MediaType.valueOf("application/vnd.example+JSON"))) {

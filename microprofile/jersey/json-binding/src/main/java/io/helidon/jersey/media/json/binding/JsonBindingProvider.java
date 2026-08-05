@@ -288,12 +288,37 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
 
     private boolean supportsMapKey(Type type) {
         GenericType<?> genericType = GenericType.create(type);
-        List<JsonSerializer<?>> mapKeySerializers = serializerBinding.prototype().serializers().stream()
-                .filter(JsonSerializer::isMapKeySerializer)
-                .toList();
-        return mapKeySerializers.stream()
-                       .anyMatch(serializer -> serializer.type().equals(genericType))
-                || supportsInterfaceComponent(genericType.rawType(), mapKeySerializers);
+        List<JsonSerializer<?>> serializers = serializerBinding.prototype().serializers();
+        JsonSerializer<?> serializer = serializers.stream()
+                .filter(component -> component.type().equals(genericType))
+                .findFirst()
+                .orElse(null);
+        if (serializer != null) {
+            return serializer.isMapKeySerializer();
+        }
+
+        ArrayDeque<Class<?>> interfaceTypes = new ArrayDeque<>();
+        Class<?>[] interfaces = genericType.rawType().getInterfaces();
+        for (int i = interfaces.length - 1; i >= 0; i--) {
+            interfaceTypes.addFirst(interfaces[i]);
+        }
+        while (!interfaceTypes.isEmpty()) {
+            Class<?> interfaceType = interfaceTypes.removeFirst();
+            GenericType<?> interfaceGenericType = GenericType.create(interfaceType);
+            serializer = serializers.stream()
+                    .filter(component -> component.type().isClass())
+                    .filter(component -> component.type().equals(interfaceGenericType))
+                    .findFirst()
+                    .orElse(null);
+            if (serializer != null) {
+                return serializer.isMapKeySerializer();
+            }
+            interfaces = interfaceType.getInterfaces();
+            for (int i = interfaces.length - 1; i >= 0; i--) {
+                interfaceTypes.addFirst(interfaces[i]);
+            }
+        }
+        return false;
     }
 
     private boolean supportsType(Type type, List<? extends JsonComponent<?>> components, boolean searchInterfaces) {
