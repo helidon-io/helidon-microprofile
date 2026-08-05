@@ -22,8 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
-import io.helidon.json.binding.JsonDeserializer;
 import io.helidon.json.binding.JsonBindingFactory;
+import io.helidon.json.binding.JsonDeserializer;
 import io.helidon.json.binding.JsonSerializer;
 import io.helidon.service.registry.Service;
 
