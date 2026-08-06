@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.LinkedHashMap;
 import java.util.UUID;
 
 import io.helidon.config.Config;
@@ -84,6 +85,28 @@ public class JsonBindingModulePathTest {
                             .post(Entity.entity("{\"json_message\":\"hello\"}", MediaType.APPLICATION_JSON_TYPE))) {
                 assertEquals(200, response.getStatus());
                 assertEquals("{\"json_message\":\"hello\"}", response.readEntity(String.class));
+            }
+        } finally {
+            webServer.stop();
+        }
+    }
+
+    @Test
+    void readsConcreteCollectionThroughJsonbFallback() {
+        ResourceConfig resourceConfig = new ResourceConfig(JsonBindingResource.class);
+        WebServer webServer = WebServer.builder()
+                .host("127.0.0.1")
+                .routing(routing -> routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig)))
+                .build()
+                .start();
+        try {
+            try (Client client = ClientBuilder.newClient();
+                    Response response = client.target("http://127.0.0.1:" + webServer.port())
+                            .path("jersey/entity/jsonb-fallback")
+                            .request(MediaType.TEXT_PLAIN_TYPE)
+                            .post(Entity.entity("{\"message\":\"hello\"}", MediaType.APPLICATION_JSON_TYPE))) {
+                assertEquals(200, response.getStatus());
+                assertEquals("hello", response.readEntity(String.class));
             }
         } finally {
             webServer.stop();
@@ -206,6 +229,14 @@ public class JsonBindingModulePathTest {
         @Produces(MediaType.APPLICATION_JSON)
         public JsonBindingEntity echo(JsonBindingEntity entity) {
             return new JsonBindingEntity(entity.message(), "do-not-serialize");
+        }
+
+        @POST
+        @Path("jsonb-fallback")
+        @Consumes(MediaType.APPLICATION_JSON)
+        @Produces(MediaType.TEXT_PLAIN)
+        public String jsonbFallback(LinkedHashMap<String, String> entity) {
+            return entity.get("message");
         }
     }
 

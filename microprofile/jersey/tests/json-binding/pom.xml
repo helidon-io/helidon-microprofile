@@ -98,6 +98,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-binding</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <scope>test</scope>
