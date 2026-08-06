@@ -296,7 +296,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         if (serializer != null) {
             return serializer.isMapKeySerializer();
         }
-        JsonBindingFactory<T> bindingFactory = bindingFactory(genericType.rawType());
+        JsonBindingFactory<T> bindingFactory = bindingFactory(genericType.rawType(), true);
         if (bindingFactory != null) {
             serializer = type instanceof Class<?> clazz
                     ? bindingFactory.createSerializer((Class<? extends T>) clazz)
@@ -332,7 +332,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
         return false;
     }
 
-    private boolean supportsType(Type type, List<? extends JsonComponent<?>> components, boolean searchInterfaces) {
+    private boolean supportsType(Type type, List<? extends JsonComponent<?>> components, boolean write) {
         if (type instanceof TypeVariable<?> || type instanceof WildcardType || type instanceof GenericArrayType) {
             return false;
         }
@@ -352,8 +352,8 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             return true;
         }
 
-        boolean genericFactory = bindingFactory(rawType) != null;
-        if (!genericFactory && searchInterfaces && supportsInterfaceComponent(rawType, components)) {
+        boolean genericFactory = bindingFactory(rawType, write) != null;
+        if (!genericFactory && write && supportsInterfaceComponent(rawType, components)) {
             return true;
         }
         if (!genericFactory) {
@@ -371,7 +371,7 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
     }
 
     @SuppressWarnings("unchecked")
-    private <T> JsonBindingFactory<T> bindingFactory(Class<?> rawType) {
+    private <T> JsonBindingFactory<T> bindingFactory(Class<?> rawType, boolean collections) {
         List<JsonBindingFactory<?>> bindingFactories = serializerBinding.prototype().bindingFactories();
         JsonBindingFactory<?> bindingFactory = bindingFactories.stream()
                 .filter(factory -> factory.supportedTypes().contains(rawType))
@@ -385,11 +385,11 @@ public class JsonBindingProvider implements MessageBodyReader<Object>, MessageBo
             factoryType = Array.class;
         } else if (rawType.isEnum()) {
             factoryType = Enum.class;
-        } else if (List.class.isAssignableFrom(rawType)) {
+        } else if (collections && List.class.isAssignableFrom(rawType)) {
             factoryType = List.class;
-        } else if (Map.class.isAssignableFrom(rawType)) {
+        } else if (collections && Map.class.isAssignableFrom(rawType)) {
             factoryType = Map.class;
-        } else if (Set.class.isAssignableFrom(rawType)) {
+        } else if (collections && Set.class.isAssignableFrom(rawType)) {
             factoryType = Set.class;
         } else {
             return null;

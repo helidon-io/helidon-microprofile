@@ -207,6 +207,16 @@ class JsonBindingProviderTest {
     }
 
     @Test
+    void doesNotReadConcreteCollectionType() {
+        Type type = new GenericType<LinkedHashMap<String, JsonBindingEntity>>() { }.type();
+
+        assertThat(provider.isReadable(LinkedHashMap.class,
+                                       type,
+                                       new Annotation[0],
+                                       MediaType.APPLICATION_JSON_TYPE), is(false));
+    }
+
+    @Test
     void supportsSerializerOnlyType() throws Exception {
         for (SerializerOnlyView entity : List.of(new SerializerOnlyEntity("hello", "do-not-serialize"),
                                                   new NestedSerializerOnlyEntity("hello", "do-not-serialize"),
