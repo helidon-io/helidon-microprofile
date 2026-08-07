@@ -194,6 +194,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-media-json-binding</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.mp.version}</version>
             </dependency>

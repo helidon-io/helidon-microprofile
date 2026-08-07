@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Jersey integration with Helidon JSON Binding.
+ * <p>
+ * The Maven artifact {@code io.helidon.jersey:helidon-jersey-media-json-binding} automatically registers the
+ * Helidon JSON Binding entity provider with Jersey server and client runtimes. The provider handles JSON media only
+ * for entity types supported by Helidon JSON Binding and leaves unsupported types to other Jersey providers.
+ *
+ * @see io.helidon.jersey.media.json.binding.JsonBindingProvider
+ */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+module io.helidon.jersey.media.json.binding {
+    requires io.helidon.common;
+    requires io.helidon.json.binding;
+    requires jakarta.annotation;
+    requires transitive jakarta.ws.rs;
+    requires jersey.common;
+
+    opens io.helidon.jersey.media.json.binding to org.glassfish.hk2.locator;
+
+    provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
+            with io.helidon.jersey.media.json.binding.JsonBindingAutoDiscoverable;
+}
