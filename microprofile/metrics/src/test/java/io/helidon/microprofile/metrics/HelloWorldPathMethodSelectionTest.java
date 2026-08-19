@@ -34,7 +34,7 @@ import jakarta.ws.rs.core.Request;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.hamcrest.FeatureMatcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +68,7 @@ class HelloWorldPathMethodSelectionTest {
     MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     MetricRegistry restRequestMetricsRegistry;
 
     @AfterAll
