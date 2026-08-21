@@ -33,6 +33,7 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class RegistryTest {
 
+    @Disabled // until https://github.com/helidon-io/helidon-microprofile/pull/85 is applied
     @Test
     void testGaugeRegistrationIsNotBlockedByPendingRemove() throws Exception {
         io.helidon.metrics.api.MeterRegistry delegateMeterRegistry = io.helidon.metrics.api.MeterRegistry.create();

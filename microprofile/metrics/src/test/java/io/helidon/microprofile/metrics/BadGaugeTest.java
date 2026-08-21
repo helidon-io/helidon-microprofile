@@ -112,11 +112,13 @@ public class BadGaugeTest {
         goodTest(ApplicationScoped.Literal.INSTANCE);
     }
 
+    @Disabled // until https://github.com/helidon-io/helidon-microprofile/pull/85 is applied
     @Test
     void testSingleton() {
         goodTest(SingletonLiteral.INSTANCE);
     }
 
+    @Disabled // until https://github.com/helidon-io/helidon-microprofile/pull/85 is applied
     @Test
     void testDependentScope() {
         // this is questionable, but it may be reporting a static field
