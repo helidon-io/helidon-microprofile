@@ -17,7 +17,6 @@
 package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
@@ -120,20 +119,6 @@ public class ServiceRegistryExtension implements Extension {
     private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";
     private static final String REGISTRY_SHUTDOWN_MESSAGE = "Helidon MP service registry is shut down.";
     private static final AtomicReference<RegistryShutdownHandler> REGISTRY_SHUTDOWN_HANDLER = new AtomicReference<>();
-    private static final ServiceRegistry SHUTDOWN_REGISTRY = (ServiceRegistry) Proxy.newProxyInstance(
-            ServiceRegistry.class.getClassLoader(),
-            new Class<?>[] {ServiceRegistry.class},
-            (proxy, method, arguments) -> {
-                if (method.getDeclaringClass() == Object.class) {
-                    return switch (method.getName()) {
-                        case "equals" -> proxy == arguments[0];
-                        case "hashCode" -> System.identityHashCode(proxy);
-                        case "toString" -> REGISTRY_SHUTDOWN_MESSAGE;
-                        default -> throw new UnsupportedOperationException(method.toString());
-                    };
-                }
-                throw new ServiceRegistryException(REGISTRY_SHUTDOWN_MESSAGE);
-            });
     private final Set<CdiServiceId> processedBeans = new HashSet<>();
 
     /**
@@ -766,7 +751,6 @@ public class ServiceRegistryExtension implements Extension {
         public void shutdown() {
             if (shutdown.compareAndSet(false, true)) {
                 try {
-                    GlobalServiceRegistry.registry(SHUTDOWN_REGISTRY);
                     manager.shutdown();
                 } catch (Exception e) {
                     LOGGER.log(System.Logger.Level.ERROR, "Failed to shutdown Helidon MP Service Registry", e);

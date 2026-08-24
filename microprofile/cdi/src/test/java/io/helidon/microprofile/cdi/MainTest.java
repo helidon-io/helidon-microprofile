@@ -24,8 +24,6 @@ import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryException;
-import io.helidon.service.registry.Services;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -42,7 +40,6 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link Main}.
@@ -63,9 +60,8 @@ class MainTest {
     }
 
     @Test
-    void testShutdownClosesAndFencesGlobalServiceRegistry() {
+    void testShutdownReplacesAndClosesGlobalServiceRegistry() {
         RegistryLifecycleService.PRE_DESTROY.set(0);
-        RegistryLifecycleService.LOOKUP_FAILURES.set(0);
 
         Main.main(new String[0]);
         ServiceRegistry firstRegistry = GlobalServiceRegistry.registry();
@@ -74,10 +70,7 @@ class MainTest {
         Main.shutdown();
 
         assertThat("first service registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(1));
-        assertThat("lookup is fenced while the first registry closes",
-                   RegistryLifecycleService.LOOKUP_FAILURES.get(),
-                   is(1));
-        assertThrows(ServiceRegistryException.class, () -> Services.get(RegistryLifecycleService.class));
+        assertThat(GlobalServiceRegistry.registry(), not(sameInstance(firstRegistry)));
 
         try {
             Main.main(new String[0]);
@@ -88,10 +81,6 @@ class MainTest {
             Main.shutdown();
         }
         assertThat("second service registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(2));
-        assertThat("lookup is fenced while the second registry closes",
-                   RegistryLifecycleService.LOOKUP_FAILURES.get(),
-                   is(2));
-        assertThrows(ServiceRegistryException.class, () -> Services.get(RegistryLifecycleService.class));
     }
 
     @Test
@@ -137,16 +126,10 @@ class MainTest {
     @Service.Singleton
     static class RegistryLifecycleService {
         private static final AtomicInteger PRE_DESTROY = new AtomicInteger();
-        private static final AtomicInteger LOOKUP_FAILURES = new AtomicInteger();
 
         @Service.PreDestroy
         void preDestroy() {
             PRE_DESTROY.incrementAndGet();
-            try {
-                Services.get(RegistryLifecycleService.class);
-            } catch (ServiceRegistryException ignored) {
-                LOOKUP_FAILURES.incrementAndGet();
-            }
         }
     }
 }
