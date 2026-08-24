@@ -33,14 +33,16 @@ extension are exempt from
 ## MP-3. Testing
 
 <a id="rule-mp-3-1"></a>**Rule MP-3.1 — Follow required test frameworks.** TCKs, framework-integration tests, and modules
-that provide testing-framework support may use the framework required by their contract instead of Core Rule 10.4.
+that provide testing-framework support may use the framework required by their contract instead of
+[Core Rule 10.4](https://github.com/helidon-io/helidon/blob/main/DEV-GUIDELINES.md#rule-10-4).
 
 <a id="chapter-mp-4"></a>
 ## MP-4. Maven and modules
 
 <a id="rule-mp-4-1"></a>**Rule MP-4.1 — Use the MicroProfile group hierarchy.** This rule overrides
 [Core Rule 4.2.2.1](https://github.com/helidon-io/helidon/blob/main/DEV-GUIDELINES.md#rule-4-2-2-1): Maven group IDs use
-the `io.helidon.microprofile` hierarchy.
+the `io.helidon.microprofile` hierarchy. Modules under `microprofile/jersey/` retain their existing
+`io.helidon.jersey*` group IDs for backward compatibility.
 
 <a id="rule-mp-4-2"></a>**Rule MP-4.2 — Use the MicroProfile bundle location.** This rule overrides
 [Core Rule 11.6.2](https://github.com/helidon-io/helidon/blob/main/DEV-GUIDELINES.md#rule-11-6-2): MicroProfile bundles are
@@ -49,7 +51,3 @@ located under [bundles](bundles/).
 <a id="rule-mp-4-3"></a>**Rule MP-4.3 — Scope Jakarta and MicroProfile specification APIs as provided.** This rule
 specializes [Core Rule 11.7](https://github.com/helidon-io/helidon/blob/main/DEV-GUIDELINES.md#rule-11-7): Jakarta EE
 components and MicroProfile specification APIs use `provided` scope unless the module implements the specification.
-
-<a id="rule-mp-4-4"></a>**Rule MP-4.4 — Scope MicroProfile extension dependencies as provided.** This rule specializes
-[Core Rule 11.8](https://github.com/helidon-io/helidon/blob/main/DEV-GUIDELINES.md#rule-11-8): MicroProfile extension
-modules use `provided` scope for dependencies on other Helidon MicroProfile modules.
