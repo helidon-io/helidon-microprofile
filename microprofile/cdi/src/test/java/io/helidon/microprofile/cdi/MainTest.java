@@ -18,8 +18,12 @@ package io.helidon.microprofile.cdi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.microprofile.config.core.MpConfigSources;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -29,6 +33,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -52,6 +57,29 @@ class MainTest {
         assertThat(testBean2.message(), is("Hello"));
 
         Main.shutdown();
+    }
+
+    @Test
+    void testShutdownClosesAndReplacesGlobalServiceRegistry() {
+        RegistryLifecycleService.PRE_DESTROY.set(0);
+
+        Main.main(new String[0]);
+        ServiceRegistry firstRegistry = GlobalServiceRegistry.registry();
+        assertThat(firstRegistry.get(RegistryLifecycleService.class), notNullValue());
+
+        Main.shutdown();
+
+        assertThat("first service registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(1));
+
+        try {
+            Main.main(new String[0]);
+            ServiceRegistry secondRegistry = GlobalServiceRegistry.registry();
+            assertThat(secondRegistry, not(sameInstance(firstRegistry)));
+            assertThat(secondRegistry.get(RegistryLifecycleService.class), notNullValue());
+        } finally {
+            Main.shutdown();
+        }
+        assertThat("second service registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(2));
     }
 
     @Test
@@ -92,5 +120,15 @@ class MainTest {
                                                   TestExtension.APPLICATION_INIT,
                                                   TestExtension.APPLICATION_BEFORE_DESTROYED,
                                                   TestExtension.APPLICATION_DESTROYED)));
+    }
+
+    @Service.Singleton
+    static class RegistryLifecycleService {
+        private static final AtomicInteger PRE_DESTROY = new AtomicInteger();
+
+        @Service.PreDestroy
+        void preDestroy() {
+            PRE_DESTROY.incrementAndGet();
+        }
     }
 }
