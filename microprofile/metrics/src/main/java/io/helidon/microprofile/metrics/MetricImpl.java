@@ -23,6 +23,7 @@ import java.util.NoSuchElementException;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -48,12 +49,15 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
-        return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
+    protected static Iterable<io.helidon.metrics.api.Tag> allTags(MetricsFactory metricsFactory,
+                                                                  SystemTagsManager systemTagsManager,
+                                                                  String scope,
+                                                                  Tag[] tags) {
+        return toHelidonTags(metricsFactory, systemTagsManager.withScopeTag(iterableEntries(tags), scope));
     }
 
-    static String resolvedScope(Meter delegate) {
-        return SystemTagsManager.instance().effectiveScope(delegate.scope()).orElse(Meter.Scope.DEFAULT);
+    static String resolvedScope(SystemTagsManager systemTagsManager, Meter delegate) {
+        return systemTagsManager.effectiveScope(delegate.scope()).orElse(Meter.Scope.DEFAULT);
     }
 
     protected static String sanitizeUnit(String unit) {
@@ -96,7 +100,9 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
      * @param entriesIterable iterable of map entries
      * @return iterable of {@link io.helidon.metrics.api.Tag}
      */
-    private static Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
+    private static Iterable<io.helidon.metrics.api.Tag> toHelidonTags(
+            MetricsFactory metricsFactory,
+            Iterable<Map.Entry<String, String>> entriesIterable) {
         return () -> new Iterator<>() {
 
             private final Iterator<Map.Entry<String, String>> entriesIterator = entriesIterable.iterator();
@@ -112,7 +118,7 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
                     throw new NoSuchElementException();
                 }
                 var entry = entriesIterator.next();
-                return io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue());
+                return metricsFactory.tagCreate(entry.getKey(), entry.getValue());
             }
         };
     }

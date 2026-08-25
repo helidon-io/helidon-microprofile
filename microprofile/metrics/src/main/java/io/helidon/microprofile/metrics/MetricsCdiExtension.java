@@ -177,6 +177,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
     private Errors.Collector errors = Errors.collector();
+    private MetricsFactory metricsFactory;
     private String syntheticTimerMetricUnmappedExceptionName;
     private Optional<AutoHttpMetricsConfig> autoHttpMetricsConfig;
 
@@ -271,7 +272,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * </p>
      */
     static void shutdown() {
-        MetricsFactory.closeAll();
         RegistryFactory.closeAll();
     }
 
@@ -545,7 +545,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         builder.endpoint("/metrics")
                 .config(config);
 
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
 
         Contexts.globalContext().register(metricsFactory);
@@ -885,6 +885,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     }
 
     private void onShutdown(@Observes BeforeShutdown shutdown) {
+        if (metricsFactory != null) {
+            Contexts.globalContext().unregister(metricsFactory);
+            metricsFactory = null;
+        }
         shutdown();
     }
 

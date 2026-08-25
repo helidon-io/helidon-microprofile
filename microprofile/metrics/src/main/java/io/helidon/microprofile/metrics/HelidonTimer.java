@@ -23,7 +23,9 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SnapshotMetric;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -37,40 +39,58 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
 
     private final io.helidon.metrics.api.Timer delegate;
     private final MeterRegistry meterRegistry;
+    private final MetricsFactory metricsFactory;
 
     private HelidonTimer(MeterRegistry meterRegistry,
+                         MetricsFactory metricsFactory,
                          String type,
                          Metadata metadata,
                          io.helidon.metrics.api.Timer delegate) {
         super(type, metadata);
         this.delegate = delegate;
         this.meterRegistry = meterRegistry;
-    }
-
-    static HelidonTimer create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
-        return create(meterRegistry,
-                      scope,
-                      metadata,
-                      meterRegistry.getOrCreate(DistributionCustomizations
-                                                        .apply(io.helidon.metrics.api.Timer.builder(metadata.getName())
-                                                                       .description(metadata.getDescription())
-                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                                       .tags(allTags(scope, tags)))));
+        this.metricsFactory = metricsFactory;
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry,
+                               MetricsFactory metricsFactory,
+                               SystemTagsManager systemTagsManager,
+                               String scope,
+                               Metadata metadata,
+                               Tag... tags) {
+        return create(meterRegistry,
+                      metricsFactory,
+                      scope,
+                      metadata,
+                      meterRegistry.getOrCreate(DistributionCustomizations
+                                                        .apply(metricsFactory.timerBuilder(metadata.getName())
+                                                                       .description(metadata.getDescription())
+                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                       .tags(allTags(metricsFactory,
+                                                                                     systemTagsManager,
+                                                                                     scope,
+                                                                                     tags)))));
+    }
+
+    static HelidonTimer create(MeterRegistry meterRegistry,
+                               MetricsFactory metricsFactory,
                                String scope,
                                Metadata metadata,
                                io.helidon.metrics.api.Timer delegate) {
         return new HelidonTimer(meterRegistry,
+                                metricsFactory,
                                 scope,
                                 metadata,
                                 delegate);
     }
 
-    static HelidonTimer create(MeterRegistry meterRegistry, io.helidon.metrics.api.Timer delegate) {
+    static HelidonTimer create(MeterRegistry meterRegistry,
+                               MetricsFactory metricsFactory,
+                               SystemTagsManager systemTagsManager,
+                               io.helidon.metrics.api.Timer delegate) {
         return new HelidonTimer(meterRegistry,
-                                resolvedScope(delegate),
+                                metricsFactory,
+                                resolvedScope(systemTagsManager, delegate),
                                 Registry.metadata(delegate),
                                 delegate);
     }
@@ -97,7 +117,7 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
 
     @Override
     public Context time() {
-        return new ContextImpl(io.helidon.metrics.api.Timer.start(meterRegistry));
+        return new ContextImpl(metricsFactory.timerStart(meterRegistry));
     }
 
     @Override

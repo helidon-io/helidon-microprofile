@@ -136,12 +136,17 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      * @return a new initialized CDI container
      */
     static HelidonContainerImpl create() {
-
-        HelidonContainerImpl container = new HelidonContainerImpl();
-
-        container.initInContext();
-
-        return container;
+        boolean serviceRegistryOwner = MpServiceRegistry.start();
+        try {
+            HelidonContainerImpl container = new HelidonContainerImpl();
+            container.initInContext();
+            return container;
+        } catch (RuntimeException | Error e) {
+            if (serviceRegistryOwner) {
+                MpServiceRegistry.shutdown();
+            }
+            throw e;
+        }
     }
 
     /**
@@ -359,7 +364,11 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                     } catch (Exception e) {
                         LOGGER.log(Level.SEVERE, e, () -> "Failed to fire ApplicationScoped Destroyed event");
                     }
-                    bootstrap.shutdown();
+                    try {
+                        bootstrap.shutdown();
+                    } finally {
+                        MpServiceRegistry.shutdown();
+                    }
                     WeldSELogger.LOG.weldContainerShutdown(id);
                 }
             }

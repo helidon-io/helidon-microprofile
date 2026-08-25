@@ -31,6 +31,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 
 import org.eclipse.microprofile.config.Config;
@@ -95,10 +96,10 @@ class DistributionCustomizations {
         instance = new DistributionCustomizations(mpConfig);
     }
 
-    static DistributionSummary.Builder apply(DistributionSummary.Builder builder) {
+    static DistributionSummary.Builder apply(DistributionSummary.Builder builder, MetricsFactory metricsFactory) {
         DistributionStatisticsConfig.Builder statsBuilder = builder.distributionStatisticsConfig()
                 .orElseGet(() -> {
-                    DistributionStatisticsConfig.Builder newBuilder = DistributionStatisticsConfig.builder();
+                    DistributionStatisticsConfig.Builder newBuilder = metricsFactory.distributionStatisticsConfigBuilder();
                     builder.distributionStatisticsConfig(newBuilder);
                     return newBuilder;
                 });

@@ -136,6 +136,7 @@
                                 <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                                 <exclude>**/TestDistributionCustomizationsNoInit.java</exclude>
+                                <exclude>**/RegistryFactoryLifecycleTest.java</exclude>
                                 <exclude>**/TestRestServiceInheritance.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
@@ -204,6 +205,19 @@
                                 <junit.jupiter.extensions.autodetection.enabled>true
                                 </junit.jupiter.extensions.autodetection.enabled>
                             </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately because this test shuts down its manually-started MP container. -->
+                        <id>test-registry-factory-lifecycle</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/RegistryFactoryLifecycleTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
                         </configuration>
                     </execution>
                     <execution>

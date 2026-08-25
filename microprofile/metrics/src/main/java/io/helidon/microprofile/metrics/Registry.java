@@ -40,6 +40,7 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -64,6 +65,8 @@ class Registry implements MetricRegistry {
     private static final System.Logger LOGGER = System.getLogger(Registry.class.getName());
     private static final Tag[] NO_TAGS = new Tag[0];
     private final MeterRegistry meterRegistry;
+    private final MetricsFactory metricsFactory;
+    private final SystemTagsManager systemTagsManager;
     private final String scope;
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -71,13 +74,21 @@ class Registry implements MetricRegistry {
     private final Map<Meter, HelidonMetric<?>> metricsByDelegate = new HashMap<>();
     private final Map<String, InfoPerName> infoByName = new HashMap<>();
 
-    private Registry(String scope, MeterRegistry meterRegistry) {
+    private Registry(String scope,
+                     MeterRegistry meterRegistry,
+                     MetricsFactory metricsFactory,
+                     SystemTagsManager systemTagsManager) {
         this.meterRegistry = meterRegistry;
+        this.metricsFactory = metricsFactory;
+        this.systemTagsManager = systemTagsManager;
         this.scope = scope;
     }
 
-    static Registry create(String scope, MeterRegistry meterRegistry) {
-        return new Registry(scope, meterRegistry);
+    static Registry create(String scope,
+                           MeterRegistry meterRegistry,
+                           MetricsFactory metricsFactory,
+                           SystemTagsManager systemTagsManager) {
+        return new Registry(scope, meterRegistry, metricsFactory, systemTagsManager);
     }
 
     static Metadata metadata(Meter meter) {
@@ -103,15 +114,15 @@ class Registry implements MetricRegistry {
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    protected static Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
+    private Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
         if (tags != null && tags.length > 0) {
             List<String> tagNames = Arrays.stream(tags).map(Tag::getTagName).toList();
-            Collection<String> reservedTagNamesUsed = SystemTagsManager.instance().reservedTagNamesUsed(tagNames);
+            Collection<String> reservedTagNamesUsed = systemTagsManager.reservedTagNamesUsed(tagNames);
             if (!reservedTagNamesUsed.isEmpty()) {
                 throw new IllegalArgumentException("Illegal use of reserved tag name(s): " + reservedTagNamesUsed);
             }
         }
-        return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
+        return toHelidonTags(systemTagsManager.withScopeTag(iterableEntries(tags), scope));
     }
 
     @Override
@@ -503,9 +514,9 @@ class Registry implements MetricRegistry {
      * @param entriesIterable iterable of map entries
      * @return iterable of {@link io.helidon.metrics.api.Tag}
      */
-    private static Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
+    private Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
         List<io.helidon.metrics.api.Tag> result = new ArrayList<>();
-        entriesIterable.forEach(entry -> result.add(io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue())));
+        entriesIterable.forEach(entry -> result.add(metricsFactory.tagCreate(entry.getKey(), entry.getValue())));
         return result;
     }
 
@@ -554,10 +565,10 @@ class Registry implements MetricRegistry {
         }
     }
 
-    private static Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
+    private Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
-        SystemTagsManager.instance().withoutSystemOrScopeTags(tags).forEach(t -> result.put(t.key(), t.value()));
+        systemTagsManager.withoutSystemOrScopeTags(tags).forEach(t -> result.put(t.key(), t.value()));
 
         return result;
     }
@@ -573,7 +584,7 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonCounter createCounter(Metadata metadata, Tag... tags) {
-        return createCounter(io.helidon.metrics.api.Counter.builder(metadata.getName())
+        return createCounter(metricsFactory.counterBuilder(metadata.getName())
                                      .scope(scope)
                                      .description(metadata.getDescription())
                                      .baseUnit(sanitizeUnit(metadata.getUnit()))
@@ -581,14 +592,13 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
-        return createMeter(counterBuilder, HelidonCounter::create);
+        return createMeter(counterBuilder, delegate -> HelidonCounter.create(systemTagsManager, delegate));
     }
 
     @SuppressWarnings("unchecked")
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
-        return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                  (Supplier<? extends N>) () -> func
-                                                                                          .apply(object))
+        return (HelidonGauge<N>) createGauge(metricsFactory.gaugeBuilder(metadata.getName(),
+                                                                         (Supplier<? extends N>) () -> func.apply(object))
                                                      .scope(scope)
                                                      .description(metadata.getDescription())
                                                      .tags(validatedAllTags(scope, tags))
@@ -597,8 +607,7 @@ class Registry implements MetricRegistry {
     }
 
     private <N extends Number> HelidonGauge<N> createGauge(Metadata metadata, Supplier<N> supplier, Tag... tags) {
-        return createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                supplier)
+        return createGauge(metricsFactory.gaugeBuilder(metadata.getName(), supplier)
                                    .scope(scope)
                                    .description(metadata.getDescription())
                                    .tags(validatedAllTags(scope, tags))
@@ -608,11 +617,12 @@ class Registry implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
-        return createMeter(gBuilder, HelidonGauge::create);
+        return createMeter(gBuilder, delegate -> HelidonGauge.create(systemTagsManager, delegate));
     }
 
     private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
-        return createHistogram(DistributionSummary.builder(metadata.getName())
+        return createHistogram(metricsFactory.distributionSummaryBuilder(
+                                               metadata.getName(), metricsFactory.distributionStatisticsConfigBuilder())
                                        .scope(scope)
                                        .description(metadata.getDescription())
                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
@@ -621,11 +631,12 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonHistogram createHistogram(io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
-        return createMeter(DistributionCustomizations.apply(sBuilder), HelidonHistogram::create);
+        return createMeter(DistributionCustomizations.apply(sBuilder, metricsFactory),
+                           delegate -> HelidonHistogram.create(systemTagsManager, delegate));
     }
 
     private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
-        return createTimer(io.helidon.metrics.api.Timer.builder(metadata.getName())
+        return createTimer(metricsFactory.timerBuilder(metadata.getName())
                                    .scope(scope)
                                    .description(metadata.getDescription())
                                    .baseUnit(sanitizeUnit(metadata.getUnit()))
@@ -633,7 +644,11 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
-        return createMeter(DistributionCustomizations.apply(tBuilder), d -> HelidonTimer.create(meterRegistry, d));
+        return createMeter(DistributionCustomizations.apply(tBuilder),
+                           delegate -> HelidonTimer.create(meterRegistry,
+                                                           metricsFactory,
+                                                           systemTagsManager,
+                                                           delegate));
     }
 
     private <HM extends HelidonMetric<M>,
@@ -688,7 +703,7 @@ class Registry implements MetricRegistry {
             return HelidonGauge.create(scope, metadata, gauge);
         }
         if (meter instanceof io.helidon.metrics.api.Timer timer) {
-            return HelidonTimer.create(meterRegistry, scope, metadata, timer);
+            return HelidonTimer.create(meterRegistry, metricsFactory, scope, metadata, timer);
         }
         collector.warn(String.format("Unrecognized type for new meter %s; unable to create MP metric for it", meter));
         return null;
@@ -697,7 +712,7 @@ class Registry implements MetricRegistry {
     private MetricID metricIDWithoutSystemTags(Errors.Collector collector, Meter.Id meterId) {
         Map<String, String> tagsWithoutScope = tagsWithoutSystemOrScopeTags(meterId.tags());
 
-        Collection<String> reservedTagNamesUsed = SystemTagsManager.instance().reservedTagNamesUsed(tagsWithoutScope.keySet());
+        Collection<String> reservedTagNamesUsed = systemTagsManager.reservedTagNamesUsed(tagsWithoutScope.keySet());
 
         if (!reservedTagNamesUsed.isEmpty()) {
             collector.fatal(reservedTagNamesUsed, "illegal use of reserved tag names");

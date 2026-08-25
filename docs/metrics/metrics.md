@@ -648,7 +648,10 @@ class InjectExample {
 }
 ```
 
-  - Invoke the static `getInstance()` method on the `RegistryFactory` class.
+  - Invoke the static `getInstance()` method on the `RegistryFactory` class while
+    the Helidon MP container is running. After the container shuts down, the
+    method throws an `IllegalStateException` rather than creating a new global
+    service registry.
 
     *Getting the `RegistryFactory` programmatically*
 

@@ -22,6 +22,8 @@ import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -40,39 +42,47 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
     }
 
     static <N extends Number> SupplierBased<N> create(MeterRegistry meterRegistry,
+                                                      SystemTagsManager systemTagsManager,
                                                       String scope,
                                                       Metadata metadata,
                                                       Supplier<N> supplier,
                                                       Tag... tags) {
+        MetricsFactory metricsFactory = meterRegistry.metricsFactory();
         return new SupplierBased<>(scope,
                                    metadata,
                                    supplier,
-                                   meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
-                                                                     .builder(metadata.getName(), supplier)
+                                   meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(metadata.getName(), supplier)
                                                                      .scope(scope)
                                                                      .baseUnit(metadata.getUnit())
                                                                      .description(metadata.getDescription())
-                                                                     .tags(allTags(scope, tags))));
+                                                                     .tags(allTags(metricsFactory,
+                                                                                   systemTagsManager,
+                                                                                   scope,
+                                                                                   tags))));
     }
 
     static <T> DoubleFunctionBased<T> create(MeterRegistry meterRegistry,
+                                             SystemTagsManager systemTagsManager,
                                              String scope,
                                              Metadata metadata,
                                              T target,
                                              ToDoubleFunction<T> fn,
                                              Tag... tags) {
+        MetricsFactory metricsFactory = meterRegistry.metricsFactory();
         return new DoubleFunctionBased<>(scope,
                                          metadata,
                                          target,
                                          fn,
-                                         meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
-                                                                           .builder(metadata.getName(),
-                                                                                    target,
-                                                                                    fn)
+                                         meterRegistry.getOrCreate(metricsFactory.gaugeBuilder(metadata.getName(),
+                                                                                               target,
+                                                                                               fn)
                                                                            .scope(scope)
                                                                            .description(metadata.getDescription())
                                                                            .baseUnit(metadata.getUnit())
-                                                                           .tags(allTags(scope, tags))));
+                                                                           .tags(allTags(metricsFactory,
+                                                                                         systemTagsManager,
+                                                                                         scope,
+                                                                                         tags))));
 
     }
 
@@ -84,8 +94,9 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                 delegate);
     }
 
-    static <N extends Number> HelidonGauge<N> create(io.helidon.metrics.api.Gauge<N> delegate) {
-        return new HelidonGauge.DelegateBased<>(resolvedScope(delegate),
+    static <N extends Number> HelidonGauge<N> create(SystemTagsManager systemTagsManager,
+                                                     io.helidon.metrics.api.Gauge<N> delegate) {
+        return new HelidonGauge.DelegateBased<>(resolvedScope(systemTagsManager, delegate),
                                                 Registry.metadata(delegate),
                                                 delegate);
     }

@@ -17,8 +17,16 @@
 package io.helidon.microprofile.config.core;
 
 import java.util.Map;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.ConfigSources;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.Config;
@@ -62,6 +70,51 @@ class MpConfigProviderResolverTest {
             assertThat(registryConfig.get("foo").asString().get(), is("baz"));
         } finally {
             resolver.registerConfig(original, classLoader);
+            shutdownRegistry();
         }
+    }
+
+    @Test
+    void serviceRegistryStartupAndConfigRegistrationAreAtomic() throws Exception {
+        MpConfigProviderResolver.ConfigDelegate config =
+                (MpConfigProviderResolver.ConfigDelegate) ConfigProviderResolver.instance().getConfig();
+        shutdownRegistry();
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        AtomicReference<ServiceRegistryManager> activeManager = new AtomicReference<>();
+        try {
+            for (int i = 0; i < 25; i++) {
+                CyclicBarrier barrier = new CyclicBarrier(2);
+                Future<ServiceRegistryManager> startFuture = executor.submit(() -> {
+                    barrier.await();
+                    return MpServiceRegistryBootstrap.start();
+                });
+                Future<?> configFuture = executor.submit(() -> {
+                    barrier.await();
+                    MpServiceRegistryBootstrap.configure(config);
+                    return null;
+                });
+
+                ServiceRegistryManager manager = startFuture.get(10, TimeUnit.SECONDS);
+                activeManager.set(manager);
+                configFuture.get(10, TimeUnit.SECONDS);
+                assertThat(GlobalServiceRegistry.registry(), sameInstance(manager.registry()));
+                MpServiceRegistryBootstrap.shutdown(manager);
+                activeManager.set(null);
+            }
+        } finally {
+            ServiceRegistryManager manager = activeManager.get();
+            if (manager != null) {
+                MpServiceRegistryBootstrap.shutdown(manager);
+            }
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS), is(true));
+            shutdownRegistry();
+        }
+    }
+
+    private static void shutdownRegistry() {
+        ServiceRegistryManager manager = MpServiceRegistryBootstrap.start();
+        MpServiceRegistryBootstrap.shutdown(manager);
     }
 }

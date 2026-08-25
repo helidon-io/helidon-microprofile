@@ -23,6 +23,7 @@ module io.helidon.microprofile.config.core {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.config.encryption;
+    requires io.helidon.service.registry;
     requires jakarta.annotation;
     requires io.helidon.common.configurable;
 

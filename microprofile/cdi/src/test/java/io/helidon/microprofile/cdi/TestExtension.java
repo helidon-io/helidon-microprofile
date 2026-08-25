@@ -44,6 +44,7 @@ public class TestExtension implements Extension {
 
     // must be public so it works with never versions of Java (do not want to open this module to weld)
     public void registerBeans(@Observes BeforeBeanDiscovery bbd) {
+        bbd.addAnnotatedType(MainTest.RegistryCleanup.class, "unit-test-registry-cleanup");
         bbd.addAnnotatedType(TestBean.class, "unit-test-bean");
         bbd.addAnnotatedType(TestBean2.class, "unit-test-bean2");
     }

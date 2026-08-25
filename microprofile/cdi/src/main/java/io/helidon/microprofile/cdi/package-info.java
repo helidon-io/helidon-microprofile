@@ -15,6 +15,16 @@
  */
 /**
  * CDI extension for Helidon MP.
+ * <p>
+ * Helidon MP owns the application-global service registry. It installs the registry before initializing CDI and keeps the
+ * registry available until CDI shutdown, including bean {@code @PreDestroy} callbacks, has completed. Helidon MP then shuts
+ * down the registry and its services.
+ * <p>
+ * MP Config can install a temporary application-global registry when configuration is accessed before Helidon MP starts.
+ * Helidon MP recognizes, shuts down, and replaces that bootstrap registry during startup. Any other application-global
+ * registry configured before Helidon MP starts is rejected; applications must not configure
+ * {@link io.helidon.service.registry.GlobalServiceRegistry} or initialize it through
+ * {@link io.helidon.service.registry.Services} before starting Helidon MP.
  *
  * @see jakarta.enterprise.context
  */

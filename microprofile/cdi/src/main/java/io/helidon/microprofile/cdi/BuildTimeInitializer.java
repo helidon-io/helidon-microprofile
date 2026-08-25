@@ -29,6 +29,7 @@ import io.helidon.logging.common.LogConfig;
 final class BuildTimeInitializer {
     private static final Lock CONTAINER_ACCESS = new ReentrantLock(true);
     private static volatile HelidonContainerImpl container;
+    private static volatile Throwable initializationFailure;
 
     static {
         // need to initialize logging as soon as possible
@@ -37,9 +38,7 @@ final class BuildTimeInitializer {
         try {
             createContainer();
         } catch (Throwable e) {
-            System.getLogger(BuildTimeInitializer.class.getName())
-                    .log(System.Logger.Level.ERROR, "Failed to initialize CDI container", e);
-            throw e;
+            recordInitializationFailure(e);
         }
     }
 
@@ -48,6 +47,7 @@ final class BuildTimeInitializer {
 
     static HelidonContainerImpl get() {
         return accessContainer(() -> {
+            throwIfInitializationFailed();
             if (null == container) {
                 createContainer();
             }
@@ -78,6 +78,22 @@ final class BuildTimeInitializer {
             return operation.get();
         } finally {
             CONTAINER_ACCESS.unlock();
+        }
+    }
+
+    private static void recordInitializationFailure(Throwable failure) {
+        initializationFailure = failure;
+        System.getLogger(BuildTimeInitializer.class.getName())
+                .log(System.Logger.Level.ERROR, "Failed to initialize CDI container", failure);
+    }
+
+    private static void throwIfInitializationFailed() {
+        switch (initializationFailure) {
+        case null -> {
+        }
+        case RuntimeException runtimeException -> throw runtimeException;
+        case Error error -> throw error;
+        default -> throw new IllegalStateException("CDI container initialization failed", initializationFailure);
         }
     }
 }
