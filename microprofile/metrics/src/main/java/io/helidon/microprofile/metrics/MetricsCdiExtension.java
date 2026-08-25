@@ -409,6 +409,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.DEBUG, () -> "Before bean discovery " + discovery);
+        Services.get(RegistryFactoryManager.class).enable();
 
         // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
         // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.

@@ -20,11 +20,14 @@
  * registry available until CDI shutdown, including bean {@code @PreDestroy} callbacks, has completed. Helidon MP then shuts
  * down the registry and its services.
  * <p>
- * MP Config can install a temporary application-global registry when configuration is accessed before Helidon MP starts.
- * Helidon MP recognizes, shuts down, and replaces that bootstrap registry during startup. Any other application-global
- * registry configured before Helidon MP starts is rejected; applications must not configure
+ * MP Config initialized before Helidon MP starts is retained without creating an application-global registry. Helidon MP
+ * publishes that configuration after installing its registry and before initializing CDI. Any application-global registry
+ * configured before Helidon MP starts is rejected; applications must not configure
  * {@link io.helidon.service.registry.GlobalServiceRegistry} or initialize it through
  * {@link io.helidon.service.registry.Services} before starting Helidon MP.
+ * <p>
+ * If the current context supplies a service registry, Helidon MP uses that registry without replacing its Config service;
+ * the contextual registry owner is responsible for its configuration.
  *
  * @see jakarta.enterprise.context
  */

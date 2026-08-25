@@ -64,21 +64,21 @@ class MainTest {
     }
 
     @Test
-    void testReplacesConfigBootstrapServiceRegistry() {
+    void testPublishesConfigAfterInstallingApplicationRegistry() {
         RegistryLifecycleService.PRE_DESTROY.set(0);
-        ConfigProviderResolver.instance().getConfig();
-        ServiceRegistry configRegistry = GlobalServiceRegistry.registry();
-        configRegistry.get(RegistryLifecycleService.class);
+        Config config = ConfigProviderResolver.instance().getConfig();
+        assertThat("config access must not initialize the global registry",
+                   GlobalServiceRegistry.configured(),
+                   is(false));
 
         try {
             Main.main(new String[0]);
-            assertThat(GlobalServiceRegistry.registry(), not(sameInstance(configRegistry)));
-            assertThat("config bootstrap registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(1));
+            assertThat(GlobalServiceRegistry.registry().get(io.helidon.config.Config.class), sameInstance(config));
             GlobalServiceRegistry.registry().get(RegistryLifecycleService.class);
         } finally {
             Main.shutdown();
         }
-        assertThat("application registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(2));
+        assertThat("application registry is closed", RegistryLifecycleService.PRE_DESTROY.get(), is(1));
     }
 
     @Test

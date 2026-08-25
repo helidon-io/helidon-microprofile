@@ -29,7 +29,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.metrics {
 
-    requires io.helidon.microprofile.config.core;
     requires io.helidon.metrics.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
@@ -55,8 +54,6 @@ module io.helidon.microprofile.metrics {
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
     provides io.helidon.metrics.spi.MetricsProgrammaticConfig
             with io.helidon.microprofile.metrics.MpMetricsProgrammaticConfig;
-    provides io.helidon.metrics.spi.MeterRegistryLifeCycleListener
-            with io.helidon.microprofile.metrics.RegistryFactoryManager;
 
     uses io.helidon.metrics.spi.ExemplarService;
 }

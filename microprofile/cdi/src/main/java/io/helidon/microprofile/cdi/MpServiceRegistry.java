@@ -24,12 +24,15 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.config.core.MpServiceRegistryBootstrap;
+import io.helidon.config.Config;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
+
+import org.eclipse.microprofile.config.ConfigProvider;
 
 final class MpServiceRegistry {
     private static final System.Logger LOGGER = System.getLogger(MpServiceRegistry.class.getName());
@@ -58,19 +61,37 @@ final class MpServiceRegistry {
                 }
                 throw new ServiceRegistryException("Helidon MP service registry is already started.");
             }
-            ServiceRegistryManager manager = MpServiceRegistryBootstrap.start();
-            ServiceRegistry registry = manager.registry();
-
-            RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
-            shutdownHandler = newShutdownHandler;
+            Config config = config();
+            ServiceRegistryManager manager = null;
             try {
+                if (GlobalServiceRegistry.configured()) {
+                    throw new ServiceRegistryException("Application-global service registry was initialized before Helidon MP "
+                                                               + "startup.");
+                }
+                manager = ServiceRegistryManager.create();
+                ServiceRegistry registry = manager.registry();
+                configureRegistry(registry, config);
+                ServiceRegistry selectedRegistry = GlobalServiceRegistry.registry(() -> registry);
+                if (selectedRegistry != registry) {
+                    throw new ServiceRegistryException("Application-global service registry was initialized while Helidon MP "
+                                                               + "was starting.");
+                }
+
+                RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
+                shutdownHandler = newShutdownHandler;
                 Main.addShutdownHandler(newShutdownHandler);
+                return true;
             } catch (RuntimeException | Error e) {
                 shutdownHandler = null;
-                MpServiceRegistryBootstrap.shutdown(manager);
+                if (manager != null) {
+                    try {
+                        manager.shutdown();
+                    } catch (RuntimeException | Error cleanupFailure) {
+                        e.addSuppressed(cleanupFailure);
+                    }
+                }
                 throw e;
             }
-            return true;
         } finally {
             LOCK.unlock();
         }
@@ -108,6 +129,21 @@ final class MpServiceRegistry {
         }
     }
 
+    private static Config config() {
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        if (config instanceof Config helidonConfig) {
+            return helidonConfig;
+        }
+        return config.unwrap(Config.class);
+    }
+
+    private static void configureRegistry(ServiceRegistry registry, Config config) {
+        Context setupContext = Context.create();
+        setupContext.register(GLOBAL_CONTEXT_CLASSIFIER, setupContext);
+        setupContext.register(GLOBAL_REGISTRY_CLASSIFIER, registry);
+        Contexts.runInContext(setupContext, () -> Services.set(Config.class, config));
+    }
+
     private static Optional<ServiceRegistry> contextualRegistry() {
         return Contexts.context()
                 .flatMap(context -> context.get(GLOBAL_CONTEXT_CLASSIFIER, Context.class))
@@ -130,7 +166,7 @@ final class MpServiceRegistry {
         public void shutdown() {
             if (shutdown.compareAndSet(false, true)) {
                 try {
-                    MpServiceRegistryBootstrap.shutdown(manager);
+                    manager.shutdown();
                 } catch (Exception e) {
                     LOGGER.log(System.Logger.Level.ERROR, "Failed to shutdown Helidon MP Service Registry", e);
                 }

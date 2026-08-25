@@ -135,14 +135,69 @@
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
-                                <exclude>**/TestDistributionCustomizationsNoInit.java</exclude>
+                                <exclude>**/BadGaugeTest.java</exclude>
+                                <exclude>**/RegistryTest.java</exclude>
+                                <exclude>**/RegistryFactoryIsolationTest.java</exclude>
                                 <exclude>**/RegistryFactoryLifecycleTest.java</exclude>
+                                <exclude>**/ReusabilityMpServiceTest.java</exclude>
                                 <exclude>**/TestRestServiceInheritance.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <junit.jupiter.extensions.autodetection.enabled>true
                                 </junit.jupiter.extensions.autodetection.enabled>
                             </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately because this test starts and stops Helidon MP containers directly. -->
+                        <id>test-bad-gauges</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/BadGaugeTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately because this test initializes the global registry without starting Helidon MP. -->
+                        <id>test-registry</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/RegistryTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately because this test starts and stops a Helidon MP server directly. -->
+                        <id>test-reusability-mp-service</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/ReusabilityMpServiceTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately because this test verifies no application-global registry is installed. -->
+                        <id>test-registry-factory-isolation</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/RegistryFactoryIsolationTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
                         </configuration>
                     </execution>
                     <execution>
@@ -218,18 +273,6 @@
                                 <include>**/RegistryFactoryLifecycleTest.java</include>
                             </includes>
                             <reuseForks>false</reuseForks>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <!-- Run separately so the normal MP container start-up does not happen. -->
-                        <id>test-dist-cust-with-no-init</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/TestDistributionCustomizationsNoInit.java</include>
-                            </includes>
                         </configuration>
                     </execution>
                     <execution>

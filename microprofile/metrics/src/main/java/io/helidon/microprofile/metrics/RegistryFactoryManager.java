@@ -15,26 +15,62 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.common.Api;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
-/**
- * Manages the creation of registry factories.
- */
-public class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
+@Service.Singleton
+final class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
+    private final ServiceRegistry serviceRegistry;
+    private final AtomicBoolean enabled = new AtomicBoolean();
+    private final AtomicReference<MeterRegistry> meterRegistry = new AtomicReference<>();
 
-    /**
-     * Required public constructor for {@link java.util.ServiceLoader}.
-     */
-    @Api.Internal
-    public RegistryFactoryManager() {
+    RegistryFactoryManager(ServiceRegistry serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
+
+    void enable() {
+        enabled.set(true);
+        RegistryFactory.registerOwner(this);
+        MeterRegistry currentMeterRegistry = meterRegistry.get();
+        if (currentMeterRegistry != null) {
+            registryFactory(currentMeterRegistry);
+        }
+    }
+
+    RegistryFactory registryFactory() {
+        return registryFactory(serviceRegistry.get(MeterRegistry.class));
     }
 
     @Override
     public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        RegistryFactory.getInstance(meterRegistry);
+        if (this.meterRegistry.compareAndSet(null, meterRegistry) && enabled.get()) {
+            registryFactory(meterRegistry);
+        }
+    }
+
+    @Service.PreDestroy
+    void preDestroy() {
+        RegistryFactory.serviceRegistryShutdown(this);
+    }
+
+    private RegistryFactory registryFactory(MeterRegistry meterRegistry) {
+        MetricsFactory metricsFactory = serviceRegistry.get(MetricsFactory.class);
+        if (meterRegistry.metricsFactory() != metricsFactory) {
+            throw new IllegalStateException(RegistryFactory.class.getName()
+                                                    + " cannot be initialized for an unrelated meter registry");
+        }
+        return RegistryFactory.activate(meterRegistry,
+                                        metricsFactory,
+                                        serviceRegistry.get(SystemTagsManager.class),
+                                        this);
     }
 
 }

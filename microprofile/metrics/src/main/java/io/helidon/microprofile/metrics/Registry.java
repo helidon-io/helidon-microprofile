@@ -106,25 +106,6 @@ class Registry implements MetricRegistry {
                 : null;
     }
 
-    /**
-     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including global tags, any app tag, and a scope
-     * tag (if metrics is so configured to add a scope tag).
-     *
-     * @param scope scope of the meter
-     * @param tags  explicitly-defined tags from the application code
-     * @return iterable ot Helidon tags
-     */
-    private Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
-        if (tags != null && tags.length > 0) {
-            List<String> tagNames = Arrays.stream(tags).map(Tag::getTagName).toList();
-            Collection<String> reservedTagNamesUsed = systemTagsManager.reservedTagNamesUsed(tagNames);
-            if (!reservedTagNamesUsed.isEmpty()) {
-                throw new IllegalArgumentException("Illegal use of reserved tag name(s): " + reservedTagNamesUsed);
-            }
-        }
-        return toHelidonTags(systemTagsManager.withScopeTag(iterableEntries(tags), scope));
-    }
-
     @Override
     public Counter counter(String name) {
         return counter(name, NO_TAGS);
@@ -508,18 +489,6 @@ class Registry implements MetricRegistry {
         }
     }
 
-    /**
-     * Converts an iterable of map entries (representing tag names and values) into an iterable of Helidon tags.
-     *
-     * @param entriesIterable iterable of map entries
-     * @return iterable of {@link io.helidon.metrics.api.Tag}
-     */
-    private Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
-        List<io.helidon.metrics.api.Tag> result = new ArrayList<>();
-        entriesIterable.forEach(entry -> result.add(metricsFactory.tagCreate(entry.getKey(), entry.getValue())));
-        return result;
-    }
-
     private static Iterable<Map.Entry<String, String>> iterableEntries(Tag... tags) {
         if (tags == null) {
             return Set.of();
@@ -565,18 +534,49 @@ class Registry implements MetricRegistry {
         }
     }
 
+    private static Tag[] tags(Map<String, String> tags) {
+        var result = new ArrayList<Tag>();
+        tags.forEach((key, value) -> result.add(new Tag(key, value)));
+        return result.toArray(new Tag[0]);
+    }
+
+    /**
+     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including global tags, any app tag, and a scope
+     * tag (if metrics is so configured to add a scope tag).
+     *
+     * @param scope scope of the meter
+     * @param tags  explicitly-defined tags from the application code
+     * @return iterable ot Helidon tags
+     */
+    private Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
+        if (tags != null && tags.length > 0) {
+            List<String> tagNames = Arrays.stream(tags).map(Tag::getTagName).toList();
+            Collection<String> reservedTagNamesUsed = systemTagsManager.reservedTagNamesUsed(tagNames);
+            if (!reservedTagNamesUsed.isEmpty()) {
+                throw new IllegalArgumentException("Illegal use of reserved tag name(s): " + reservedTagNamesUsed);
+            }
+        }
+        return toHelidonTags(systemTagsManager.withScopeTag(iterableEntries(tags), scope));
+    }
+
+    /**
+     * Converts an iterable of map entries (representing tag names and values) into an iterable of Helidon tags.
+     *
+     * @param entriesIterable iterable of map entries
+     * @return iterable of {@link io.helidon.metrics.api.Tag}
+     */
+    private Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
+        List<io.helidon.metrics.api.Tag> result = new ArrayList<>();
+        entriesIterable.forEach(entry -> result.add(metricsFactory.tagCreate(entry.getKey(), entry.getValue())));
+        return result;
+    }
+
     private Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
         systemTagsManager.withoutSystemOrScopeTags(tags).forEach(t -> result.put(t.key(), t.value()));
 
         return result;
-    }
-
-    private static Tag[] tags(Map<String, String> tags) {
-        var result = new ArrayList<Tag>();
-        tags.forEach((key, value) -> result.add(new Tag(key, value)));
-        return result.toArray(new Tag[0]);
     }
 
     private boolean isMeterEnabled(Meter meter) {

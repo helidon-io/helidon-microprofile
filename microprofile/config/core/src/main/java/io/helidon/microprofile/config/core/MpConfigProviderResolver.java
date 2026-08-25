@@ -105,9 +105,6 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
                 Config c = buildConfig(loader);
                 return doRegisterConfig(c, loader);
             } else {
-                if (loader == contextClassLoader()) {
-                    updateServiceRegistry(config);
-                }
                 return config;
             }
         } finally {
@@ -225,15 +222,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
         CONFIGS.put(classLoader, newConfig);
 
-        if (classLoader == contextClassLoader()) {
-            updateServiceRegistry(newConfig);
-        }
-
         return newConfig;
-    }
-
-    private static void updateServiceRegistry(ConfigDelegate config) {
-        MpServiceRegistryBootstrap.configure(config);
     }
 
     private static ClassLoader contextClassLoader() {

@@ -25,10 +25,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.microprofile.config.core.MpConfigSources;
-import io.helidon.microprofile.config.core.MpServiceRegistryBootstrap;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -78,8 +76,6 @@ class ServiceRegistryShutdownDeadlockTest {
             executor.shutdownNow();
             Main.shutdown();
             resolver.registerConfig(originalConfig, classLoader);
-            ServiceRegistryManager manager = MpServiceRegistryBootstrap.start();
-            MpServiceRegistryBootstrap.shutdown(manager);
         }
     }
 

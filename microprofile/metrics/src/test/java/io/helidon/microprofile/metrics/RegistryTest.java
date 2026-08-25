@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -113,13 +114,17 @@ class RegistryTest {
         if (removeEntered.await(5, TimeUnit.SECONDS)) {
             return;
         }
-        if (!removeFuture.isDone()) {
-            fail("Underlying meter removal did not start within 5 seconds and the removal task remains incomplete");
-        }
+        assertThat("Underlying meter removal did not start within 5 seconds and the removal task remains incomplete",
+                   removeFuture.isDone(),
+                   is(true));
         try {
-            fail("Removal completed without invoking the underlying meter registry; result: " + removeFuture.get());
+            assertThat("Removal completed without invoking the underlying meter registry",
+                       removeFuture.get(),
+                       nullValue());
         } catch (ExecutionException e) {
-            fail("Removal failed before invoking the underlying meter registry", e.getCause());
+            assertThat("Removal failed before invoking the underlying meter registry",
+                       e.getCause(),
+                       nullValue());
         }
     }
 

@@ -28,16 +28,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.service.registry.GlobalServiceRegistry;
-import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.Services;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -46,19 +43,13 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * Micrometer-specific implementation of a registry factory, created automatically whenever a new
- * {@link io.helidon.metrics.api.MeterRegistry} is created by a metrics provider.
+ * MicroProfile Metrics registry factory backed by a Helidon {@link io.helidon.metrics.api.MeterRegistry}.
  * <p>
- * Note: Formerly, an instance of this class could be updated with new configuration information after it had been initialized
- * as described in Github issue #360. This version, though, is instantiated once per new meter registry, with the intent that
- * only
- * one meter registry will every be created in a production server.
- * </p>
- * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry)}
- * method creates a new instance and saves it for retrieval via {@link #getInstance()}. The
- * {@link #create(io.helidon.metrics.api.MeterRegistry)}
- * method creates a new instance but does not record it internally.
- * </p>
+ * A managed instance is created and recorded for the meter registry owned by the currently configured service registry.
+ * Otherwise, static access throws an {@link java.lang.IllegalStateException}.
+ * <p>
+ * The {@link #create(io.helidon.metrics.api.MeterRegistry)} method creates an isolated instance for the supplied meter
+ * registry without recording it internally.
  */
 public class RegistryFactory {
 
@@ -68,18 +59,23 @@ public class RegistryFactory {
                                                                            Timer.class);
     private static final Lock LIFECYCLE_ACCESS = new ReentrantLock();
     private static final AtomicReference<RegistryFactory> REGISTRY_FACTORY = new AtomicReference<>();
+    private static final AtomicReference<RegistryFactoryManager> REGISTRY_FACTORY_OWNER = new AtomicReference<>();
     private static final System.Logger LOGGER = System.getLogger(RegistryFactory.class.getName());
-    private static volatile LifecycleState lifecycleState = LifecycleState.INITIAL;
     private final MeterRegistry meterRegistry;
     private final MetricsFactory metricsFactory;
     private final SystemTagsManager systemTagsManager;
+    private final RegistryFactoryManager owner;
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
 
-    private RegistryFactory(MeterRegistry meterRegistry) {
+    private RegistryFactory(MeterRegistry meterRegistry,
+                            MetricsFactory metricsFactory,
+                            SystemTagsManager systemTagsManager,
+                            RegistryFactoryManager owner) {
         this.meterRegistry = meterRegistry;
-        this.metricsFactory = meterRegistry.metricsFactory();
-        this.systemTagsManager = Services.get(SystemTagsManager.class);
+        this.metricsFactory = metricsFactory;
+        this.systemTagsManager = systemTagsManager;
+        this.owner = owner;
         meterRegistry
                 .onMeterAdded(this::registerMetricForExistingMeter)
                 .onMeterRemoved(this::removeMetricForMeter);
@@ -89,63 +85,47 @@ public class RegistryFactory {
      * Get a singleton instance of the registry factory.
      *
      * @return registry factory singleton
-     * @throws IllegalStateException if the Helidon MP container has shut down
+     * @throws IllegalStateException if no service registry is configured
      */
     public static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
-        if (result != null) {
+        if (result != null && activationAllowed()) {
             return result;
         }
-        if (lifecycleState == LifecycleState.STOPPED && !contextualRegistryConfigured()) {
+        if (!activationAllowed()) {
             throw new IllegalStateException(RegistryFactory.class.getName()
-                                                    + " is available only while a Helidon MP container is running");
+                                                    + " is available only while a service registry is configured");
         }
-
-        LIFECYCLE_ACCESS.lock();
-        try {
-            result = REGISTRY_FACTORY.get();
-            if (result != null) {
-                return result;
-            }
-            boolean contextualRegistry = contextualRegistryConfigured();
-            if (lifecycleState == LifecycleState.STOPPED && !contextualRegistry) {
-                throw new IllegalStateException(RegistryFactory.class.getName()
-                                                        + " is available only while a Helidon MP container is running");
-            }
-
-            boolean initial = lifecycleState == LifecycleState.INITIAL;
-            if (initial) {
-                ConfigProvider.getConfig();
-            }
-            MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
-            result = REGISTRY_FACTORY.get();
-            if (result == null && (initial || contextualRegistry)) {
-                result = create(meterRegistry);
-                REGISTRY_FACTORY.set(result);
-                lifecycleState = LifecycleState.ACTIVE;
-            }
-            if (result == null) {
-                throw new IllegalStateException("Helidon MP did not initialize " + RegistryFactory.class.getName());
-            }
-            return result;
-        } finally {
-            LIFECYCLE_ACCESS.unlock();
+        RegistryFactoryManager owner = REGISTRY_FACTORY_OWNER.get();
+        if (owner == null) {
+            owner = Services.get(RegistryFactoryManager.class);
         }
+        return owner.registryFactory();
     }
 
     static RegistryFactory create(MeterRegistry meterRegistry) {
-        return new RegistryFactory(meterRegistry);
+        MetricsFactory metricsFactory = meterRegistry.metricsFactory();
+        SystemTagsManager systemTagsManager = SystemTagsManager.create(metricsFactory.metricsConfig(), metricsFactory);
+        return new RegistryFactory(meterRegistry, metricsFactory, systemTagsManager, null);
     }
 
-    static RegistryFactory getInstance(MeterRegistry meterRegistry) {
+    static RegistryFactory activate(MeterRegistry meterRegistry,
+                                    MetricsFactory metricsFactory,
+                                    SystemTagsManager systemTagsManager,
+                                    RegistryFactoryManager owner) {
         LIFECYCLE_ACCESS.lock();
         try {
-            RegistryFactory result = REGISTRY_FACTORY.get();
-            if (result == null || result.meterRegistry != meterRegistry) {
-                result = create(meterRegistry);
-                REGISTRY_FACTORY.set(result);
+            if (!activationAllowed()) {
+                throw new IllegalStateException(RegistryFactory.class.getName()
+                                                        + " cannot be initialized without a configured service registry");
             }
-            lifecycleState = LifecycleState.ACTIVE;
+            RegistryFactory result = REGISTRY_FACTORY.get();
+            if (result != null && result.meterRegistry == meterRegistry && result.owner == owner) {
+                return result;
+            }
+            result = new RegistryFactory(meterRegistry, metricsFactory, systemTagsManager, owner);
+            REGISTRY_FACTORY_OWNER.set(owner);
+            REGISTRY_FACTORY.set(result);
             return result;
         } finally {
             LIFECYCLE_ACCESS.unlock();
@@ -159,7 +139,6 @@ public class RegistryFactory {
     static void closeAll() {
         LIFECYCLE_ACCESS.lock();
         try {
-            lifecycleState = LifecycleState.STOPPED;
             RegistryFactory rf = REGISTRY_FACTORY.getAndSet(null);
             if (rf != null) {
                 rf.close();
@@ -167,6 +146,18 @@ public class RegistryFactory {
         } finally {
             LIFECYCLE_ACCESS.unlock();
         }
+    }
+
+    static void registerOwner(RegistryFactoryManager owner) {
+        REGISTRY_FACTORY_OWNER.set(owner);
+    }
+
+    static void serviceRegistryShutdown(RegistryFactoryManager owner) {
+        RegistryFactory current = REGISTRY_FACTORY.get();
+        if (current != null && current.owner == owner) {
+            REGISTRY_FACTORY.compareAndSet(current, null);
+        }
+        REGISTRY_FACTORY_OWNER.compareAndSet(owner, null);
     }
 
     /**
@@ -207,6 +198,10 @@ public class RegistryFactory {
         PeriodicExecutor.stop();
     }
 
+    private static boolean activationAllowed() {
+        return GlobalServiceRegistry.configured();
+    }
+
     private <T> T accessMetricsSettings(Callable<T> callable) {
         metricsSettingsAccess.lock();
         try {
@@ -232,24 +227,6 @@ public class RegistryFactory {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
         }
         registry(scope).onMeterRemoved(meter);
-    }
-
-    private static boolean contextualRegistryConfigured() {
-        if (Contexts.context().isEmpty() || !GlobalServiceRegistry.configured()) {
-            return false;
-        }
-        ServiceRegistry currentRegistry = GlobalServiceRegistry.registry();
-        ServiceRegistry globalRegistry = Contexts.runInContext(Contexts.globalContext(),
-                                                               () -> GlobalServiceRegistry.configured()
-                                                                       ? GlobalServiceRegistry.registry()
-                                                                       : null);
-        return currentRegistry != globalRegistry;
-    }
-
-    private enum LifecycleState {
-        INITIAL,
-        ACTIVE,
-        STOPPED
     }
 
 }
