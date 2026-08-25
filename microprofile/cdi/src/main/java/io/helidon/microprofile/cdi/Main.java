@@ -49,20 +49,11 @@ public final class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
     private static final AtomicBoolean MAIN_CALLED = new AtomicBoolean();
     private static final HelidonContainer CONTAINER;
-    private static final Throwable INITIALIZATION_FAILURE;
     private static volatile HelidonContainer inUse;
 
     static {
         // static initialization to support GraalVM native image
-        HelidonContainer container = null;
-        Throwable initializationFailure = null;
-        try {
-            container = ContainerInstanceHolder.get();
-        } catch (RuntimeException | Error e) {
-            initializationFailure = e;
-        }
-        CONTAINER = container;
-        INITIALIZATION_FAILURE = initializationFailure;
+        CONTAINER = ContainerInstanceHolder.get();
     }
 
     private Main() {
@@ -77,7 +68,6 @@ public final class Main {
      * @param args command line arguments, currently ignored
      */
     public static void main(String[] args) {
-        throwIfInitializationFailed();
         if (ContainerInstanceHolder.isReset()) {
             // in case somebody restarted the container, we need to get a new one
             inUse = ContainerInstanceHolder.get();
@@ -107,16 +97,6 @@ public final class Main {
             } catch (IllegalStateException e) {
                 LOGGER.log(Level.FINEST, "Failed to obtain a CDI instance to shut down, probably duplicate call", e);
             }
-        }
-    }
-
-    private static void throwIfInitializationFailed() {
-        switch (INITIALIZATION_FAILURE) {
-        case null -> {
-        }
-        case RuntimeException runtimeException -> throw runtimeException;
-        case Error error -> throw error;
-        default -> throw new IllegalStateException("CDI container initialization failed", INITIALIZATION_FAILURE);
         }
     }
 }
