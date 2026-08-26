@@ -1042,6 +1042,11 @@
                 <version>${version.lib.microprofile-restful-tck}</version>
             </dependency>
             <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>${version.lib.jaxb-runtime}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.akarnokd</groupId>
                 <artifactId>rxjava2-jdk9-interop</artifactId>
                 <version>${version.lib.rxjava2-jdk9-interop}</version>
