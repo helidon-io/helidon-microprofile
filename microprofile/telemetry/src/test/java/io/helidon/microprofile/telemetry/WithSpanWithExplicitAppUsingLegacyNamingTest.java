@@ -18,12 +18,15 @@ package io.helidon.microprofile.telemetry;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @AddBean(App.class)
 @AddBean(AppTracedResource.class)
+@AddConfig(key = "telemetry.span.name-includes-method", value = "false")
+@AddConfig(key = "telemetry.span.full.url", value = "false")
 class WithSpanWithExplicitAppUsingLegacyNamingTest extends WithSpanTestBase {
 
     static Stream<SpanPathTestInfo> testExplicitAppSpanNameFromPath() {
@@ -34,6 +37,6 @@ class WithSpanWithExplicitAppUsingLegacyNamingTest extends WithSpanTestBase {
     @ParameterizedTest()
     @MethodSource()
     void testExplicitAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
-        testSpanNameFromPath(spanPathTestInfo);
+        testLegacySpanNameFromPath(spanPathTestInfo);
     }
 }
