@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class AutoSpanIncludesWriteDefaultTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
-    void testDefaultEndsSpanBeforeWrite() {
-        checkSpanAtWrite(true);
+    void testDefaultEndsSpanAfterWrite() {
+        checkSpanAtWrite(false);
     }
 }

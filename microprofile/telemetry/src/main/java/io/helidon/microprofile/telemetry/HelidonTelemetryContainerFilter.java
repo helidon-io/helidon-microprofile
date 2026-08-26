@@ -74,7 +74,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     @Deprecated(forRemoval = true, since = "4.5.4")
     static final String AUTO_SPAN_INCLUDES_RESPONSE_WRITE = "telemetry.span.includes-response-write";
 
-    private static boolean spanNameFullUrl = false;
+    private static boolean spanNameFullUrl = true;
     private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
 
     private final io.helidon.tracing.Tracer helidonTracer;
@@ -83,10 +83,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     /*
      MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
-     Because Helidon adopts MP Telemetry 1.1 in a dot release (4.1), this would be a backward-incompatible change. This setting,
-     controllable via config, defaults to the older behavior that is backward-compatible with Helidon 4.0.x but allows users to
-     select the newer, spec-compliant behavior that is backward-incompatible with Helidon 4.0.x. The default is to use the
-     old behavior.
+     Because Helidon adopted MP Telemetry 1.1 in a dot release (4.1), this was a backward-incompatible change. This setting,
+     controllable via config, allows users to select the older behavior that is backward-compatible with Helidon 4.0.x. The
+     default is to use the newer, spec-compliant behavior.
      */
     private final boolean restSpanNameIncludesMethod;
 
@@ -108,22 +107,24 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         // @Deprecated(forRemoval = true) In 5.x remove the following.
         autoSpanIncludesResponseWrite = DeprecatedConfig.get(helidonConfig, AUTO_SPAN_INCLUDES_RESPONSE_WRITE)
                 .asBoolean()
-                .orElse(false);
+                .orElse(true);
 
         // @Deprecated(forRemoval = true) In 5.x remove the following.
-        DeprecatedConfig.get(helidonConfig, SPAN_NAME_FULL_URL).asBoolean().ifPresent(e -> spanNameFullUrl = e);
+        spanNameFullUrl = DeprecatedConfig.get(helidonConfig, SPAN_NAME_FULL_URL)
+                .asBoolean()
+                .orElse(true);
         restSpanNameIncludesMethod = DeprecatedConfig.get(helidonConfig, SPAN_NAME_INCLUDES_METHOD)
                 .asBoolean()
-                .orElse(false);
+                .orElse(true);
         if (!restSpanNameIncludesMethod && !spanNameWarningLogged.get()) {
             spanNameWarningLogged.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
                                Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
-                               names. Your configuration does not set %s to true, so your service uses the legacy span name
+                               names. Your configuration sets %s to false, so your service uses the legacy span name
                                format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-                               future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
-                               configuration to migrate to the current conventions.""",
+                               future major release of Helidon. Consider removing the setting or changing it to 'true' to
+                               migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
