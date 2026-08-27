@@ -33,12 +33,19 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 @Service.Singleton
 public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
+    private final Config config;
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
     public MpMetricsProgrammaticConfig() {
+        this(config());
+    }
+
+    @Service.Inject
+    MpMetricsProgrammaticConfig(Config config) {
+        this.config = config;
     }
 
     @Override
@@ -60,15 +67,22 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
     public MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
         MetricsProgrammaticConfig.super.apply(builder);
 
-        org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
-        mpConfig.getOptionalValue("mp.metrics.tags", String.class)
+        config.get("mp.metrics.tags").asString()
                 .ifPresent(tags -> {
                     Config tagsConfig = Config.just(ConfigSources.create(Map.of("tags", tags)));
                     builder.tags(MetricsConfig.create(tagsConfig).tags());
                 });
-        mpConfig.getOptionalValue("mp.metrics.appName", String.class)
+        config.get("mp.metrics.appName").asString()
                 .ifPresent(builder::appName);
 
         return builder;
+    }
+
+    private static Config config() {
+        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        if (config instanceof Config helidonConfig) {
+            return helidonConfig;
+        }
+        return config.unwrap(Config.class);
     }
 }

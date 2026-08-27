@@ -692,9 +692,11 @@ mp.metrics.tags=region=west,env=prod
 mp.metrics.appName=orders
 ```
 
-`mp.metrics.tags` is a comma-separated list of `name=value` pairs. The
-`mp.metrics.appName` value is reported using the Helidon MP application tag
-name (`mp_app` by default). If both MicroProfile keys and the corresponding
+`mp.metrics.tags` is a comma-separated list of `name=value` pairs. In the
+resolved configuration value, a literal `=` or `,` in a tag value must be
+escaped with a backslash (`\`). In a `.properties` file, write that backslash
+as `\\`. The `mp.metrics.appName` value is reported using the Helidon MP
+application tag name (`mp_app` by default). If both MicroProfile keys and the corresponding
 Helidon SE-style keys are present, Helidon MP gives the MicroProfile keys
 precedence over `metrics.tags` and `metrics.app-name`.
 
