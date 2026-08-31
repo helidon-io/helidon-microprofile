@@ -74,12 +74,12 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     @Deprecated(forRemoval = true, since = "4.5.4")
     static final String AUTO_SPAN_INCLUDES_RESPONSE_WRITE = "telemetry.span.includes-response-write";
 
-    private static boolean spanNameFullUrl = true;
     private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
 
     private final io.helidon.tracing.Tracer helidonTracer;
     private final boolean isAgentPresent;
     private final boolean autoSpanIncludesResponseWrite;
+    private final boolean spanNameFullUrl;
 
     /*
      MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
