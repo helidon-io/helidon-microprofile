@@ -35,7 +35,6 @@ import io.helidon.common.GenericType;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigMapper;
-import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -97,7 +96,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         Lock lock = RW_LOCK.readLock();
         try {
             lock.lock();
-            Config config = CONFIGS.get(loader);
+            ConfigDelegate config = CONFIGS.get(loader);
 
             if (null == config) {
                 lock.unlock();
@@ -222,13 +221,6 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
         }
 
         CONFIGS.put(classLoader, newConfig);
-
-        if (classLoader == contextClassLoader()) {
-            try {
-                Services.set(io.helidon.config.Config.class, newConfig);
-            } catch (Exception ígnored) {
-            }
-        }
 
         return newConfig;
     }

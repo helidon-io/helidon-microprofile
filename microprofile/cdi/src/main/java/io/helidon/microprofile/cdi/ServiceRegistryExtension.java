@@ -28,7 +28,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.Main;
 import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
@@ -38,7 +37,6 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.metadata.reflection.AnnotationFactory;
 import io.helidon.metadata.reflection.TypeFactory;
 import io.helidon.service.registry.DependencyContext;
-import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.InterceptionMetadata;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
@@ -48,13 +46,11 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
-import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.context.Destroyed;
 import jakarta.enterprise.context.NormalScope;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -121,7 +117,7 @@ public class ServiceRegistryExtension implements Extension {
 
     @SuppressWarnings("unchecked")
     void registerTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
-        var registry = GlobalServiceRegistry.registry();
+        var registry = MpServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
@@ -167,7 +163,7 @@ public class ServiceRegistryExtension implements Extension {
 
     void registryToCdi(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) AfterBeanDiscovery abd,
                        BeanManager bm) {
-        var registry = GlobalServiceRegistry.registry();
+        var registry = MpServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();
 
@@ -197,17 +193,7 @@ public class ServiceRegistryExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .beanClass(ServiceRegistry.class)
                 .addType(ServiceRegistry.class)
-                .createWith(context -> GlobalServiceRegistry.registry());
-    }
-
-    /*
-    When the application scope is closed, we must re-create a new service registry, as otherwise we may
-    start CDI again with stale registry services
-     */
-    void resetRegistry(@Observes @Destroyed(ApplicationScoped.class) Object event) {
-        ServiceRegistryManager manager = ServiceRegistryManager.create();
-        GlobalServiceRegistry.registry(manager::registry);
-        Main.addShutdownHandler(manager::shutdown);
+                .createWith(context -> MpServiceRegistry.registry());
     }
 
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {

@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.MeterRegistry;
@@ -53,6 +52,7 @@ import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserver;
@@ -177,6 +177,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
     private Errors.Collector errors = Errors.collector();
+    private MetricsFactory metricsFactory;
     private String syntheticTimerMetricUnmappedExceptionName;
     private Optional<AutoHttpMetricsConfig> autoHttpMetricsConfig;
 
@@ -271,7 +272,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * </p>
      */
     static void shutdown() {
-        MetricsFactory.closeAll();
         RegistryFactory.closeAll();
     }
 
@@ -409,6 +409,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      */
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(Level.DEBUG, () -> "Before bean discovery " + discovery);
+        Services.get(RegistryFactoryManager.class).enable();
 
         // Register beans manually with annotated type identifiers that are deliberately the same as those used by the container
         // during bean discovery to avoid accidental duplicate registration in odd packaging scenarios.
@@ -443,40 +444,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
 
     @Override
     protected Config componentConfig() {
-        // Combine the Helidon-specific "metrics.xxx" settings with the MP
-        // "mp.metrics.xxx" settings into a single metrics config object.
         org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
 
         DistributionCustomizations.init(mpConfig);
-
-        /*
-         Some MP config refers to "mp.metrics.xxx" whereas te neutral SE metrics implementation uses "metrics.yyy" (where
-         sometimes xxx and yyy are different). In particular, there's "mp.metrics.appName" -> "metrics.app-name"
-
-         The next section maps MP config settings (if present) to the corresponding SE config settings, possibly adjusting the
-         key name in the process.
-         */
-        Map<String, String> mpToSeKeyNameMap = Map.of("appName", "app-name");
-        Map<String, String> mpConfigSettings = new HashMap<>();
-        Stream.of("tags",
-                  "appName")
-                .forEach(key ->
-                                 mpConfig.getOptionalValue("mp.metrics." + key, String.class)
-                                         .ifPresent(value -> mpConfigSettings.put(mpToSeKeyNameMap.getOrDefault(key, key),
-                                                                                  value)));
-
-        Config metricsConfig = super.componentConfig().detach();
-
-        Config.Builder builder = Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource();
-        if (!mpConfigSettings.isEmpty()) {
-            builder.addSource(ConfigSources.create(mpConfigSettings));
-        }
-        if (metricsConfig.exists()) {
-            builder.addSource(ConfigSources.create(metricsConfig));
-        }
-        return builder.build();
+        return super.componentConfig();
     }
 
     private static <E extends Member & AnnotatedElement> void recordAnnotatedSite(
@@ -575,8 +546,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         builder.endpoint("/metrics")
                 .config(config);
 
-        // Initialize the metrics factory instance and, along with it, the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
 
         Contexts.globalContext().register(metricsFactory);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
@@ -591,7 +562,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                          since the start of the server.""")
                 .withUnit(MetricUnits.NONE)
                 .build();
-        MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
         return builder.metricsConfig(metricsConfig)
                 .meterRegistry(meterRegistry)
                 .build();
@@ -916,6 +886,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     }
 
     private void onShutdown(@Observes BeforeShutdown shutdown) {
+        if (metricsFactory != null) {
+            Contexts.globalContext().unregister(metricsFactory);
+            metricsFactory = null;
+        }
         shutdown();
     }
 

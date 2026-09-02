@@ -19,7 +19,9 @@ package io.helidon.microprofile.metrics;
 import java.util.Objects;
 
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SampledMetric;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -36,14 +38,19 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
         this.delegate = delegate;
     }
 
-    static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+    static HelidonCounter create(MeterRegistry meterRegistry,
+                                 MetricsFactory metricsFactory,
+                                 SystemTagsManager systemTagsManager,
+                                 String scope,
+                                 Metadata metadata,
+                                 Tag... tags) {
         return create(scope,
                       metadata,
-                      meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
+                      meterRegistry.getOrCreate(metricsFactory.counterBuilder(metadata.getName())
                                                         .scope(scope)
                                                         .baseUnit(sanitizeUnit(metadata.getUnit()))
                                                         .description(metadata.getDescription())
-                                                        .tags(allTags(scope, tags))));
+                                                        .tags(allTags(metricsFactory, systemTagsManager, scope, tags))));
     }
 
     static HelidonCounter create(String scope,
@@ -54,8 +61,8 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
                                   delegate);
     }
 
-    static HelidonCounter create(io.helidon.metrics.api.Counter delegate) {
-        return new HelidonCounter(resolvedScope(delegate),
+    static HelidonCounter create(SystemTagsManager systemTagsManager, io.helidon.metrics.api.Counter delegate) {
+        return new HelidonCounter(resolvedScope(systemTagsManager, delegate),
                                   Registry.metadata(delegate),
                                   delegate);
     }

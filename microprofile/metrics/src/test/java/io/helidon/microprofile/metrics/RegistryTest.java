@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -29,6 +30,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
+
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -37,13 +42,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class RegistryTest {
 
     @Test
     void testGaugeRegistrationIsNotBlockedByPendingRemove() throws Exception {
-        io.helidon.metrics.api.MeterRegistry delegateMeterRegistry = io.helidon.metrics.api.MeterRegistry.create();
+        ConfigProvider.getConfig();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        io.helidon.metrics.api.MeterRegistry delegateMeterRegistry =
+                metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
         CountDownLatch removeEntered = new CountDownLatch(1);
         CountDownLatch allowRemoveToProceed = new CountDownLatch(1);
         io.helidon.metrics.api.MeterRegistry blockingMeterRegistry =
@@ -58,16 +68,17 @@ class RegistryTest {
                                              new Tag("issue", "11604"),
                                              new Tag("sequence", "2"));
 
-        registry.gauge(removedGaugeId, () -> 1);
+        Gauge<Integer> removedGauge = registry.gauge(removedGaugeId, () -> 1);
+        assertThat("Initial gauge should be registered before removal",
+                   registry.getGauge(removedGaugeId),
+                   sameInstance(removedGauge));
 
         ExecutorService removeExecutor = Executors.newSingleThreadExecutor();
         ExecutorService addExecutor = Executors.newSingleThreadExecutor();
         Throwable failure = null;
         try {
             Future<Boolean> removeFuture = removeExecutor.submit(() -> registry.remove(removedGaugeId));
-            assertThat("Expected underlying meter removal to start",
-                       removeEntered.await(5, TimeUnit.SECONDS),
-                       is(true));
+            awaitUnderlyingRemove(removeEntered, removeFuture);
 
             Future<Gauge<Integer>> addFuture = addExecutor.submit(() -> registry.gauge(addedGaugeId, () -> 2));
 
@@ -97,6 +108,24 @@ class RegistryTest {
         failure = collectFailure(failure, awaitTerminationFailure(removeExecutor, "remove executor"));
         failure = collectFailure(failure, awaitTerminationFailure(addExecutor, "add executor"));
         throwIfNeeded(failure);
+    }
+
+    private static void awaitUnderlyingRemove(CountDownLatch removeEntered, Future<Boolean> removeFuture) throws Exception {
+        if (removeEntered.await(5, TimeUnit.SECONDS)) {
+            return;
+        }
+        assertThat("Underlying meter removal did not start within 5 seconds and the removal task remains incomplete",
+                   removeFuture.isDone(),
+                   is(true));
+        try {
+            assertThat("Removal completed without invoking the underlying meter registry",
+                       removeFuture.get(),
+                       nullValue());
+        } catch (ExecutionException e) {
+            assertThat("Removal failed before invoking the underlying meter registry",
+                       e.getCause(),
+                       nullValue());
+        }
     }
 
     private static Throwable closeFailure(Runnable closeAction, String description) {

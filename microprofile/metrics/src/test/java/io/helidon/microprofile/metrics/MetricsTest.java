@@ -22,8 +22,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.providers.micrometer.MicrometerPrometheusFormatter;
+import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -143,8 +144,7 @@ public class MetricsTest extends MetricsBaseTest {
         bean.setValue(expectedValue);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(MetricsFactory.getInstance()
-                                                                                               .globalRegistry())
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(Services.get(MeterRegistry.class))
                 .scopeTagName("mp_scope")
                 .build();
         Optional<Object> outputOpt = formatter.format();

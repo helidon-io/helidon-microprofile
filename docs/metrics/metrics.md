@@ -648,7 +648,11 @@ class InjectExample {
 }
 ```
 
-  - Invoke the static `getInstance()` method on the `RegistryFactory` class.
+  - Invoke the static `getInstance()` method on the `RegistryFactory` class while
+    the Helidon MP container is running. If no service registry is configured,
+    as is normally the case before the container starts and after it shuts down,
+    the method throws an `IllegalStateException` rather than creating a new global
+    service registry.
 
     *Getting the `RegistryFactory` programmatically*
 
@@ -679,6 +683,22 @@ accomplish this is to deal with metrics in a method that observes the Helidon
 
 To control how the Helidon metrics subsystem behaves, add a `metrics` section to
 your `META-INF/microprofile-config.properties` file.
+
+For MicroProfile Metrics global tags and the application name, use the
+MicroProfile configuration keys directly:
+
+```properties
+mp.metrics.tags=region=west,env=prod
+mp.metrics.appName=orders
+```
+
+`mp.metrics.tags` is a comma-separated list of `name=value` pairs. In the
+resolved configuration value, a literal `=` or `,` in a tag value must be
+escaped with a backslash (`\`). In a `.properties` file, write that backslash
+as `\\`. The `mp.metrics.appName` value is reported using the Helidon MP
+application tag name (`mp_app` by default). If both MicroProfile keys and the corresponding
+Helidon SE-style keys are present, Helidon MP gives the MicroProfile keys
+precedence over `metrics.tags` and `metrics.app-name`.
 
 See [Configuration options][io-helidon-metri-3].
 

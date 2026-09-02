@@ -21,7 +21,9 @@ import java.util.Objects;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SnapshotMetric;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -39,15 +41,26 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
         this.delegate = delegate;
     }
 
-    static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+    static HelidonHistogram create(MeterRegistry meterRegistry,
+                                   MetricsFactory metricsFactory,
+                                   SystemTagsManager systemTagsManager,
+                                   String scope,
+                                   Metadata metadata,
+                                   Tag... tags) {
         return create(scope,
                       metadata,
                       meterRegistry.getOrCreate(DistributionCustomizations
-                                                        .apply(DistributionSummary.builder(metadata.getName())
+                                                        .apply(metricsFactory.distributionSummaryBuilder(
+                                                                       metadata.getName(),
+                                                                       metricsFactory.distributionStatisticsConfigBuilder())
                                                                        .scope(scope)
                                                                        .description(metadata.getDescription())
                                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                                       .tags(allTags(scope, tags)))));
+                                                                       .tags(allTags(metricsFactory,
+                                                                                     systemTagsManager,
+                                                                                     scope,
+                                                                                     tags)),
+                                                               metricsFactory)));
     }
 
     static HelidonHistogram create(String scope,
@@ -58,8 +71,9 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
                                     delegate);
     }
 
-    static HelidonHistogram create(io.helidon.metrics.api.DistributionSummary delegate) {
-        return new HelidonHistogram(resolvedScope(delegate),
+    static HelidonHistogram create(SystemTagsManager systemTagsManager,
+                                   io.helidon.metrics.api.DistributionSummary delegate) {
+        return new HelidonHistogram(resolvedScope(systemTagsManager, delegate),
                                     Registry.metadata(delegate),
                                     delegate);
     }
