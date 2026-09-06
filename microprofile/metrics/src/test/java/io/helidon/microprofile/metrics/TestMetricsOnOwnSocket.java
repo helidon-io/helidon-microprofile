@@ -28,6 +28,7 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -102,11 +103,12 @@ public class TestMetricsOnOwnSocket {
             assertThat(descr + " metrics sampling response", r.getStatus(), is(Status.OK_200.code()));
 
             JsonObject metrics = r.readEntity(JsonObject.class);
-            assertThat("Check for requests.load", metrics.containsKey("requests.load"), is(true));
+            String meterName = "requests.load;" + MpScope.TAG_NAME + "=" + MetricRegistry.VENDOR_SCOPE;
+            assertThat("Check for requests.load", metrics.containsKey(meterName), is(true));
             // In Helidon 4, requests.load changed from a meter to a counter (backends can do the time-series analysis), so
             // just fetch it as a number.
-            assertThat("Load count type", metrics.get("requests.load"), is(instanceOf(JsonNumber.class)));
-            JsonNumber load = metrics.getJsonNumber("requests.load");
+            assertThat("Load count type", metrics.get(meterName), is(instanceOf(JsonNumber.class)));
+            JsonNumber load = metrics.getJsonNumber(meterName);
 
             return load.intValue();
         }

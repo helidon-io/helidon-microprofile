@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,7 +59,6 @@ public class RegistryFactory {
     private static final Lock LIFECYCLE_ACCESS = new ReentrantLock();
     private static final AtomicReference<RegistryFactory> REGISTRY_FACTORY = new AtomicReference<>();
     private static final AtomicReference<RegistryFactoryManager> REGISTRY_FACTORY_OWNER = new AtomicReference<>();
-    private static final System.Logger LOGGER = System.getLogger(RegistryFactory.class.getName());
     private final MeterRegistry meterRegistry;
     private final MetricsFactory metricsFactory;
     private final SystemTagsManager systemTagsManager;
@@ -89,7 +87,7 @@ public class RegistryFactory {
      */
     public static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
-        if (result != null && activationAllowed()) {
+        if (result != null) {
             return result;
         }
         if (!activationAllowed()) {
@@ -214,19 +212,11 @@ public class RegistryFactory {
     }
 
     private void registerMetricForExistingMeter(Meter delegate) {
-        String scope = delegate.scope().orElse(null);
-        if (scope == null) {
-            LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + delegate);
-        }
-        registry(scope).onMeterAdded(delegate);
+        registry(MpScope.scope(delegate)).onMeterAdded(delegate);
     }
 
     private void removeMetricForMeter(Meter meter) {
-        String scope = meter.scope().orElse(null);
-        if (scope == null) {
-            LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
-        }
-        registry(scope).onMeterRemoved(meter);
+        registry(MpScope.scope(meter)).onMeterRemoved(meter);
     }
 
 }
