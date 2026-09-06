@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -174,7 +175,7 @@ public class RegistryFactory {
      * @return set of scope names
      */
     public Set<String> scopes() {
-        return Collections.unmodifiableSet(registries.keySet());
+        return accessMetricsSettings(() -> Collections.unmodifiableSet(new HashSet<>(registries.keySet())));
     }
 
     Registry registry(String scope) {

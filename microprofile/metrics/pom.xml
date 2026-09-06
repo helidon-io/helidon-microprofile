@@ -62,6 +62,10 @@
             <artifactId>helidon-webserver-observe-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>

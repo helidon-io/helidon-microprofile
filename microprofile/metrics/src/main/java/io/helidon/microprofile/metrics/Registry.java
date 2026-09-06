@@ -289,7 +289,12 @@ class Registry implements MetricRegistry {
 
     @Override
     public SortedSet<String> getNames() {
-        return new TreeSet<>(infoByName.keySet());
+        lock.lock();
+        try {
+            return new TreeSet<>(infoByName.keySet());
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
