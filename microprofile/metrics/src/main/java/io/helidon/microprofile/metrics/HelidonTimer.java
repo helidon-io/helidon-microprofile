@@ -67,7 +67,7 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
                                                   metricsFactory.timerBuilder(metadata.getName())
                                                           .description(metadata.getDescription())
                                                           .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                          .tags(allTags(metricsFactory, scope, tags)))));
+                                                          .tags(allTags(metricsFactory, tags)))));
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry,

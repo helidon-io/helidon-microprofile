@@ -55,7 +55,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                        metricsFactory.gaugeBuilder(metadata.getName(), supplier)
                                                                .baseUnit(metadata.getUnit())
                                                                .description(metadata.getDescription())
-                                                               .tags(allTags(metricsFactory, scope, tags))));
+                                                               .tags(allTags(metricsFactory, tags))));
     }
 
     static <T> DoubleFunctionBased<T> create(MeterRegistry meterRegistry,
@@ -75,7 +75,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                              metricsFactory.gaugeBuilder(metadata.getName(), target, fn)
                                                                      .description(metadata.getDescription())
                                                                      .baseUnit(metadata.getUnit())
-                                                                     .tags(allTags(metricsFactory, scope, tags))));
+                                                                     .tags(allTags(metricsFactory, tags))));
 
     }
 

@@ -15,10 +15,10 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -30,6 +30,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 final class MpScope {
     static final String TAG_NAME = "mp_scope";
+    private static final ScopedValue<String> REGISTRATION_SCOPE = ScopedValue.newInstance();
 
     private MpScope() {
     }
@@ -42,7 +43,7 @@ final class MpScope {
         return meter.id().tagsMap().getOrDefault(TAG_NAME, MetricRegistry.APPLICATION_SCOPE);
     }
 
-    static Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
+    static Iterable<Map.Entry<String, String>> validatedTags(Iterable<Map.Entry<String, String>> tags) {
         var result = new ArrayList<Map.Entry<String, String>>();
         tags.forEach(tag -> {
             if (tag.getKey().equals(TAG_NAME)) {
@@ -50,8 +51,11 @@ final class MpScope {
             }
             result.add(tag);
         });
-        result.add(new AbstractMap.SimpleImmutableEntry<>(TAG_NAME, Objects.requireNonNull(scope)));
         return result;
+    }
+
+    static Optional<String> registrationScope() {
+        return REGISTRATION_SCOPE.isBound() ? Optional.of(REGISTRATION_SCOPE.get()) : Optional.empty();
     }
 
     @SuppressWarnings({"removal", "unchecked"})
@@ -59,9 +63,29 @@ final class MpScope {
                                                                           MetricsFactory metricsFactory,
                                                                           String scope,
                                                                           B builder) {
-        return isMeterEnabled(metricsFactory.metricsConfig(), scope, builder.name())
-                ? meterRegistry.getOrCreate(builder)
-                : (M) metricsFactory.noOpMeter(builder);
+        Objects.requireNonNull(meterRegistry);
+        Objects.requireNonNull(metricsFactory);
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(builder);
+        rejectScopeTag(builder);
+
+        if (!isMeterEnabled(metricsFactory.metricsConfig(), scope, builder.name())) {
+            return (M) metricsFactory.noOpMeter(builder.addTag(tag(scope)));
+        }
+
+        if (REGISTRATION_SCOPE.isBound()) {
+            throw new IllegalStateException("Nested MP meter registration for scope " + scope
+                                                    + " while registering scope " + REGISTRATION_SCOPE.get());
+        }
+
+        try {
+            return ScopedValue.where(REGISTRATION_SCOPE, scope)
+                    .call(() -> getOrCreateAndVerify(meterRegistry, scope, builder));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalStateException("MP meter registration failed", e);
+        }
     }
 
     @SuppressWarnings("removal")
@@ -72,6 +96,24 @@ final class MpScope {
                             || scopeConfig.enabled()
                             && scopeConfig.include().map(pattern -> pattern.matcher(meterName).matches()).orElse(true)
                             && scopeConfig.exclude().map(pattern -> !pattern.matcher(meterName).matches()).orElse(true));
+    }
+
+    private static void rejectScopeTag(Meter.Builder<?, ?> builder) {
+        if (builder.tags().containsKey(TAG_NAME)) {
+            throw new IllegalArgumentException("Illegal use of reserved tag name: " + TAG_NAME);
+        }
+    }
+
+    private static <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreateAndVerify(MeterRegistry meterRegistry,
+                                                                                           String scope,
+                                                                                           B builder) {
+        M meter = meterRegistry.getOrCreate(builder);
+        String actualScope = meter.id().tagsMap().get(TAG_NAME);
+        if (!scope.equals(actualScope)) {
+            throw new IllegalStateException("MP meter registration for scope " + scope
+                                                    + " produced scope " + actualScope);
+        }
+        return meter;
     }
 
     private record ScopeTag(String key, String value) implements Tag {

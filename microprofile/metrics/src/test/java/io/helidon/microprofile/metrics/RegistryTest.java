@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -118,6 +119,12 @@ class RegistryTest {
                        registryFactory.scopes().contains(null),
                        is(false));
 
+            var maliciousBuilder = metricsFactory.counterBuilder("neutral.illegal.scope.tag")
+                    .addTag(metricsFactory.tagCreate(MpScope.TAG_NAME, MetricRegistry.VENDOR_SCOPE));
+            IllegalArgumentException neutralException =
+                    assertThrows(IllegalArgumentException.class, () -> meterRegistry.getOrCreate(maliciousBuilder));
+            assertThat(neutralException.getMessage(), containsString(MpScope.TAG_NAME));
+
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                                                                () -> application.counter(
                                                                        "illegal.scope.tag",
@@ -128,6 +135,37 @@ class RegistryTest {
             registryFactory.close();
             meterRegistry.close();
         }
+    }
+
+    @Test
+    void registrationContextDoesNotLeakAfterFailure() {
+        ConfigProvider.getConfig();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        io.helidon.metrics.api.MeterRegistry failingMeterRegistry =
+                (io.helidon.metrics.api.MeterRegistry) Proxy.newProxyInstance(
+                        RegistryTest.class.getClassLoader(),
+                        new Class<?>[] {io.helidon.metrics.api.MeterRegistry.class},
+                        (proxy, method, args) -> {
+                            if (method.getName().equals("getOrCreate")) {
+                                assertThat("Registration scope while creating an MP meter",
+                                           MpScope.registrationScope(),
+                                           is(Optional.of(MetricRegistry.BASE_SCOPE)));
+                                throw new IllegalStateException("deliberate registration failure");
+                            }
+                            throw new AssertionError("Unexpected meter registry method " + method.getName());
+                        });
+
+        assertThrows(IllegalStateException.class,
+                     () -> MpScope.getOrCreate(failingMeterRegistry,
+                                              metricsFactory,
+                                              MetricRegistry.BASE_SCOPE,
+                                              metricsFactory.counterBuilder("context.failure")));
+
+        var builderAfterFailure = metricsFactory.counterBuilder("context.after.failure");
+        new MpMeterBuilderCustomizer().customize(builderAfterFailure);
+        assertThat("Originless meter after failed MP registration",
+                   builderAfterFailure.tags().get(MpScope.TAG_NAME),
+                   is(MetricRegistry.APPLICATION_SCOPE));
     }
 
     @Test

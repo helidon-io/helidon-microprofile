@@ -546,24 +546,20 @@ class Registry implements MetricRegistry {
     }
 
     /**
-     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including the MP scope tag.
+     * Returns an iterable of validated Helidon {@link io.helidon.metrics.api.Tag} instances.
      *
-     * @param scope scope of the meter
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    private Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
+    private Iterable<io.helidon.metrics.api.Tag> validatedTags(Tag[] tags) {
         if (tags != null && tags.length > 0) {
             List<String> tagNames = Arrays.stream(tags).map(Tag::getTagName).toList();
             Collection<String> reservedTagNamesUsed = new ArrayList<>(systemTagsManager.reservedTagNamesUsed(tagNames));
-            if (tagNames.contains(MpScope.TAG_NAME) && !reservedTagNamesUsed.contains(MpScope.TAG_NAME)) {
-                reservedTagNamesUsed.add(MpScope.TAG_NAME);
-            }
             if (!reservedTagNamesUsed.isEmpty()) {
                 throw new IllegalArgumentException("Illegal use of reserved tag name(s): " + reservedTagNamesUsed);
             }
         }
-        return toHelidonTags(MpScope.withScopeTag(iterableEntries(tags), scope));
+        return toHelidonTags(MpScope.validatedTags(iterableEntries(tags)));
     }
 
     /**
@@ -602,7 +598,7 @@ class Registry implements MetricRegistry {
         return createCounter(metricsFactory.counterBuilder(metadata.getName())
                                      .description(metadata.getDescription())
                                      .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                     .tags(validatedAllTags(scope, tags)));
+                                     .tags(validatedTags(tags)));
     }
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
@@ -614,7 +610,7 @@ class Registry implements MetricRegistry {
         return (HelidonGauge<N>) createGauge(metricsFactory.gaugeBuilder(metadata.getName(),
                                                                          (Supplier<? extends N>) () -> func.apply(object))
                                                      .description(metadata.getDescription())
-                                                     .tags(validatedAllTags(scope, tags))
+                                                     .tags(validatedTags(tags))
                                                      .baseUnit(sanitizeUnit(metadata.getUnit())));
 
     }
@@ -622,7 +618,7 @@ class Registry implements MetricRegistry {
     private <N extends Number> HelidonGauge<N> createGauge(Metadata metadata, Supplier<N> supplier, Tag... tags) {
         return createGauge(metricsFactory.gaugeBuilder(metadata.getName(), supplier)
                                    .description(metadata.getDescription())
-                                   .tags(validatedAllTags(scope, tags))
+                                   .tags(validatedTags(tags))
                                    .baseUnit(sanitizeUnit(metadata.getUnit())));
 
     }
@@ -637,7 +633,7 @@ class Registry implements MetricRegistry {
                                                metadata.getName(), metricsFactory.distributionStatisticsConfigBuilder())
                                        .description(metadata.getDescription())
                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                       .tags(validatedAllTags(scope, tags)));
+                                       .tags(validatedTags(tags)));
 
     }
 
@@ -650,7 +646,7 @@ class Registry implements MetricRegistry {
         return createTimer(metricsFactory.timerBuilder(metadata.getName())
                                    .description(metadata.getDescription())
                                    .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                   .tags(validatedAllTags(scope, tags)));
+                                   .tags(validatedTags(tags)));
     }
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {

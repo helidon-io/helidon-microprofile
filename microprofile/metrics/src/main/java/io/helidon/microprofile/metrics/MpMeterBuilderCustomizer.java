@@ -42,11 +42,12 @@ final class MpMeterBuilderCustomizer implements MeterBuilderCustomizer {
     public void customize(Meter.Builder<?, ?> builder) {
         Objects.requireNonNull(builder);
         if (builder.tags().containsKey(MpScope.TAG_NAME)) {
-            return;
+            throw new IllegalArgumentException("Illegal use of reserved tag name: " + MpScope.TAG_NAME);
         }
-        String scope = builder.origin()
-                .map(ORIGIN_SCOPES::get)
-                .orElse(MetricRegistry.APPLICATION_SCOPE);
+        String scope = MpScope.registrationScope()
+                .orElseGet(() -> builder.origin()
+                        .map(ORIGIN_SCOPES::get)
+                        .orElse(MetricRegistry.APPLICATION_SCOPE));
         builder.addTag(MpScope.tag(scope));
     }
 }

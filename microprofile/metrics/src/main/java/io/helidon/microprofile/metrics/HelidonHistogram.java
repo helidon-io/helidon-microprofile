@@ -56,7 +56,7 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
                                                                   metricsFactory.distributionStatisticsConfigBuilder())
                                                           .description(metadata.getDescription())
                                                           .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                          .tags(allTags(metricsFactory, scope, tags)),
+                                                          .tags(allTags(metricsFactory, tags)),
                                                   metricsFactory)));
     }
 

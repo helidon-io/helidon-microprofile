@@ -50,7 +50,7 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
                                           metricsFactory.counterBuilder(metadata.getName())
                                                   .baseUnit(sanitizeUnit(metadata.getUnit()))
                                                   .description(metadata.getDescription())
-                                                  .tags(allTags(metricsFactory, scope, tags))));
+                                                  .tags(allTags(metricsFactory, tags))));
     }
 
     static HelidonCounter create(String scope,

@@ -41,16 +41,13 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
     }
 
     /**
-     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including the MP scope tag.
+     * Returns an iterable of validated Helidon {@link io.helidon.metrics.api.Tag} instances.
      *
-     * @param scope scope of the meter
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    protected static Iterable<io.helidon.metrics.api.Tag> allTags(MetricsFactory metricsFactory,
-                                                                  String scope,
-                                                                  Tag[] tags) {
-        return toHelidonTags(metricsFactory, MpScope.withScopeTag(iterableEntries(tags), scope));
+    protected static Iterable<io.helidon.metrics.api.Tag> allTags(MetricsFactory metricsFactory, Tag[] tags) {
+        return toHelidonTags(metricsFactory, MpScope.validatedTags(iterableEntries(tags)));
     }
 
     static String resolvedScope(Meter delegate) {
