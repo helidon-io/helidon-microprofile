@@ -97,10 +97,18 @@ class RegistryTest {
             Meter vendorMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.vendor")
                                                                    .origin("io.helidon.faulttolerance.FaultTolerance"));
             Meter applicationMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.application"));
+            var reusableBuilder = metricsFactory.counterBuilder("core.reused")
+                    .origin("io.helidon.faulttolerance.FaultTolerance");
+            Meter firstReusableMeter = meterRegistry.getOrCreate(reusableBuilder);
+            Meter secondReusableMeter = meterRegistry.getOrCreate(reusableBuilder);
 
             assertMeterScope(baseMeter, MetricRegistry.BASE_SCOPE);
             assertMeterScope(vendorMeter, MetricRegistry.VENDOR_SCOPE);
             assertMeterScope(applicationMeter, MetricRegistry.APPLICATION_SCOPE);
+            assertThat("Repeated get-or-create returns the same meter",
+                       secondReusableMeter,
+                       sameInstance(firstReusableMeter));
+            assertMeterScope(secondReusableMeter, MetricRegistry.VENDOR_SCOPE);
             assertThat("Core base meter routes to base registry",
                        base.getCounter(new MetricID("core.base")),
                        notNullValue());
@@ -141,6 +149,7 @@ class RegistryTest {
     void registrationContextDoesNotLeakAfterFailure() {
         ConfigProvider.getConfig();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        var retryBuilder = metricsFactory.counterBuilder("context.failure");
         io.helidon.metrics.api.MeterRegistry failingMeterRegistry =
                 (io.helidon.metrics.api.MeterRegistry) Proxy.newProxyInstance(
                         RegistryTest.class.getClassLoader(),
@@ -159,10 +168,24 @@ class RegistryTest {
                      () -> MpScope.getOrCreate(failingMeterRegistry,
                                               metricsFactory,
                                               MetricRegistry.BASE_SCOPE,
-                                              metricsFactory.counterBuilder("context.failure")));
+                                              retryBuilder));
+
+        io.helidon.metrics.api.MeterRegistry meterRegistry =
+                metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        try {
+            Meter retryMeter = MpScope.getOrCreate(meterRegistry,
+                                                   metricsFactory,
+                                                   MetricRegistry.BASE_SCOPE,
+                                                   retryBuilder);
+            assertMeterScope(retryMeter, MetricRegistry.BASE_SCOPE);
+        } finally {
+            meterRegistry.close();
+        }
 
         var builderAfterFailure = metricsFactory.counterBuilder("context.after.failure");
-        new MpMeterBuilderCustomizer().customize(builderAfterFailure);
+        var customizer = new MpMeterBuilderCustomizer();
+        customizer.customize(builderAfterFailure);
+        customizer.customize(builderAfterFailure);
         assertThat("Originless meter after failed MP registration",
                    builderAfterFailure.tags().get(MpScope.TAG_NAME),
                    is(MetricRegistry.APPLICATION_SCOPE));

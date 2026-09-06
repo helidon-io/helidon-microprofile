@@ -41,13 +41,18 @@ final class MpMeterBuilderCustomizer implements MeterBuilderCustomizer {
     @Override
     public void customize(Meter.Builder<?, ?> builder) {
         Objects.requireNonNull(builder);
-        if (builder.tags().containsKey(MpScope.TAG_NAME)) {
-            throw new IllegalArgumentException("Illegal use of reserved tag name: " + MpScope.TAG_NAME);
-        }
-        String scope = MpScope.registrationScope()
+        String expectedScope = MpScope.registrationScope()
                 .orElseGet(() -> builder.origin()
                         .map(ORIGIN_SCOPES::get)
                         .orElse(MetricRegistry.APPLICATION_SCOPE));
-        builder.addTag(MpScope.tag(scope));
+        if (builder.tags().containsKey(MpScope.TAG_NAME)) {
+            String actualScope = builder.tags().get(MpScope.TAG_NAME);
+            if (expectedScope.equals(actualScope)) {
+                return;
+            }
+            throw new IllegalArgumentException("Conflicting " + MpScope.TAG_NAME + " value " + actualScope
+                                                       + "; expected " + expectedScope);
+        }
+        builder.addTag(MpScope.tag(expectedScope));
     }
 }
