@@ -67,10 +67,13 @@ final class MpScope {
         Objects.requireNonNull(metricsFactory);
         Objects.requireNonNull(scope);
         Objects.requireNonNull(builder);
-        rejectScopeTag(builder);
+        boolean scopeTagPresent = validateScopeTag(builder, scope);
 
         if (!isMeterEnabled(metricsFactory.metricsConfig(), scope, builder.name())) {
-            return (M) metricsFactory.noOpMeter(builder.addTag(tag(scope)));
+            if (!scopeTagPresent) {
+                builder.addTag(tag(scope));
+            }
+            return (M) metricsFactory.noOpMeter(builder);
         }
 
         if (REGISTRATION_SCOPE.isBound()) {
@@ -98,10 +101,16 @@ final class MpScope {
                             && scopeConfig.exclude().map(pattern -> !pattern.matcher(meterName).matches()).orElse(true));
     }
 
-    private static void rejectScopeTag(Meter.Builder<?, ?> builder) {
-        if (builder.tags().containsKey(TAG_NAME)) {
-            throw new IllegalArgumentException("Illegal use of reserved tag name: " + TAG_NAME);
+    private static boolean validateScopeTag(Meter.Builder<?, ?> builder, String expectedScope) {
+        if (!builder.tags().containsKey(TAG_NAME)) {
+            return false;
         }
+        String actualScope = builder.tags().get(TAG_NAME);
+        if (!expectedScope.equals(actualScope)) {
+            throw new IllegalArgumentException("Conflicting " + TAG_NAME + " value " + actualScope
+                                                       + "; expected " + expectedScope);
+        }
+        return true;
     }
 
     private static <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreateAndVerify(MeterRegistry meterRegistry,

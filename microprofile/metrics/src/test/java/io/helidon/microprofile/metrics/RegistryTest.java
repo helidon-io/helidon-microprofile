@@ -97,10 +97,15 @@ class RegistryTest {
             Meter vendorMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.vendor")
                                                                    .origin("io.helidon.faulttolerance.FaultTolerance"));
             Meter applicationMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.application"));
-            var reusableBuilder = metricsFactory.counterBuilder("core.reused")
-                    .origin("io.helidon.faulttolerance.FaultTolerance");
-            Meter firstReusableMeter = meterRegistry.getOrCreate(reusableBuilder);
-            Meter secondReusableMeter = meterRegistry.getOrCreate(reusableBuilder);
+            var reusableBuilder = metricsFactory.counterBuilder("mp.reused");
+            Meter firstReusableMeter = MpScope.getOrCreate(meterRegistry,
+                                                           metricsFactory,
+                                                           MetricRegistry.VENDOR_SCOPE,
+                                                           reusableBuilder);
+            Meter secondReusableMeter = MpScope.getOrCreate(meterRegistry,
+                                                            metricsFactory,
+                                                            MetricRegistry.VENDOR_SCOPE,
+                                                            reusableBuilder);
 
             assertMeterScope(baseMeter, MetricRegistry.BASE_SCOPE);
             assertMeterScope(vendorMeter, MetricRegistry.VENDOR_SCOPE);
@@ -132,6 +137,14 @@ class RegistryTest {
             IllegalArgumentException neutralException =
                     assertThrows(IllegalArgumentException.class, () -> meterRegistry.getOrCreate(maliciousBuilder));
             assertThat(neutralException.getMessage(), containsString(MpScope.TAG_NAME));
+
+            IllegalArgumentException mpConflict = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> MpScope.getOrCreate(meterRegistry,
+                                             metricsFactory,
+                                             MetricRegistry.APPLICATION_SCOPE,
+                                             maliciousBuilder));
+            assertThat(mpConflict.getMessage(), containsString(MpScope.TAG_NAME));
 
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                                                                () -> application.counter(
