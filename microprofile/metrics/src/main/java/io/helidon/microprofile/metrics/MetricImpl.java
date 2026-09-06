@@ -24,7 +24,6 @@ import java.util.NoSuchElementException;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -42,22 +41,17 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
     }
 
     /**
-     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including global tags, any app tag, and a scope
-     * tag (if metrics is so configured to add a scope tag).
+     * Returns an iterable of validated Helidon {@link io.helidon.metrics.api.Tag} instances.
      *
-     * @param scope scope of the meter
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    protected static Iterable<io.helidon.metrics.api.Tag> allTags(MetricsFactory metricsFactory,
-                                                                  SystemTagsManager systemTagsManager,
-                                                                  String scope,
-                                                                  Tag[] tags) {
-        return toHelidonTags(metricsFactory, systemTagsManager.withScopeTag(iterableEntries(tags), scope));
+    protected static Iterable<io.helidon.metrics.api.Tag> allTags(MetricsFactory metricsFactory, Tag[] tags) {
+        return toHelidonTags(metricsFactory, MpScope.validatedTags(iterableEntries(tags)));
     }
 
-    static String resolvedScope(SystemTagsManager systemTagsManager, Meter delegate) {
-        return systemTagsManager.effectiveScope(delegate.scope()).orElse(Meter.Scope.DEFAULT);
+    static String resolvedScope(Meter delegate) {
+        return MpScope.scope(delegate);
     }
 
     protected static String sanitizeUnit(String unit) {

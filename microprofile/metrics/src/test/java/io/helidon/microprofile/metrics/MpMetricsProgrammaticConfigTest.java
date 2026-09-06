@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.microprofile.config.core.MpConfigSources;
 
@@ -67,8 +66,6 @@ class MpMetricsProgrammaticConfigTest {
                              not(hasEntry("ignored", "tag"))));
             assertThat("MP app name", metricsConfig.appName(), is(Optional.of("orders")));
             assertThat("MP application tag name", metricsConfig.appTagName(), is(Optional.of("mp_app")));
-            assertThat("MP scope tag name", metricsConfig.scoping().tagName(), is(Optional.of("mp_scope")));
-            assertThat("MP default scope", metricsConfig.scoping().defaultValue(), is(Optional.of(Meter.Scope.DEFAULT)));
         } finally {
             resolver.releaseConfig(mpConfig);
             resolver.registerConfig(originalConfig, classLoader);

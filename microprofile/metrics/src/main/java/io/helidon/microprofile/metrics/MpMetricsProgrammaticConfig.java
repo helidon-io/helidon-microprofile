@@ -21,8 +21,8 @@ import java.util.Optional;
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.service.registry.Service;
 
@@ -49,23 +49,18 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
     }
 
     @Override
-    public Optional<String> scopeTagName() {
-        return Optional.of("mp_scope");
-    }
-
-    @Override
     public Optional<String> appTagName() {
         return Optional.of("mp_app");
     }
 
     @Override
-    public Optional<String> scopeDefaultValue() {
-        return Optional.of(Meter.Scope.DEFAULT);
-    }
-
-    @Override
+    @SuppressWarnings("removal")
     public MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
         MetricsProgrammaticConfig.super.apply(builder);
+
+        config.get("metrics.scoping")
+                .as(ScopingConfig::create)
+                .ifPresent(builder::scoping);
 
         config.get("mp.metrics.tags").asString()
                 .ifPresent(tags -> {

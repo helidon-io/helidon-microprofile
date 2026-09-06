@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
@@ -41,12 +43,166 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class RegistryTest {
+
+    @Test
+    void routesMetersUsingMpScopeTag() {
+        ConfigProvider.getConfig();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        io.helidon.metrics.api.MeterRegistry meterRegistry =
+                metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        RegistryFactory registryFactory = RegistryFactory.create(meterRegistry);
+        Registry application = registryFactory.registry(MetricRegistry.APPLICATION_SCOPE);
+        Registry base = registryFactory.registry(MetricRegistry.BASE_SCOPE);
+        Registry vendor = registryFactory.registry(MetricRegistry.VENDOR_SCOPE);
+        Registry custom = registryFactory.registry("custom");
+
+        try {
+            var applicationId = new MetricID("mp.application", new Tag("color", "blue"));
+            var applicationCounter = application.counter(applicationId);
+            var baseCounter = base.counter("mp.base");
+            var vendorCounter = vendor.counter("mp.vendor");
+            var customCounter = custom.counter("mp.custom");
+
+            assertThat("Application metric ID retains only user tags",
+                       application.getCounter(applicationId),
+                       sameInstance(applicationCounter));
+            assertMeterScope(meterRegistry, applicationId.getName(), MetricRegistry.APPLICATION_SCOPE);
+            assertMeterScope(meterRegistry, "mp.base", MetricRegistry.BASE_SCOPE);
+            assertMeterScope(meterRegistry, "mp.vendor", MetricRegistry.VENDOR_SCOPE);
+            assertMeterScope(meterRegistry, "mp.custom", "custom");
+            assertThat("Base metric routes to base registry",
+                       base.getCounter(new MetricID("mp.base")),
+                       sameInstance(baseCounter));
+            assertThat("Vendor metric routes to vendor registry",
+                       vendor.getCounter(new MetricID("mp.vendor")),
+                       sameInstance(vendorCounter));
+            assertThat("Custom metric routes to custom registry",
+                       custom.getCounter(new MetricID("mp.custom")),
+                       sameInstance(customCounter));
+            assertThat("Scope tag is not exposed as an MP metric tag",
+                       custom.getMetricIDs().iterator().next().getTags().containsKey(MpScope.TAG_NAME),
+                       is(false));
+
+            Meter baseMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.base")
+                                                                 .origin("io.helidon.metrics.systemmeters.SystemMetersProvider"));
+            Meter vendorMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.vendor")
+                                                                   .origin("io.helidon.faulttolerance.FaultTolerance"));
+            Meter applicationMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.application"));
+            var reusableBuilder = metricsFactory.counterBuilder("mp.reused");
+            Meter firstReusableMeter = MpScope.getOrCreate(meterRegistry,
+                                                           metricsFactory,
+                                                           MetricRegistry.VENDOR_SCOPE,
+                                                           reusableBuilder);
+            Meter secondReusableMeter = MpScope.getOrCreate(meterRegistry,
+                                                            metricsFactory,
+                                                            MetricRegistry.VENDOR_SCOPE,
+                                                            reusableBuilder);
+
+            assertMeterScope(baseMeter, MetricRegistry.BASE_SCOPE);
+            assertMeterScope(vendorMeter, MetricRegistry.VENDOR_SCOPE);
+            assertMeterScope(applicationMeter, MetricRegistry.APPLICATION_SCOPE);
+            assertThat("Repeated get-or-create returns the same meter",
+                       secondReusableMeter,
+                       sameInstance(firstReusableMeter));
+            assertMeterScope(secondReusableMeter, MetricRegistry.VENDOR_SCOPE);
+            assertThat("Core base meter routes to base registry",
+                       base.getCounter(new MetricID("core.base")),
+                       notNullValue());
+            assertThat("Core vendor meter routes to vendor registry",
+                       vendor.getCounter(new MetricID("core.vendor")),
+                       notNullValue());
+            assertThat("Originless core meter routes to application registry",
+                       application.getCounter(new MetricID("core.application")),
+                       notNullValue());
+
+            meterRegistry.remove(applicationMeter);
+            assertThat("Removed core meter leaves the application registry",
+                       application.getCounter(new MetricID("core.application")),
+                       nullValue());
+            assertThat("Add and remove callbacks never create a null-scoped registry",
+                       registryFactory.scopes().contains(null),
+                       is(false));
+
+            var maliciousBuilder = metricsFactory.counterBuilder("neutral.illegal.scope.tag")
+                    .addTag(metricsFactory.tagCreate(MpScope.TAG_NAME, MetricRegistry.VENDOR_SCOPE));
+            IllegalArgumentException neutralException =
+                    assertThrows(IllegalArgumentException.class, () -> meterRegistry.getOrCreate(maliciousBuilder));
+            assertThat(neutralException.getMessage(), containsString(MpScope.TAG_NAME));
+
+            IllegalArgumentException mpConflict = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> MpScope.getOrCreate(meterRegistry,
+                                             metricsFactory,
+                                             MetricRegistry.APPLICATION_SCOPE,
+                                             maliciousBuilder));
+            assertThat(mpConflict.getMessage(), containsString(MpScope.TAG_NAME));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                               () -> application.counter(
+                                                                       "illegal.scope.tag",
+                                                                       new Tag(MpScope.TAG_NAME,
+                                                                               MetricRegistry.VENDOR_SCOPE)));
+            assertThat(exception.getMessage(), containsString(MpScope.TAG_NAME));
+        } finally {
+            registryFactory.close();
+            meterRegistry.close();
+        }
+    }
+
+    @Test
+    void registrationContextDoesNotLeakAfterFailure() {
+        ConfigProvider.getConfig();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        var retryBuilder = metricsFactory.counterBuilder("context.failure");
+        io.helidon.metrics.api.MeterRegistry failingMeterRegistry =
+                (io.helidon.metrics.api.MeterRegistry) Proxy.newProxyInstance(
+                        RegistryTest.class.getClassLoader(),
+                        new Class<?>[] {io.helidon.metrics.api.MeterRegistry.class},
+                        (proxy, method, args) -> {
+                            if (method.getName().equals("getOrCreate")) {
+                                assertThat("Registration scope while creating an MP meter",
+                                           MpScope.registrationScope(),
+                                           is(Optional.of(MetricRegistry.BASE_SCOPE)));
+                                throw new IllegalStateException("deliberate registration failure");
+                            }
+                            throw new AssertionError("Unexpected meter registry method " + method.getName());
+                        });
+
+        assertThrows(IllegalStateException.class,
+                     () -> MpScope.getOrCreate(failingMeterRegistry,
+                                              metricsFactory,
+                                              MetricRegistry.BASE_SCOPE,
+                                              retryBuilder));
+
+        io.helidon.metrics.api.MeterRegistry meterRegistry =
+                metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+        try {
+            Meter retryMeter = MpScope.getOrCreate(meterRegistry,
+                                                   metricsFactory,
+                                                   MetricRegistry.BASE_SCOPE,
+                                                   retryBuilder);
+            assertMeterScope(retryMeter, MetricRegistry.BASE_SCOPE);
+        } finally {
+            meterRegistry.close();
+        }
+
+        var builderAfterFailure = metricsFactory.counterBuilder("context.after.failure");
+        var customizer = new MpMeterBuilderCustomizer();
+        customizer.customize(builderAfterFailure);
+        customizer.customize(builderAfterFailure);
+        assertThat("Originless meter after failed MP registration",
+                   builderAfterFailure.tags().get(MpScope.TAG_NAME),
+                   is(MetricRegistry.APPLICATION_SCOPE));
+    }
 
     @Test
     void testGaugeRegistrationIsNotBlockedByPendingRemove() throws Exception {
@@ -126,6 +282,22 @@ class RegistryTest {
                        e.getCause(),
                        nullValue());
         }
+    }
+
+    private static void assertMeterScope(io.helidon.metrics.api.MeterRegistry meterRegistry,
+                                         String name,
+                                         String expectedScope) {
+        Meter meter = meterRegistry.meters().stream()
+                .filter(candidate -> candidate.id().name().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Missing meter " + name));
+        assertMeterScope(meter, expectedScope);
+    }
+
+    private static void assertMeterScope(Meter meter, String expectedScope) {
+        assertThat("MP scope tag for " + meter.id().name(),
+                   meter.id().tagsMap().get(MpScope.TAG_NAME),
+                   is(expectedScope));
     }
 
     private static Throwable closeFailure(Runnable closeAction, String description) {

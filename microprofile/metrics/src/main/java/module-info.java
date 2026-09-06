@@ -29,6 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.metrics {
 
+    requires io.helidon.http.media.json;
     requires io.helidon.metrics.api;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;

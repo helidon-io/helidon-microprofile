@@ -707,8 +707,11 @@ Default Values Specific to Helidon MP:
 | Key                | Default Value |
 |--------------------|---------------|
 | `app-tag-name`     | `mp_app`      |
-| `scoping.tag-name` | `mp_scope`    |
 | `scoping.default`  | `application` |
+
+MicroProfile Metrics always uses the specification-defined `mp_scope` tag for
+metric scopes. The general Helidon setting `metrics.scoping.tag-name` does not
+apply to Helidon MP.
 
 ## Metric Type for `gc.time`
 

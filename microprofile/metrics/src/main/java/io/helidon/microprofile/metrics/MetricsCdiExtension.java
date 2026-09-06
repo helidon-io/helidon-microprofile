@@ -55,7 +55,6 @@ import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
-import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
 import jakarta.annotation.Priority;
@@ -318,7 +317,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         }
 
         // this needs to be done early on, so the registry is configured before accessed
-        MetricsObserver observer = configure();
+        MpMetricsObserver observer = configure();
 
         autoHttpMetricsConfig = observer.prototype().autoHttpMetrics();
 
@@ -539,10 +538,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         return narrowedReturnType;
     }
 
-    private MetricsObserver configure() {
+    private MpMetricsObserver configure() {
         Config config = componentConfig();
 
-        MetricsObserverConfig.Builder builder = MetricsObserver.builder();
+        MetricsObserverConfig.Builder builder = MetricsObserverConfig.builder();
         builder.endpoint("/metrics")
                 .config(config);
 
@@ -562,9 +561,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                          since the start of the server.""")
                 .withUnit(MetricUnits.NONE)
                 .build();
-        return builder.metricsConfig(metricsConfig)
-                .meterRegistry(meterRegistry)
-                .build();
+        return MpMetricsObserver.create(builder.metricsConfig(metricsConfig)
+                                                .meterRegistry(meterRegistry)
+                                                .buildPrototype());
     }
 
     private void registerMetricsForAnnotatedSites() {
