@@ -30,11 +30,12 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
-import io.helidon.webserver.testing.junit5.DirectClient;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -58,7 +59,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
 
 /**
- * Measures MP metrics routing and response serialization without network transport.
+ * Measures steady-state MP metrics requests over loopback HTTP using a persistent client connection.
  * Public state and benchmark methods are required by the JMH integration contract.
  */
 @BenchmarkMode(Mode.AverageTime)
@@ -82,7 +83,10 @@ public class MpMetricsEndpointBenchmark {
     public int meterNames;
 
     private ServiceRegistryManager manager;
-    private DirectClient client;
+    private MeterRegistry meterRegistry;
+    private WebServer server;
+    private Http1Client client;
+    private boolean fixtureReady;
 
     /**
      * Creates the registry, routes, and fixed dataset, and verifies the responses before measurement.
@@ -108,9 +112,27 @@ public class MpMetricsEndpointBenchmark {
             var factoryManager = services.get(RegistryFactoryManager.class);
             factoryManager.enable();
             RegistryFactory factory = factoryManager.registryFactory();
-            MeterRegistry meterRegistry = services.get(MeterRegistry.class);
+            meterRegistry = services.get(MeterRegistry.class);
 
-            // Remove built-in meters so JVM activity does not change the dataset or response size.
+            var observerConfig = MetricsObserverConfig.builder()
+                    .metricsConfig(meterRegistry.metricsFactory().metricsConfig())
+                    .meterRegistry(meterRegistry)
+                    .buildPrototype();
+            var routing = HttpRouting.builder();
+            new MpMetricsFeature(observerConfig).register(routing, ENDPOINT);
+            server = WebServer.builder()
+                    .host("127.0.0.1")
+                    .port(0)
+                    .routing(routing)
+                    .build();
+            server.start();
+            client = Http1Client.builder()
+                    .baseUri("http://127.0.0.1:" + server.port())
+                    .shareConnectionCache(false)
+                    .build();
+
+            // Initialize the persistent connection before removing startup and system meters.
+            response(false, MediaTypes.TEXT_PLAIN);
             List.copyOf(meterRegistry.meters()).forEach(meter -> meterRegistry.remove(meter.id()));
             for (int scopeIndex = 0; scopeIndex < SCOPES.size(); scopeIndex++) {
                 MetricRegistry registry = factory.getRegistry(SCOPES.get(scopeIndex));
@@ -119,18 +141,8 @@ public class MpMetricsEndpointBenchmark {
                 }
             }
 
-            var observerConfig = MetricsObserverConfig.builder()
-                    .metricsConfig(meterRegistry.metricsFactory().metricsConfig())
-                    .meterRegistry(meterRegistry)
-                    .buildPrototype();
-            var routing = HttpRouting.builder();
-            new MpMetricsFeature(observerConfig).register(routing, ENDPOINT);
-            client = new DirectClient(routing);
-
-            verifyPrometheus(checkedResponse(false, MediaTypes.TEXT_PLAIN), false);
-            verifyPrometheus(checkedResponse(true, MediaTypes.TEXT_PLAIN), true);
-            verifyJson(checkedResponse(false, MediaTypes.APPLICATION_JSON), false);
-            verifyJson(checkedResponse(true, MediaTypes.APPLICATION_JSON), true);
+            verifyDataset();
+            fixtureReady = true;
         } catch (RuntimeException | Error failure) {
             try {
                 tearDown();
@@ -182,23 +194,65 @@ public class MpMetricsEndpointBenchmark {
     }
 
     /**
-     * Releases routing and the service registry, including the global registry reference.
+     * Verifies the unchanged dataset and closes the client, server, and service registry.
      */
     @TearDown(Level.Trial)
     public void tearDown() {
+        Throwable failure = null;
+        try {
+            if (fixtureReady) {
+                verifyDataset();
+            }
+        } catch (RuntimeException | Error verificationFailure) {
+            failure = verificationFailure;
+        } finally {
+            fixtureReady = false;
+        }
+        closeResources(failure);
+    }
+
+    private static Throwable recordFailure(Throwable failure, Throwable cleanupFailure) {
+        if (failure == null) {
+            return cleanupFailure;
+        }
+        failure.addSuppressed(cleanupFailure);
+        return failure;
+    }
+
+    private void closeResources(Throwable failure) {
         try {
             if (client != null) {
-                client.close();
+                client.closeResource();
             }
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = recordFailure(failure, cleanupFailure);
         } finally {
             client = null;
-            if (manager != null) {
-                try {
-                    manager.shutdown();
-                } finally {
-                    manager = null;
-                }
+        }
+        try {
+            if (server != null) {
+                server.stop();
             }
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = recordFailure(failure, cleanupFailure);
+        } finally {
+            server = null;
+        }
+        try {
+            if (manager != null) {
+                manager.shutdown();
+            }
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = recordFailure(failure, cleanupFailure);
+        } finally {
+            manager = null;
+            meterRegistry = null;
+        }
+        if (failure instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (failure instanceof Error error) {
+            throw error;
         }
     }
 
@@ -213,6 +267,9 @@ public class MpMetricsEndpointBenchmark {
 
     private String response(boolean selected, MediaType mediaType) {
         try (Http1ClientResponse response = request(selected, mediaType).request()) {
+            if (response.status().code() != 200) {
+                throw new IllegalStateException("Metrics request failed: " + response.status());
+            }
             return response.as(String.class);
         }
     }
@@ -223,6 +280,21 @@ public class MpMetricsEndpointBenchmark {
             assertThat("selected=" + selected + " (" + mediaType + "): " + body, response.status(), is(Status.OK_200));
             return body;
         }
+    }
+
+    private void verifyDataset() {
+        var meters = meterRegistry.meters();
+        List<String> unexpected = meters.stream()
+                .map(meter -> meter.id().name())
+                .filter(name -> !name.startsWith(NAME_PREFIX))
+                .toList();
+        assertThat("Registered meter count; unexpected meters: " + unexpected,
+                   meters.size(),
+                   is(SCOPES.size() * meterNames));
+        verifyPrometheus(checkedResponse(false, MediaTypes.TEXT_PLAIN), false);
+        verifyPrometheus(checkedResponse(true, MediaTypes.TEXT_PLAIN), true);
+        verifyJson(checkedResponse(false, MediaTypes.APPLICATION_JSON), false);
+        verifyJson(checkedResponse(true, MediaTypes.APPLICATION_JSON), true);
     }
 
     private void verifyPrometheus(String body, boolean selected) {

@@ -4,10 +4,11 @@ The opt-in `jmh` profile compiles the benchmark as test code. It does not add
 benchmark classes or JMH dependencies to the production artifact.
 
 `MpMetricsEndpointBenchmark` exercises the real MP metrics routes and response
-serialization through Helidon's `DirectClient`. It excludes network transport,
-CDI startup, and metric registration from the measured operations. Trial setup
-creates the same counter names in application, base, and vendor scopes, removes
-initial system meters, and verifies response status, selection, and values.
+serialization over loopback HTTP using a persistent client connection. CDI and
+server startup and metric registration are outside the measured operations.
+Trial setup creates the same counter names in application, base, and vendor
+scopes, removes initial system meters, and verifies response status, selection,
+and values. Responses are consumed and closed on every operation.
 
 The four workloads cover unfiltered and name/scope-selected Prometheus and JSON
 GET requests. The default data sizes are 100 and 1000 counter names per scope.
@@ -25,5 +26,5 @@ iterations, and five one-second measurement iterations. Select one method or
 override the parameters for a shorter wiring smoke test; smoke results are not
 performance evidence. For comparisons, use identical benchmark sources, JDK,
 dependencies, parameters, and host conditions for both revisions. Compare time
-and allocation results, retain the reported uncertainty, and distinguish direct
-route costs from networked application throughput.
+and allocation results, retain the reported uncertainty, and distinguish this
+single-client loopback workload from production network throughput.
