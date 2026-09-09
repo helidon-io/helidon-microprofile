@@ -533,7 +533,7 @@ public final class Mp1Main {
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
-        int count = vendor.getInt("requests.count");
+        int count = vendor.getInt("requests.count;mp_scope=vendor");
         if (count == 0) {
             collector.fatal("Vendor metric \"requests.count\" must not be zero");
         }
@@ -542,7 +542,7 @@ public final class Mp1Main {
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
-        long uptime = base.getJsonNumber("jvm.uptime").longValue();
+        long uptime = base.getJsonNumber("jvm.uptime;mp_scope=base").longValue();
         if (uptime == 0) {
             collector.fatal("Base metric \"jvm.uptime\" must not be zero");
         }
@@ -555,7 +555,7 @@ public final class Mp1Main {
         if (null == timer) {
             collector.fatal("Timer for TestBean.config() is not present in metrics result");
         } else {
-            count = timer.getInt("count");
+            count = timer.getInt("count;mp_scope=application");
             if (count == 0) {
                 collector.fatal(timer, "The TestBean.config() should have bean called at least once, yet metric is 0");
             }
