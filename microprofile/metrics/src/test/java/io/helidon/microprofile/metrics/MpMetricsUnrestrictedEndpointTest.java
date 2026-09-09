@@ -15,8 +15,13 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.List;
+
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.service.registry.Services;
 
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
@@ -29,7 +34,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
 @HelidonTest
 @AddConfig(key = "metrics.permit-all", value = "true")
@@ -74,6 +81,43 @@ class MpMetricsUnrestrictedEndpointTest {
         assertThat(shared, is(notNullValue()));
         assertThat(shared.containsKey(jsonName("elapsedTime", MetricRegistry.APPLICATION_SCOPE)), is(true));
         assertThat(shared.containsKey(jsonName("total", MetricRegistry.VENDOR_SCOPE)), is(true));
+    }
+
+    @Test
+    void includesDirectMicrometerRegistrationInSelectedOutput() {
+        String name = "unrestricted.direct.micrometer";
+        var nativeRegistry = Services.get(MeterRegistry.class).unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        var counter = nativeRegistry.counter(name);
+        counter.increment(7);
+
+        String aggregate = webTarget.path("metrics").request(MediaType.TEXT_PLAIN_TYPE).get(String.class);
+        assertThat(aggregate, containsString(name.replace('.', '_') + "_total"));
+        for (String mediaType : List.of(MediaType.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT.text())) {
+            String selected = webTarget.path("metrics")
+                    .queryParam("name", name)
+                    .request(mediaType)
+                    .get(String.class);
+            assertThat(selected, containsString("mp_scope=\"application\""));
+        }
+
+        RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE).counter(name).inc(11);
+        for (String mediaType : List.of(MediaType.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT.text())) {
+            String selected = webTarget.path("metrics/application/" + name).request(mediaType).get(String.class);
+            assertThat(selected, containsString("mp_scope=\"application\""));
+            assertThat(selected, not(containsString("mp_scope=\"vendor\"")));
+        }
+
+        JsonObject json = webTarget.path("metrics").request(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
+        assertThat(json.getJsonNumber(jsonName(name, MetricRegistry.APPLICATION_SCOPE)).doubleValue(), is(7.0));
+        JsonObject selectedJson = webTarget.path("metrics")
+                .queryParam("scope", MetricRegistry.APPLICATION_SCOPE)
+                .queryParam("name", name)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(JsonObject.class);
+        assertThat(selectedJson.getJsonNumber(jsonName(name, MetricRegistry.APPLICATION_SCOPE)).doubleValue(), is(7.0));
+        assertThat(selectedJson.containsKey(jsonName(name, MetricRegistry.VENDOR_SCOPE)), is(false));
+        assertThat(nativeRegistry.counter(name), sameInstance(counter));
+        assertThat(RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE).counter(name).getCount(), is(7L));
     }
 
     private static String jsonName(String meterName, String scope) {

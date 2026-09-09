@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -46,6 +47,8 @@ import static org.hamcrest.Matchers.notNullValue;
 @AddConfigBlock("""
         metrics.scoping.scopes.0.name=base
         metrics.scoping.scopes.0.filter.exclude=thread[.]count
+        metrics.scoping.scopes.1.name=application
+        metrics.scoping.scopes.1.filter.exclude=direct[.]hidden
         """)
 class MpMetricsScopeEndpointTest {
     private static final String APPLICATION_METER = "scope.application";
@@ -195,7 +198,7 @@ class MpMetricsScopeEndpointTest {
 
     @Test
     void hidesScopeDisabledCoreMeterAndReturnsNotFoundByName() {
-        boolean coreMeterExists = Services.get(io.helidon.metrics.api.MeterRegistry.class)
+        boolean coreMeterExists = Services.get(MeterRegistry.class)
                 .meters()
                 .stream()
                 .anyMatch(meter -> meter.id().name().equals(DISABLED_BASE_METER));
@@ -219,6 +222,38 @@ class MpMetricsScopeEndpointTest {
                 .get()) {
             assertThat("Disabled metric query status", response.getStatus(), is(404));
         }
+    }
+
+    @Test
+    void appliesScopeExclusionToDirectMicrometerMeters() {
+        String name = "direct.hidden";
+        Services.get(MeterRegistry.class)
+                .unwrap(io.micrometer.core.instrument.MeterRegistry.class)
+                .counter(name)
+                .increment(7);
+        RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE).counter(name).inc(11);
+
+        for (String mediaType : List.of(MediaType.TEXT_PLAIN,
+                                       MediaTypes.APPLICATION_OPENMETRICS_TEXT.text(),
+                                       MediaType.APPLICATION_JSON)) {
+            try (Response response = webTarget.path("metrics")
+                    .queryParam("scope", MetricRegistry.APPLICATION_SCOPE)
+                    .queryParam("name", name)
+                    .request(mediaType)
+                    .get()) {
+                assertThat("Excluded direct application meter: " + mediaType, response.getStatus(), is(404));
+            }
+        }
+
+        for (String mediaType : List.of(MediaType.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT.text())) {
+            String aggregate = webTarget.path("metrics").request(mediaType).get(String.class);
+            List<String> samples = aggregate.lines().filter(line -> line.startsWith("direct_hidden_total{")).toList();
+            assertThat("Only the vendor sample is exposed", samples.size(), is(1));
+            assertThat(samples.getFirst(), containsString("mp_scope=\"vendor\""));
+        }
+        JsonObject aggregate = webTarget.path("metrics").request(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
+        assertThat(aggregate.containsKey(jsonName(name, MetricRegistry.APPLICATION_SCOPE)), is(false));
+        assertThat(aggregate.getJsonNumber(jsonName(name, MetricRegistry.VENDOR_SCOPE)).doubleValue(), is(11.0));
     }
 
     private static void assertOnlyExpectedMeter(String output,

@@ -19,15 +19,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Weighted;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -37,6 +41,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class RegistryFactoryIsolationTest {
+
+    @Test
+    void tagsDirectMetersBeforeOtherLifecycleListeners() {
+        var descriptor = ServiceLoader__ServiceDescriptor.create(TypeName.create(MeterRegistryLifeCycleListener.class),
+                                                                 StartupMeterListener.class,
+                                                                 StartupMeterListener::new,
+                                                                 Weighted.DEFAULT_WEIGHT);
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                              .addServiceDescriptor(descriptor)
+                                                                              .build());
+        try {
+            MeterRegistry registry = manager.registry().get(MeterRegistry.class);
+            var counter = registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class).counter("early.direct");
+            assertThat("The later listener registered the counter", counter.count(), is(3.0));
+            assertThat("Scope was assigned before the other listener registered its meter",
+                       counter.getId().getTag(MpScope.TAG_NAME),
+                       is("application"));
+            assertThat("No MP container has activated the registry", GlobalServiceRegistry.configured(), is(false));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void registryMetricsFactoryUsesRegistryConfig() {
@@ -102,5 +128,12 @@ class RegistryFactoryIsolationTest {
             manager.shutdown();
         }
         assertThat(GlobalServiceRegistry.configured(), is(false));
+    }
+
+    private static class StartupMeterListener implements MeterRegistryLifeCycleListener {
+        @Override
+        public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+            meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class).counter("early.direct").increment(3);
+        }
     }
 }

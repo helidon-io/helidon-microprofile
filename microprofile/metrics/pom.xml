@@ -37,6 +37,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
@@ -143,6 +148,7 @@
                                 <exclude>**/RegistryTest.java</exclude>
                                 <exclude>**/RegistryFactoryIsolationTest.java</exclude>
                                 <exclude>**/RegistryFactoryLifecycleTest.java</exclude>
+                                <exclude>**/MpMetricsWithoutMicrometerTest.java</exclude>
                                 <exclude>**/ReusabilityMpServiceTest.java</exclude>
                                 <exclude>**/TestRestServiceInheritance.java</exclude>
                             </excludes>
@@ -289,6 +295,25 @@
                                 <include>**/TestRestServiceInheritance.java</include>
                             </includes>
                             <reuseForks>false</reuseForks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Verify the optional Micrometer integration with its classes absent at runtime. -->
+                        <id>test-without-micrometer</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/MpMetricsWithoutMicrometerTest.java</include>
+                            </includes>
+                            <reuseForks>false</reuseForks>
+                            <classpathDependencyExcludes>
+                                <classpathDependencyExclude>io.micrometer:micrometer-core</classpathDependencyExclude>
+                                <classpathDependencyExclude>
+                                    io.helidon.metrics.providers:helidon-metrics-providers-micrometer
+                                </classpathDependencyExclude>
+                            </classpathDependencyExcludes>
                         </configuration>
                     </execution>
                 </executions>
