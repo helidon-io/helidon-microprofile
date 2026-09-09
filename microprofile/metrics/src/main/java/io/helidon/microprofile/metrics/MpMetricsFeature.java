@@ -48,8 +48,12 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Timer;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -100,6 +104,16 @@ final class MpMetricsFeature {
         var result = new TreeSet<String>();
         values.forEach(result::add);
         return result;
+    }
+
+    private static MetricKind metricKind(Metric metric) {
+        return switch (metric) {
+            case Counter _ -> MetricKind.COUNTER;
+            case Gauge<?> _ -> MetricKind.GAUGE;
+            case Histogram _ -> MetricKind.HISTOGRAM;
+            case Timer _ -> MetricKind.TIMER;
+            default -> throw new IllegalArgumentException("Unsupported metric type " + metric.getClass().getName());
+        };
     }
 
     private static Optional<?> merge(List<Object> output) {
@@ -224,14 +238,14 @@ final class MpMetricsFeature {
         if (!requestedScopes.isEmpty()) {
             candidateScopes.retainAll(requestedScopes);
         }
-        Map<String, Map<String, Set<String>>> scopesByNameAndType = new TreeMap<>();
+        Map<String, Map<MetricKind, Set<String>>> scopesByNameAndType = new TreeMap<>();
 
         for (String scope : candidateScopes) {
             for (Map.Entry<MetricID, Metric> entry : registryFactory.registry(scope).getMetrics().entrySet()) {
                 String name = entry.getKey().getName();
                 if (requestedNames.isEmpty() || requestedNames.contains(name)) {
                     scopesByNameAndType.computeIfAbsent(name, _ -> new TreeMap<>())
-                            .computeIfAbsent(entry.getValue().getClass().getName(), _ -> new TreeSet<>())
+                            .computeIfAbsent(metricKind(entry.getValue()), _ -> new TreeSet<>())
                             .add(scope);
                 }
             }
@@ -381,6 +395,13 @@ final class MpMetricsFeature {
                                                     Map.of(),
                                                     List.of()))
                 .anyMatch(Optional::isPresent);
+    }
+
+    private enum MetricKind {
+        COUNTER,
+        GAUGE,
+        HISTOGRAM,
+        TIMER
     }
 
     private interface FormatterOperation {
