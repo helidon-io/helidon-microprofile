@@ -19,6 +19,7 @@ import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -28,18 +29,23 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics.permit-all", value = "true")
 class MpMetricsUnrestrictedEndpointTest {
     private static final String APPLICATION_METER = "unrestricted.application";
+    private static final String SHARED_STRUCTURED_METER = "unrestricted.shared.structured";
 
     @Inject
     private WebTarget webTarget;
 
     @BeforeEach
     void createMeter() {
-        RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE).counter(APPLICATION_METER);
+        RegistryFactory registryFactory = RegistryFactory.getInstance();
+        registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).counter(APPLICATION_METER);
+        registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).timer(SHARED_STRUCTURED_METER);
+        registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_STRUCTURED_METER);
     }
 
     @Test
@@ -56,5 +62,21 @@ class MpMetricsUnrestrictedEndpointTest {
         }
         assertThat(TestMeterRegistryFormatterProvider.invocationCount(), is(1));
         assertThat(TestMeterRegistryFormatterProvider.allSelectionsEmpty(), is(true));
+    }
+
+    @Test
+    void groupsUnrestrictedJsonByMetricType() {
+        JsonObject aggregate = webTarget.path("metrics")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(JsonObject.class);
+
+        JsonObject shared = aggregate.getJsonObject(SHARED_STRUCTURED_METER);
+        assertThat(shared, is(notNullValue()));
+        assertThat(shared.containsKey(jsonName("elapsedTime", MetricRegistry.APPLICATION_SCOPE)), is(true));
+        assertThat(shared.containsKey(jsonName("total", MetricRegistry.VENDOR_SCOPE)), is(true));
+    }
+
+    private static String jsonName(String meterName, String scope) {
+        return meterName + ";" + MpScope.TAG_NAME + "=" + scope;
     }
 }

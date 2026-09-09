@@ -102,6 +102,14 @@ final class MpMetricsFeature {
                 .orElse(null);
     }
 
+    private static boolean supportsNativeScrape(MediaType mediaType) {
+        return matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT);
+    }
+
+    private static boolean matches(MediaType first, MediaType second) {
+        return first.type().equals(second.type()) && first.subtype().equals(second.subtype());
+    }
+
     private static Set<String> values(Iterable<String> values) {
         var result = new TreeSet<String>();
         values.forEach(result::add);
@@ -233,7 +241,10 @@ final class MpMetricsFeature {
                                FormatterOperation formatterOperation) {
         Set<String> requestedScopes = values(scopeSelection);
         Set<String> requestedNames = values(nameSelection);
-        if (requestedScopes.isEmpty() && requestedNames.isEmpty() && !scopeRestrictions) {
+        if (requestedScopes.isEmpty()
+                && requestedNames.isEmpty()
+                && !scopeRestrictions
+                && supportsNativeScrape(mediaType)) {
             return formatterOperation.apply(chooseFormatter(mediaType, Map.of(), List.of()));
         }
         List<Object> output = new ArrayList<>();
