@@ -32,6 +32,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 import io.helidon.metrics.api.MeterRegistry;
@@ -194,6 +195,38 @@ final class MpMetricsFeature {
         return result.toString();
     }
 
+    private static JsonArray metadataTags(String scope, List<MetricID> ids) {
+        List<JsonArray> groups = new ArrayList<>();
+        for (MetricID id : ids) {
+            Map<String, String> tags = new TreeMap<>(id.getTags());
+            tags.put(MpScope.TAG_NAME, scope);
+            groups.add(JsonArray.createStrings(tags.entrySet().stream()
+                                                      .map(tag -> escapeMetadataTag(tag.getKey()) + "="
+                                                              + escapeMetadataTag(tag.getValue()))
+                                                      .toList()));
+        }
+        return JsonArray.create(groups);
+    }
+
+    private static String escapeMetadataTag(String value) {
+        // Preserve the tag encoding used by the existing JSON metadata formatter.
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            switch (value.charAt(i)) {
+            case '\b' -> result.append("\\b");
+            case '\f' -> result.append("\\f");
+            case '\n' -> result.append("\\n");
+            case '\r' -> result.append("\\r");
+            case '\t' -> result.append("\\t");
+            case '"' -> result.append("\\\"");
+            case '\\' -> result.append("\\\\");
+            case ';' -> result.append('_');
+            default -> result.append(value.charAt(i));
+            }
+        }
+        return result.toString();
+    }
+
     private MeterRegistryFormatter chooseFormatter(MediaType mediaType,
                                                     Map<String, Collection<String>> tagSelection,
                                                     Iterable<String> nameSelection) {
@@ -226,33 +259,73 @@ final class MpMetricsFeature {
             LOGGER.log(System.Logger.Level.DEBUG, "[" + req.serverSocketId() + " "
                     + req.socketId() + "] Preparing MP metrics output");
         }
-        return format(mediaType, scopeSelection, nameSelection, MeterRegistryFormatter::format);
+        return format(mediaType, scopeSelection, nameSelection);
     }
 
     private Optional<?> outputMetadata(MediaType mediaType,
                                        Iterable<String> scopeSelection,
                                        Iterable<String> nameSelection) {
-        return format(mediaType, scopeSelection, nameSelection, MeterRegistryFormatter::formatMetadata);
+        Set<String> requestedNames = values(nameSelection);
+        Map<String, List<JsonObject>> metadataByName = new TreeMap<>();
+        for (String scope : selectedScopes(values(scopeSelection))) {
+            Map<String, List<MetricID>> idsByName = new TreeMap<>();
+            new TreeSet<>(registryFactory.registry(scope).getMetrics().keySet()).forEach(id -> {
+                if (requestedNames.isEmpty() || requestedNames.contains(id.getName())) {
+                    idsByName.computeIfAbsent(id.getName(), _ -> new ArrayList<>()).add(id);
+                }
+            });
+            if (idsByName.isEmpty()) {
+                continue;
+            }
+            Optional<Object> formatted = chooseFormatter(mediaType,
+                                                         Map.of(MpScope.TAG_NAME, Set.of(scope)),
+                                                         idsByName.keySet()).formatMetadata();
+            if (formatted.isEmpty()) {
+                continue;
+            }
+            if (!(formatted.get() instanceof JsonObject metadata)) {
+                throw new IllegalStateException("Expected JSON metrics metadata but received "
+                                                        + formatted.get().getClass().getName());
+            }
+            idsByName.forEach((name, ids) -> metadata.value(name).ifPresent(value -> {
+                if (!(value instanceof JsonObject record)) {
+                    throw new IllegalStateException("Expected a JSON metadata object for " + name);
+                }
+                JsonObject scopedMetadata = JsonObject.builder()
+                        .from(record)
+                        .set("tags", metadataTags(scope, ids))
+                        .build();
+                metadataByName.computeIfAbsent(name, _ -> new ArrayList<>()).add(scopedMetadata);
+            }));
+        }
+        if (metadataByName.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, JsonValue> result = new LinkedHashMap<>();
+        metadataByName.forEach((name, records) -> result.put(name,
+                                                            records.size() == 1
+                                                                    ? records.getFirst()
+                                                                    : JsonArray.create(records)));
+        return Optional.of(JsonObject.create(result));
     }
 
     private Optional<?> format(MediaType mediaType,
                                Iterable<String> scopeSelection,
-                               Iterable<String> nameSelection,
-                               FormatterOperation formatterOperation) {
+                               Iterable<String> nameSelection) {
         Set<String> requestedScopes = values(scopeSelection);
         Set<String> requestedNames = values(nameSelection);
         if (requestedScopes.isEmpty()
                 && requestedNames.isEmpty()
                 && !scopeRestrictions
                 && supportsNativeScrape(mediaType)) {
-            return formatterOperation.apply(chooseFormatter(mediaType, Map.of(), List.of()));
+            return chooseFormatter(mediaType, Map.of(), List.of()).format();
         }
         List<Object> output = new ArrayList<>();
         nameGroups(requestedScopes, requestedNames, !supportsNativeScrape(mediaType)).forEach((scopes, names) -> {
             MeterRegistryFormatter formatter = chooseFormatter(mediaType,
                                                                Map.of(MpScope.TAG_NAME, scopes),
                                                                names);
-            formatterOperation.apply(formatter).ifPresent(output::add);
+            formatter.format().ifPresent(output::add);
         });
         return merge(output);
     }
@@ -260,13 +333,9 @@ final class MpMetricsFeature {
     private Map<Set<String>, Set<String>> nameGroups(Set<String> requestedScopes,
                                                      Set<String> requestedNames,
                                                      boolean groupByType) {
-        Set<String> candidateScopes = new TreeSet<>(registryFactory.scopes());
-        if (!requestedScopes.isEmpty()) {
-            candidateScopes.retainAll(requestedScopes);
-        }
         Map<String, Map<MetricKind, Set<String>>> scopesByNameAndType = new TreeMap<>();
 
-        for (String scope : candidateScopes) {
+        for (String scope : selectedScopes(requestedScopes)) {
             for (Map.Entry<MetricID, Metric> entry : registryFactory.registry(scope).getMetrics().entrySet()) {
                 String name = entry.getKey().getName();
                 if (requestedNames.isEmpty() || requestedNames.contains(name)) {
@@ -290,6 +359,14 @@ final class MpMetricsFeature {
             scopeGroups.forEach(scopes -> result.computeIfAbsent(Set.copyOf(scopes), _ -> new TreeSet<>()).add(name));
         });
         return result;
+    }
+
+    private Set<String> selectedScopes(Set<String> requestedScopes) {
+        Set<String> candidateScopes = new TreeSet<>(registryFactory.scopes());
+        if (!requestedScopes.isEmpty()) {
+            candidateScopes.retainAll(requestedScopes);
+        }
+        return candidateScopes;
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
@@ -437,10 +514,6 @@ final class MpMetricsFeature {
         GAUGE,
         HISTOGRAM,
         TIMER
-    }
-
-    private interface FormatterOperation {
-        Optional<?> apply(MeterRegistryFormatter formatter);
     }
 
     private class MetricsService implements HttpService {

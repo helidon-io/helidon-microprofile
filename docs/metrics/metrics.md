@@ -414,6 +414,37 @@ tag. For single-valued metrics, the tag appears in the top-level key. For
 multivalued metrics, it appears in each key inside the metric's JSON object.
 Metadata lists the tag explicitly.
 
+For an `OPTIONS` response, a metric name that occurs in one selected scope maps
+to a metadata object. If the same name occurs in multiple selected scopes, it
+maps to an array of metadata objects ordered by scope name. Each object retains
+that scope's type, unit, description, and complete tag groups, even when the
+metrics have the same type in all scopes. Selecting a single scope returns the
+original object shape.
+
+For example, an application timer and a vendor histogram with the same name
+produce metadata with separate entries:
+
+```json
+{
+  "shared.metric": [
+    {
+      "type": "timer",
+      "unit": "SECONDS",
+      "tags": [["mp_scope=application"]]
+    },
+    {
+      "type": "distribution_summary",
+      "tags": [["mp_scope=vendor"]]
+    }
+  ]
+}
+```
+
+The metadata type `distribution_summary` identifies the underlying Helidon
+meter used for a MicroProfile histogram. An `OPTIONS` request to
+`/metrics?scope=application&name=shared.metric` returns only the timer metadata,
+as an object rather than an array.
+
 JSON metrics metadata (partial):
 
 <!--@mdc ::code-callout -->
