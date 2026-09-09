@@ -88,7 +88,7 @@ public class RegistryFactory {
      */
     public static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
-        if (result != null) {
+        if (result != null && activationAllowed()) {
             return result;
         }
         if (!activationAllowed()) {

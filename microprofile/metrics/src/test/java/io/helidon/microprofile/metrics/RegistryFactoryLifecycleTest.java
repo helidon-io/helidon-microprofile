@@ -16,11 +16,20 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeName;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.InterceptionMetadata;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import jakarta.enterprise.inject.se.SeContainer;
@@ -32,11 +41,34 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RegistryFactoryLifecycleTest {
+
+    @Test
+    void rejectsCachedFactoryAfterGlobalRegistryIsUnsetDuringShutdown() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .addServiceDescriptor(new ShutdownProbeDescriptor())
+                .build());
+        try {
+            GlobalServiceRegistry.registry(manager.registry());
+            RegistryFactory factory = manager.registry().get(RegistryFactoryManager.class).registryFactory();
+            assertThat(RegistryFactory.getInstance(), sameInstance(factory));
+            ShutdownProbe probe = manager.registry().get(ShutdownProbe.class);
+
+            manager.shutdown();
+
+            assertThat("The probe ran before MP registry destruction", probe.called, is(true));
+            assertThat("Global registry was already unset during the callback", probe.globalConfigured, is(false));
+            assertThat("Cached factory access during shutdown must fail", probe.failure, instanceOf(IllegalStateException.class));
+            assertThat(probe.failure.getMessage(), containsString("only while a service registry is configured"));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void staticAccessAfterShutdownDoesNotRestoreGlobalServiceRegistry() {
@@ -116,5 +148,49 @@ class RegistryFactoryLifecycleTest {
                 .disableDiscovery()
                 .addExtensions(MetricsCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)
                 .initialize();
+    }
+
+    private static class ShutdownProbe {
+        private boolean called;
+        private boolean globalConfigured;
+        private RuntimeException failure;
+    }
+
+    private static class ShutdownProbeDescriptor implements ServiceDescriptor<ShutdownProbe> {
+        @Override
+        public TypeName serviceType() {
+            return TypeName.create(ShutdownProbe.class);
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return TypeName.create(ShutdownProbeDescriptor.class);
+        }
+
+        @Override
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(ShutdownProbe.class));
+        }
+
+        @Override
+        public Optional<Double> runLevel() {
+            return Optional.of(Service.RunLevel.NORMAL + 100);
+        }
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
+            return new ShutdownProbe();
+        }
+
+        @Override
+        public void preDestroy(ShutdownProbe probe) {
+            probe.called = true;
+            probe.globalConfigured = GlobalServiceRegistry.configured();
+            try {
+                RegistryFactory.getInstance();
+            } catch (RuntimeException e) {
+                probe.failure = e;
+            }
+        }
     }
 }
