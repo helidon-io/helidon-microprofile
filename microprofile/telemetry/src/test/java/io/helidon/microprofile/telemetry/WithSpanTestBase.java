@@ -56,14 +56,26 @@ class WithSpanTestBase {
     }
 
     void testSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+        testSpanNameFromPath(spanPathTestInfo, true);
+    }
+
+    void testLegacySpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+        testSpanNameFromPath(spanPathTestInfo, false);
+    }
+
+    private void testSpanNameFromPath(SpanPathTestInfo spanPathTestInfo, boolean useCurrentDefaults) {
         JaxRsCdiExtension jaxRsCdiExtension = CDI.current().getBeanManager().getExtension(JaxRsCdiExtension.class);
-        Response response = webTarget.path(spanPathTestInfo.requestPath)
+        WebTarget requestTarget = webTarget.path(spanPathTestInfo.requestPath);
+        Response response = requestTarget
                 .request(MediaType.TEXT_PLAIN)
                 .get();
         assertThat("Status accessing " + spanPathTestInfo.requestPath, response.getStatus(), is(200));
 
         List<SpanData> spanData = testSpanExporter.spanData(2); // Automatic GET span and then the resource method span
-        assertThat("Span name", spanData.get(0).getName(), is(spanPathTestInfo.expectedSpanName));
+        String expectedSpanName = useCurrentDefaults
+                ? "GET " + requestTarget.getUri()
+                : spanPathTestInfo.expectedSpanName;
+        assertThat("Span name", spanData.get(0).getName(), is(expectedSpanName));
     }
 
     record SpanPathTestInfo(String requestPath, String expectedSpanName) { }

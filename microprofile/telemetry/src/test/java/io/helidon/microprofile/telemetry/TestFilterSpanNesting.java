@@ -28,6 +28,7 @@ import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -97,7 +98,7 @@ class TestFilterSpanNesting {
         assertThat("ingress span data", ingressSpanData, OptionalMatcher.optionalPresent());
 
         Optional<SpanData> spanFromJakartaFilter = spanData.stream()
-                .filter(sd -> sd.getName().equals("/parentSpanCheck"))
+                .filter(sd -> sd.getKind() == SpanKind.SERVER)
                 .findFirst();
         assertThat("/parentSpanCheck span data", spanFromJakartaFilter, OptionalMatcher.optionalPresent());
 
