@@ -33,6 +33,7 @@ import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -46,6 +47,9 @@ import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
+
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
 
 import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
@@ -106,15 +110,34 @@ final class MpMetricsFeature {
             return Optional.of(output.getFirst());
         }
         if (output.getFirst() instanceof JsonObject) {
-            JsonObject.Builder result = JsonObject.builder();
-            output.forEach(item -> result.from((JsonObject) item));
-            return Optional.of(result.build());
+            return Optional.of(mergeJson(output));
         }
         if (output.getFirst() instanceof String) {
             return Optional.of(mergeText(output));
         }
         throw new IllegalStateException("Cannot merge metrics formatter output of type "
                                                 + output.getFirst().getClass().getName());
+    }
+
+    private static JsonObject mergeJson(List<Object> output) {
+        Map<String, JsonValue> result = new LinkedHashMap<>();
+        output.stream()
+                .map(JsonObject.class::cast)
+                .forEach(jsonObject -> jsonObject.keysAsStrings()
+                        .forEach(key -> result.merge(key,
+                                                     jsonObject.value(key).orElseThrow(),
+                                                     MpMetricsFeature::mergeJsonValues)));
+        return JsonObject.create(result);
+    }
+
+    private static JsonValue mergeJsonValues(JsonValue first, JsonValue second) {
+        if (first instanceof JsonObject firstObject && second instanceof JsonObject secondObject) {
+            return JsonObject.builder()
+                    .from(firstObject)
+                    .from(secondObject)
+                    .build();
+        }
+        return second;
     }
 
     private static String mergeText(List<Object> output) {
@@ -201,19 +224,22 @@ final class MpMetricsFeature {
         if (!requestedScopes.isEmpty()) {
             candidateScopes.retainAll(requestedScopes);
         }
-        Map<String, Set<String>> scopesByName = new TreeMap<>();
+        Map<String, Map<String, Set<String>>> scopesByNameAndType = new TreeMap<>();
 
         for (String scope : candidateScopes) {
-            for (String name : registryFactory.registry(scope).getNames()) {
+            for (Map.Entry<MetricID, Metric> entry : registryFactory.registry(scope).getMetrics().entrySet()) {
+                String name = entry.getKey().getName();
                 if (requestedNames.isEmpty() || requestedNames.contains(name)) {
-                    scopesByName.computeIfAbsent(name, ignored -> new TreeSet<>()).add(scope);
+                    scopesByNameAndType.computeIfAbsent(name, _ -> new TreeMap<>())
+                            .computeIfAbsent(entry.getValue().getClass().getName(), _ -> new TreeSet<>())
+                            .add(scope);
                 }
             }
         }
 
         Map<Set<String>, Set<String>> result = new LinkedHashMap<>();
-        scopesByName.forEach((name, scopes) -> result.computeIfAbsent(Set.copyOf(scopes), ignored -> new TreeSet<>())
-                .add(name));
+        scopesByNameAndType.forEach((name, scopesByType) -> scopesByType.values()
+                .forEach(scopes -> result.computeIfAbsent(Set.copyOf(scopes), _ -> new TreeSet<>()).add(name)));
         return result;
     }
 

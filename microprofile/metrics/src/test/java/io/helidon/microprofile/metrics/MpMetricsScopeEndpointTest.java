@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics.permit-all", value = "true")
@@ -48,6 +49,7 @@ class MpMetricsScopeEndpointTest {
     private static final String APPLICATION_METER = "scope.application";
     private static final String BASE_METER = "scope.base";
     private static final String VENDOR_METER = "scope.vendor";
+    private static final String SHARED_STRUCTURED_METER = "scope.shared.structured";
     private static final String DISABLED_BASE_METER = "thread.count";
     private static final String UNKNOWN_SCOPE = "unknown-scope";
 
@@ -58,8 +60,10 @@ class MpMetricsScopeEndpointTest {
     void createMeters() {
         RegistryFactory registryFactory = RegistryFactory.getInstance();
         registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).counter(APPLICATION_METER);
+        registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).timer(SHARED_STRUCTURED_METER);
         registryFactory.getRegistry(MetricRegistry.BASE_SCOPE).counter(BASE_METER);
         registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).counter(VENDOR_METER);
+        registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_STRUCTURED_METER);
     }
 
     @Test
@@ -120,6 +124,19 @@ class MpMetricsScopeEndpointTest {
         assertThat(base.containsKey(jsonName(BASE_METER, MetricRegistry.BASE_SCOPE)), is(true));
         assertThat(base.containsKey(jsonName(APPLICATION_METER, MetricRegistry.APPLICATION_SCOPE)), is(false));
         assertThat(base.containsKey(jsonName(VENDOR_METER, MetricRegistry.VENDOR_SCOPE)), is(false));
+    }
+
+    @Test
+    void formatsSameNameWithDifferentTypesAcrossScopesAsJson() {
+        JsonObject aggregate = webTarget.path("metrics")
+                .queryParam("name", SHARED_STRUCTURED_METER)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(JsonObject.class);
+
+        JsonObject shared = aggregate.getJsonObject(SHARED_STRUCTURED_METER);
+        assertThat(shared, is(notNullValue()));
+        assertThat(shared.containsKey(jsonName("elapsedTime", MetricRegistry.APPLICATION_SCOPE)), is(true));
+        assertThat(shared.containsKey(jsonName("total", MetricRegistry.VENDOR_SCOPE)), is(true));
     }
 
     @Test
