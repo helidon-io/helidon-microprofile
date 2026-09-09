@@ -289,10 +289,8 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 
 ```json [Response]
 {
-   "base" : {
-      "memory.maxHeap" : 3817865216,
-      "memory.committedHeap" : 335544320
-    }
+  "memory.maxHeap;mp_scope=base": 3817865216,
+  "memory.committedHeap;mp_scope=base": 335544320
 }
 ```
 
@@ -411,45 +409,45 @@ Unlike OpenMetrics/Prometheus output, which combines the data and the metadata
 in a single response, you use an HTTP `GET` request to retrieve metrics JSON
 *data* and an `OPTIONS` request to retrieve *metadata* in JSON format.
 
-Helidon groups metrics in the same scope together in JSON output as shown in the
-following example.
+Helidon represents a metric's scope using the specification-defined `mp_scope`
+tag. For single-valued metrics, the tag appears in the top-level key. For
+multivalued metrics, it appears in each key inside the metric's JSON object.
+Metadata lists the tag explicitly.
 
-JSON metrics output structured by scope (partial):
+JSON metrics metadata (partial):
 
 <!--@mdc ::code-callout -->
 ```json
 {
-  "application": { // <1>
-    "getTimer": {
-      "type": "timer",
-      "unit": "seconds",
-      "description": "Timer for getting the default greeting"
-    }
+  "getTimer": {
+    "type": "timer",
+    "unit": "seconds",
+    "description": "Timer for getting the default greeting",
+    "tags": [["mp_scope=application"]] // <1>
   },
-  "vendor": { // <1>
-    "requests.count": {
-      "type": "counter",
-      "description": "Each request (regardless of HTTP method) will increase this counter"
-    }
+  "requests.count": {
+    "type": "counter",
+    "description": "Each request (regardless of HTTP method) will increase this counter",
+    "tags": [["mp_scope=vendor"]] // <1>
   },
-  "base": { // <1>
-    "cpu.systemLoadAverage": {
-      "type": "gauge",
-      "description": "Displays the system load average for the last minute."
-    },
-    "classloader.loadedClasses.count": {
-      "type": "gauge",
-      "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
-    }
+  "cpu.systemLoadAverage": {
+    "type": "gauge",
+    "description": "Displays the system load average for the last minute.",
+    "tags": [["mp_scope=base"]] // <1>
+  },
+  "classloader.loadedClasses.count": {
+    "type": "gauge",
+    "description": "Displays the number of classes that are currently loaded in the Java virtual machine.",
+    "tags": [["mp_scope=base"]] // <1>
   }
 }
 ```
-1. Note the `application`, `vendor`, and `base` sections.
+1. The `mp_scope` tag identifies the metric's scope.
 <!--@mdc :: -->
 
 If an HTTP request [selects by scope](#metrics-endpoint), the output
-omits the extra level of structure that identifies the scope as shown in the
-following example.
+contains only metrics from that scope. The `mp_scope` tag remains part of the
+JSON representation, as shown in the following metadata example.
 
 JSON metrics output for the base scope (partial):
 
@@ -457,11 +455,13 @@ JSON metrics output for the base scope (partial):
 {
   "cpu.systemLoadAverage": {
     "type": "gauge",
-     "description": "Displays the system load average for the last minute."
+    "description": "Displays the system load average for the last minute.",
+    "tags": [["mp_scope=base"]]
   },
   "classloader.loadedClasses.count": {
     "type": "gauge",
-    "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
+    "description": "Displays the number of classes that are currently loaded in the Java virtual machine.",
+    "tags": [["mp_scope=base"]]
   }
 }
 ```
@@ -474,23 +474,23 @@ example, a counter) or a structure with multiple values (for example, a timer).
 JSON output for a single-valued metric (for example, Counter):
 
 ```json
-"requests.count": 5
+"requests.count;mp_scope=vendor": 5
 ```
 
 JSON output for a multivalued metric (for example, Timer):
 
 ```json
 "getTimer": {
-  "count": 3,
-  "max": 0.0030455,
-  "mean": 0.0011060836666666666,
-  "elapsedTime": 0.003318251,
-  "p0.5": 0.000151552,
-  "p0.75": 0.003141632,
-  "p0.95": 0.003141632,
-  "p0.98": 0.003141632,
-  "p0.99": 0.003141632,
-  "p0.999": 0.003141632
+  "count;mp_scope=application": 3,
+  "max;mp_scope=application": 0.0030455,
+  "mean;mp_scope=application": 0.0011060836666666666,
+  "elapsedTime;mp_scope=application": 0.003318251,
+  "p0.5;mp_scope=application": 0.000151552,
+  "p0.75;mp_scope=application": 0.003141632,
+  "p0.95;mp_scope=application": 0.003141632,
+  "p0.98;mp_scope=application": 0.003141632,
+  "p0.99;mp_scope=application": 0.003141632,
+  "p0.999;mp_scope=application": 0.003141632
 }
 ```
 
@@ -507,8 +507,9 @@ Example Counter metadata:
 ```json
 "requests.count": {
   "type": "counter",
-  "description": "Each request (regardless of HTTP method) will increase this counter"
-    }
+  "description": "Each request (regardless of HTTP method) will increase this counter",
+  "tags": [["mp_scope=vendor"]]
+}
 ```
 
 Example Timer metadata:
@@ -517,7 +518,8 @@ Example Timer metadata:
 "getTimer": {
   "type": "timer",
   "unit": "seconds",
-  "description": "Timer for getting the default greeting"
+  "description": "Timer for getting the default greeting",
+  "tags": [["mp_scope=application"]]
 }
 ```
 
@@ -872,13 +874,13 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 <!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "io.helidon.examples.quickstart.mp.GreetingCards.any-card": 2, //  <1>
-  "personalizedGets": 0,
+  "io.helidon.examples.quickstart.mp.GreetingCards.any-card;mp_scope=application": 2, //  <1>
+  "personalizedGets;mp_scope=application": 0,
   "allGets": {
-    "count": 0,
-    "elapsedTime": 0,
-    "max": 0,
-    "mean": 0
+    "count;mp_scope=application": 0,
+    "elapsedTime;mp_scope=application": 0,
+    "max;mp_scope=application": 0,
+    "mean;mp_scope=application": 0
   }
 }
 ```
@@ -949,19 +951,19 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 ```json [Response]
 {
   "cardTimer": {
-    "count": 2,
-    "elapsedTime": 0.002941925,
-    "max": 0.002919973,
-    "mean": 0.0014709625
+    "count;mp_scope=application": 2,
+    "elapsedTime;mp_scope=application": 0.002941925,
+    "max;mp_scope=application": 0.002919973,
+    "mean;mp_scope=application": 0.0014709625
   },
-  "personalizedGets": 0,
+  "personalizedGets;mp_scope=application": 0,
   "allGets": {
-    "count": 0,
-    "elapsedTime": 0,
-    "max": 0,
-    "mean": 0
+    "count;mp_scope=application": 0,
+    "elapsedTime;mp_scope=application": 0,
+    "max;mp_scope=application": 0,
+    "mean;mp_scope=application": 0
   },
-  "cardCount": 2
+  "cardCount;mp_scope=application": 2
 }
 ```
 
@@ -1027,16 +1029,16 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 <!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "birthdayCard": 1,
-  "personalizedGets": 0,
+  "birthdayCard;mp_scope=application": 1,
+  "personalizedGets;mp_scope=application": 0,
   "allGets": {
-    "count": 0,
-    "elapsedTime": 0,
-    "max": 0,
-    "mean": 0
+    "count;mp_scope=application": 0,
+    "elapsedTime;mp_scope=application": 0,
+    "max;mp_scope=application": 0,
+    "mean;mp_scope=application": 0
   },
-  "anyCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 // <1>
+  "anyCard;mp_scope=application": 1,
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards;mp_scope=application": 2 // <1>
 }
 ```
 1. The `totalCards.GreetingCards` count is a total of all the method-level
@@ -1116,17 +1118,17 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 <!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "birthdayCard": 3,
-  "personalizedGets": 0,
+  "birthdayCard;mp_scope=application": 3,
+  "personalizedGets;mp_scope=application": 0,
   "allGets": {
-    "count": 0,
-    "elapsedTime": 0,
-    "max": 0,
-    "mean": 0
+    "count;mp_scope=application": 0,
+    "elapsedTime;mp_scope=application": 0,
+    "max;mp_scope=application": 0,
+    "mean;mp_scope=application": 0
   },
-  "anyCard": 2,
-  "cacheHits": 2, // <1>
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 5
+  "anyCard;mp_scope=application": 2,
+  "cacheHits;mp_scope=application": 2, // <1>
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards;mp_scope=application": 5
 }
 ```
 1. The cache was hit two times out of five queries.
@@ -1209,15 +1211,15 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 <!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "personalizedGets": 0,
+  "personalizedGets;mp_scope=application": 0,
   "allGets": {
-    "count": 0,
-    "elapsedTime": 0,
-    "max": 0,
-    "mean": 0
+    "count;mp_scope=application": 0,
+    "elapsedTime;mp_scope=application": 0,
+    "max;mp_scope=application": 0,
+    "mean;mp_scope=application": 0
   },
-  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 23, // <1>
-  "cardCount": 0
+  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds;mp_scope=application": 23, // <1>
+  "cardCount;mp_scope=application": 0
 }
 ```
 1. The application has been running for 23 seconds.
