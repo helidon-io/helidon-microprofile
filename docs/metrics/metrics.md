@@ -746,6 +746,31 @@ MicroProfile Metrics always uses the specification-defined `mp_scope` tag for
 metric scopes. The general Helidon setting `metrics.scoping.tag-name` does not
 apply to Helidon MP.
 
+When registering a metric through a MicroProfile `MetricRegistry`, that
+registry's scope takes precedence. For meters registered through the Helidon
+metrics API, known Helidon origins retain their `base` or `vendor` scope mapping.
+Meters with no origin or an unrecognized origin use the effective
+`metrics.scoping.default` value, which defaults to `application`.
+
+Direct Micrometer registrations through the service-managed meter registry also
+receive the configured default scope when they have no `mp_scope` tag. Existing
+Micrometer `mp_scope` tags are preserved.
+
+For example:
+
+```properties
+metrics.scoping.default=custom_default
+```
+
+With this setting, Helidon meters with missing or unrecognized origins and
+untagged direct Micrometer meters receive `mp_scope=custom_default`. They appear
+in requests to `/metrics?scope=custom_default`. Explicit MicroProfile registry
+scopes and known Helidon origin mappings are unaffected.
+
+The configured default scope must match `[a-zA-Z_][a-zA-Z0-9_]*`. Invalid values,
+such as `custom-default`, are rejected with `IllegalArgumentException` when the
+default is applied.
+
 ## Metric Type for `gc.time`
 
 To date Helidon 4 releases have implemented the system-provided metric `gc.time`
