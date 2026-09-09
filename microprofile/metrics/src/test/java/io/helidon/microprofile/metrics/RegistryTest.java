@@ -96,6 +96,8 @@ class RegistryTest {
                                                                  .origin("io.helidon.metrics.systemmeters.SystemMetersProvider"));
             Meter vendorMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.vendor")
                                                                    .origin("io.helidon.faulttolerance.FaultTolerance"));
+            Meter dbClientMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.dbclient")
+                                                                     .origin("io.helidon.dbclient.metrics.DbClientMetrics"));
             Meter applicationMeter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("core.application"));
             var reusableBuilder = metricsFactory.counterBuilder("mp.reused");
             Meter firstReusableMeter = MpScope.getOrCreate(meterRegistry,
@@ -109,6 +111,7 @@ class RegistryTest {
 
             assertMeterScope(baseMeter, MetricRegistry.BASE_SCOPE);
             assertMeterScope(vendorMeter, MetricRegistry.VENDOR_SCOPE);
+            assertMeterScope(dbClientMeter, MetricRegistry.VENDOR_SCOPE);
             assertMeterScope(applicationMeter, MetricRegistry.APPLICATION_SCOPE);
             assertThat("Repeated get-or-create returns the same meter",
                        secondReusableMeter,
@@ -119,6 +122,9 @@ class RegistryTest {
                        notNullValue());
             assertThat("Core vendor meter routes to vendor registry",
                        vendor.getCounter(new MetricID("core.vendor")),
+                       notNullValue());
+            assertThat("DB client meter routes to vendor registry",
+                       vendor.getCounter(new MetricID("core.dbclient")),
                        notNullValue());
             assertThat("Originless core meter routes to application registry",
                        application.getCounter(new MetricID("core.application")),
