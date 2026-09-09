@@ -248,7 +248,7 @@ final class MpMetricsFeature {
             return formatterOperation.apply(chooseFormatter(mediaType, Map.of(), List.of()));
         }
         List<Object> output = new ArrayList<>();
-        nameGroups(requestedScopes, requestedNames).forEach((scopes, names) -> {
+        nameGroups(requestedScopes, requestedNames, !supportsNativeScrape(mediaType)).forEach((scopes, names) -> {
             MeterRegistryFormatter formatter = chooseFormatter(mediaType,
                                                                Map.of(MpScope.TAG_NAME, scopes),
                                                                names);
@@ -258,7 +258,8 @@ final class MpMetricsFeature {
     }
 
     private Map<Set<String>, Set<String>> nameGroups(Set<String> requestedScopes,
-                                                     Set<String> requestedNames) {
+                                                     Set<String> requestedNames,
+                                                     boolean groupByType) {
         Set<String> candidateScopes = new TreeSet<>(registryFactory.scopes());
         if (!requestedScopes.isEmpty()) {
             candidateScopes.retainAll(requestedScopes);
@@ -277,8 +278,17 @@ final class MpMetricsFeature {
         }
 
         Map<Set<String>, Set<String>> result = new LinkedHashMap<>();
-        scopesByNameAndType.forEach((name, scopesByType) -> scopesByType.values()
-                .forEach(scopes -> result.computeIfAbsent(Set.copyOf(scopes), _ -> new TreeSet<>()).add(name)));
+        scopesByNameAndType.forEach((name, scopesByType) -> {
+            Collection<Set<String>> scopeGroups;
+            if (groupByType) {
+                scopeGroups = scopesByType.values();
+            } else {
+                Set<String> scopes = new TreeSet<>();
+                scopesByType.values().forEach(scopes::addAll);
+                scopeGroups = List.of(scopes);
+            }
+            scopeGroups.forEach(scopes -> result.computeIfAbsent(Set.copyOf(scopes), _ -> new TreeSet<>()).add(name));
+        });
         return result;
     }
 

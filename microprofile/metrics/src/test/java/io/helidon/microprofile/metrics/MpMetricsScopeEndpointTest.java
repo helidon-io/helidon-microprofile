@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.media.type.MediaTypes;
@@ -49,6 +51,7 @@ class MpMetricsScopeEndpointTest {
     private static final String APPLICATION_METER = "scope.application";
     private static final String BASE_METER = "scope.base";
     private static final String VENDOR_METER = "scope.vendor";
+    private static final String SHARED_PROMETHEUS_METER = "scope.shared.prometheus";
     private static final String SHARED_STRUCTURED_METER = "scope.shared.structured";
     private static final String DISABLED_BASE_METER = "thread.count";
     private static final String UNKNOWN_SCOPE = "unknown-scope";
@@ -60,9 +63,11 @@ class MpMetricsScopeEndpointTest {
     void createMeters() {
         RegistryFactory registryFactory = RegistryFactory.getInstance();
         registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).counter(APPLICATION_METER);
+        registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).gauge(SHARED_PROMETHEUS_METER, () -> 1);
         registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).timer(SHARED_STRUCTURED_METER);
         registryFactory.getRegistry(MetricRegistry.BASE_SCOPE).counter(BASE_METER);
         registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).counter(VENDOR_METER);
+        registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_PROMETHEUS_METER);
         registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_STRUCTURED_METER);
     }
 
@@ -140,6 +145,25 @@ class MpMetricsScopeEndpointTest {
     }
 
     @Test
+    void formatsEachPrometheusFamilyOnceAcrossScopes() {
+        for (String mediaType : List.of(MediaType.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT.text())) {
+            String namedOutput = webTarget.path("metrics")
+                    .queryParam("name", SHARED_PROMETHEUS_METER)
+                    .request()
+                    .accept(mediaType)
+                    .get(String.class);
+            assertThat(namedOutput, containsString(SHARED_PROMETHEUS_METER.replace('.', '_')));
+            assertUniquePrometheusMetadata(namedOutput);
+
+            String aggregateOutput = webTarget.path("metrics")
+                    .request()
+                    .accept(mediaType)
+                    .get(String.class);
+            assertUniquePrometheusMetadata(aggregateOutput);
+        }
+    }
+
+    @Test
     void mergesOpenMetricsOutputWithOneTerminalMarker() {
         String output = webTarget.path("metrics")
                 .request()
@@ -208,6 +232,17 @@ class MpMetricsScopeEndpointTest {
 
     private static String prometheusName(String meterName) {
         return meterName.replace('.', '_') + "_total";
+    }
+
+    private static void assertUniquePrometheusMetadata(String output) {
+        Set<String> descriptors = new HashSet<>();
+        for (String line : output.lines().toList()) {
+            if (line.startsWith("# HELP ") || line.startsWith("# TYPE ") || line.startsWith("# UNIT ")) {
+                String[] fields = line.split(" ", 4);
+                String descriptor = fields[1] + " " + fields[2];
+                assertThat("Unique Prometheus metadata " + descriptor, descriptors.add(descriptor), is(true));
+            }
+        }
     }
 
     private static String jsonName(String meterName, String scope) {
