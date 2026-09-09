@@ -25,16 +25,16 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
