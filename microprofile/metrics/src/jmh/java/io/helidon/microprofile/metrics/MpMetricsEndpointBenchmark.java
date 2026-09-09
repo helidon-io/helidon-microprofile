@@ -86,7 +86,6 @@ public class MpMetricsEndpointBenchmark {
     private MeterRegistry meterRegistry;
     private WebServer server;
     private Http1Client client;
-    private boolean fixtureReady;
 
     /**
      * Creates the registry, routes, and fixed dataset, and verifies the responses before measurement.
@@ -142,7 +141,6 @@ public class MpMetricsEndpointBenchmark {
             }
 
             verifyDataset();
-            fixtureReady = true;
         } catch (RuntimeException | Error failure) {
             try {
                 tearDown();
@@ -194,32 +192,12 @@ public class MpMetricsEndpointBenchmark {
     }
 
     /**
-     * Verifies the unchanged dataset and closes the client, server, and service registry.
+     * Closes the client, server, and service registry.
+     * Response verification stays in setup because trial teardown can contribute to the last GC-profiler sample.
      */
     @TearDown(Level.Trial)
     public void tearDown() {
         Throwable failure = null;
-        try {
-            if (fixtureReady) {
-                verifyDataset();
-            }
-        } catch (RuntimeException | Error verificationFailure) {
-            failure = verificationFailure;
-        } finally {
-            fixtureReady = false;
-        }
-        closeResources(failure);
-    }
-
-    private static Throwable recordFailure(Throwable failure, Throwable cleanupFailure) {
-        if (failure == null) {
-            return cleanupFailure;
-        }
-        failure.addSuppressed(cleanupFailure);
-        return failure;
-    }
-
-    private void closeResources(Throwable failure) {
         try {
             if (client != null) {
                 client.closeResource();
@@ -254,6 +232,14 @@ public class MpMetricsEndpointBenchmark {
         if (failure instanceof Error error) {
             throw error;
         }
+    }
+
+    private static Throwable recordFailure(Throwable failure, Throwable cleanupFailure) {
+        if (failure == null) {
+            return cleanupFailure;
+        }
+        failure.addSuppressed(cleanupFailure);
+        return failure;
     }
 
     private Http1ClientRequest request(boolean selected, MediaType mediaType) {
