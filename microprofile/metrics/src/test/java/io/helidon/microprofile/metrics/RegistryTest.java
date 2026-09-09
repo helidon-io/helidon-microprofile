@@ -202,7 +202,7 @@ class RegistryTest {
         }
 
         var builderAfterFailure = metricsFactory.counterBuilder("context.after.failure");
-        var customizer = new MpMeterBuilderCustomizer();
+        var customizer = new MpMeterBuilderCustomizer(() -> metricsFactory);
         customizer.customize(builderAfterFailure);
         customizer.customize(builderAfterFailure);
         assertThat("Originless meter after failed MP registration",

@@ -17,8 +17,10 @@ package io.helidon.microprofile.metrics;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.spi.MeterBuilderCustomizer;
 import io.helidon.service.registry.Service;
 
@@ -39,13 +41,21 @@ final class MpMeterBuilderCustomizer implements MeterBuilderCustomizer {
             Map.entry("io.helidon.webserver.observe.metrics.KeyPerformanceIndicatorMetricsImpls",
                       MetricRegistry.VENDOR_SCOPE));
 
+    private final Supplier<MetricsFactory> metricsFactory;
+
+    MpMeterBuilderCustomizer(Supplier<MetricsFactory> metricsFactory) {
+        this.metricsFactory = metricsFactory;
+    }
+
     @Override
+    @SuppressWarnings("removal")
     public void customize(Meter.Builder<?, ?> builder) {
         Objects.requireNonNull(builder);
         String expectedScope = MpScope.registrationScope()
                 .orElseGet(() -> builder.origin()
                         .map(ORIGIN_SCOPES::get)
-                        .orElse(MetricRegistry.APPLICATION_SCOPE));
+                        .orElseGet(() -> metricsFactory.get().metricsConfig().scoping().defaultValue()
+                                .orElse(MetricRegistry.APPLICATION_SCOPE)));
         if (builder.tags().containsKey(MpScope.TAG_NAME)) {
             String actualScope = builder.tags().get(MpScope.TAG_NAME);
             if (expectedScope.equals(actualScope)) {

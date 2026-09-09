@@ -16,6 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
@@ -26,31 +27,38 @@ final class MpMicrometerSupport {
     private MpMicrometerSupport() {
     }
 
-    static void configure(MeterRegistry meterRegistry) {
+    @SuppressWarnings("removal")
+    static void configure(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
         try {
             Class.forName("io.micrometer.core.instrument.MeterRegistry", false, MpMicrometerSupport.class.getClassLoader());
         } catch (ClassNotFoundException _) {
             return;
         }
-        ScopeFilter.configure(meterRegistry);
+        ScopeFilter.configure(meterRegistry, metricsConfig.scoping().defaultValue().orElse(MetricRegistry.APPLICATION_SCOPE));
     }
 
     // Load the Micrometer types only when that optional implementation is available.
     private static class ScopeFilter implements MeterFilter {
-        static void configure(MeterRegistry meterRegistry) {
+        private final Tag defaultScopeTag;
+
+        private ScopeFilter(String defaultScope) {
+            defaultScopeTag = Tag.of(MpScope.TAG_NAME, defaultScope);
+        }
+
+        static void configure(MeterRegistry meterRegistry, String defaultScope) {
             io.micrometer.core.instrument.MeterRegistry nativeRegistry;
             try {
                 nativeRegistry = meterRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
             } catch (ClassCastException _) {
                 return;
             }
-            nativeRegistry.config().meterFilter(new ScopeFilter());
+            nativeRegistry.config().meterFilter(new ScopeFilter(defaultScope));
         }
 
         @Override
         public Meter.Id map(Meter.Id id) {
             return id.getTag(MpScope.TAG_NAME) == null
-                    ? id.withTag(Tag.of(MpScope.TAG_NAME, MetricRegistry.APPLICATION_SCOPE))
+                    ? id.withTag(defaultScopeTag)
                     : id;
         }
     }

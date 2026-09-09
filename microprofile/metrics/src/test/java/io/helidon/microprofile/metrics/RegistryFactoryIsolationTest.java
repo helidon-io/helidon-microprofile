@@ -16,6 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,7 +27,9 @@ import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
@@ -61,6 +64,40 @@ class RegistryFactoryIsolationTest {
             assertThat("No MP container has activated the registry", GlobalServiceRegistry.configured(), is(false));
         } finally {
             manager.shutdown();
+        }
+    }
+
+    @Test
+    void usesProgrammaticDefaultScopeFromOwningRegistry() {
+        for (String defaultScope : List.of("vendor", "custom")) {
+            Config config = Config.just(ConfigSources.create(Map.of("metrics.scoping.default", "application")));
+            MetricsProgrammaticConfig override = new MetricsProgrammaticConfig() {
+                @Override
+                @SuppressWarnings("removal")
+                public MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
+                    return builder.scoping(ScopingConfig.builder().defaultValue(defaultScope).build());
+                }
+            };
+            ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                    .putContractInstance(Config.class, config)
+                    .putContractInstance(MetricsProgrammaticConfig.class, override)
+                    .build());
+            try {
+                MeterRegistry registry = manager.registry().get(MeterRegistry.class);
+                MetricsFactory factory = manager.registry().get(MetricsFactory.class);
+                var counter = registry.getOrCreate(factory.counterBuilder("overridden.default"));
+                var nativeCounter = registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class)
+                        .counter("overridden.direct");
+                assertThat("Neutral meter uses the effective scope in " + defaultScope,
+                           counter.id().tagsMap().get(MpScope.TAG_NAME),
+                           is(defaultScope));
+                assertThat("Native meter uses the same effective scope in " + defaultScope,
+                           nativeCounter.getId().getTag(MpScope.TAG_NAME),
+                           is(defaultScope));
+                assertThat(GlobalServiceRegistry.configured(), is(false));
+            } finally {
+                manager.shutdown();
+            }
         }
     }
 

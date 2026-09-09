@@ -54,7 +54,7 @@ final class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
 
     @Override
     public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        MpMicrometerSupport.configure(meterRegistry);
+        MpMicrometerSupport.configure(meterRegistry, metricsConfig);
         if (this.meterRegistry.compareAndSet(null, meterRegistry) && enabled.get()) {
             registryFactory(meterRegistry);
         }
