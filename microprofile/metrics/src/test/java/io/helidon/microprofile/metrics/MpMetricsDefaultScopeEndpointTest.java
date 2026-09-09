@@ -39,7 +39,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
 @AddConfig(key = "metrics.permit-all", value = "true")
-@AddConfig(key = "metrics.scoping.default", value = "custom-default")
+@AddConfig(key = "metrics.scoping.default", value = "custom_default")
 class MpMetricsDefaultScopeEndpointTest {
     @Inject
     private WebTarget webTarget;
@@ -59,16 +59,16 @@ class MpMetricsDefaultScopeEndpointTest {
         RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE).counter("default.explicit").inc(17);
 
         JsonObject aggregate = webTarget.path("metrics").request(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
-        assertCount(aggregate, "default.neutral;mp_scope=custom-default", 3);
-        assertCount(aggregate, "default.unknown;mp_scope=custom-default", 5);
-        assertCount(aggregate, "default.direct;mp_scope=custom-default", 7);
+        assertCount(aggregate, "default.neutral;mp_scope=custom_default", 3);
+        assertCount(aggregate, "default.unknown;mp_scope=custom_default", 5);
+        assertCount(aggregate, "default.direct;mp_scope=custom_default", 7);
         assertCount(aggregate, "default.base;mp_scope=base", 11);
         assertCount(aggregate, "default.vendor;mp_scope=vendor", 13);
         assertCount(aggregate, "default.explicit;mp_scope=application", 17);
 
         for (String mediaType : List.of(MediaType.TEXT_PLAIN, MediaTypes.APPLICATION_OPENMETRICS_TEXT.text())) {
             String selected = webTarget.path("metrics")
-                    .queryParam("scope", "custom-default")
+                    .queryParam("scope", "custom_default")
                     .request(mediaType)
                     .get(String.class);
             assertThat(selected, containsString("default_neutral_total"));

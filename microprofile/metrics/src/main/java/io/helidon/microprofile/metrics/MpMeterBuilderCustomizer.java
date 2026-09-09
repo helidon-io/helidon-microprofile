@@ -48,14 +48,12 @@ final class MpMeterBuilderCustomizer implements MeterBuilderCustomizer {
     }
 
     @Override
-    @SuppressWarnings("removal")
     public void customize(Meter.Builder<?, ?> builder) {
         Objects.requireNonNull(builder);
         String expectedScope = MpScope.registrationScope()
                 .orElseGet(() -> builder.origin()
                         .map(ORIGIN_SCOPES::get)
-                        .orElseGet(() -> metricsFactory.get().metricsConfig().scoping().defaultValue()
-                                .orElse(MetricRegistry.APPLICATION_SCOPE)));
+                        .orElseGet(() -> MpScope.defaultScope(metricsFactory.get().metricsConfig())));
         if (builder.tags().containsKey(MpScope.TAG_NAME)) {
             String actualScope = builder.tags().get(MpScope.TAG_NAME);
             if (expectedScope.equals(actualScope)) {

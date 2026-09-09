@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -30,9 +31,20 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 final class MpScope {
     static final String TAG_NAME = "mp_scope";
+    private static final Pattern SCOPE_NAME = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
     private static final ScopedValue<String> REGISTRATION_SCOPE = ScopedValue.newInstance();
 
     private MpScope() {
+    }
+
+    @SuppressWarnings("removal")
+    static String defaultScope(MetricsConfig metricsConfig) {
+        String scope = metricsConfig.scoping().defaultValue().orElse(MetricRegistry.APPLICATION_SCOPE);
+        if (!SCOPE_NAME.matcher(scope).matches()) {
+            throw new IllegalArgumentException("Invalid metrics.scoping.default '" + scope
+                                                       + "'; expected " + SCOPE_NAME.pattern());
+        }
+        return scope;
     }
 
     static Tag tag(String scope) {

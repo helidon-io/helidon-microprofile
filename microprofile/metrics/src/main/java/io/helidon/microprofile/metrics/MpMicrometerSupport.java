@@ -21,20 +21,18 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.config.MeterFilter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 final class MpMicrometerSupport {
     private MpMicrometerSupport() {
     }
 
-    @SuppressWarnings("removal")
     static void configure(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
         try {
             Class.forName("io.micrometer.core.instrument.MeterRegistry", false, MpMicrometerSupport.class.getClassLoader());
         } catch (ClassNotFoundException _) {
             return;
         }
-        ScopeFilter.configure(meterRegistry, metricsConfig.scoping().defaultValue().orElse(MetricRegistry.APPLICATION_SCOPE));
+        ScopeFilter.configure(meterRegistry, MpScope.defaultScope(metricsConfig));
     }
 
     // Load the Micrometer types only when that optional implementation is available.
