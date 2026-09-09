@@ -70,6 +70,7 @@ final class MpMetricsFeature {
     private final MeterRegistry meterRegistry;
     private final RegistryFactory registryFactory;
     private final List<MeterRegistryFormatterProvider> formatterProviders;
+    private final boolean scopeRestrictions;
 
     MpMetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
@@ -80,6 +81,7 @@ final class MpMetricsFeature {
                 : meterRegistry.metricsFactory().metricsConfig();
         this.registryFactory = RegistryFactory.getInstance();
         this.formatterProviders = Services.all(MeterRegistryFormatterProvider.class);
+        this.scopeRestrictions = hasScopeRestrictions(metricsConfig);
     }
 
     void register(HttpRouting.Builder routing, String endpoint) {
@@ -114,6 +116,15 @@ final class MpMetricsFeature {
             case Timer _ -> MetricKind.TIMER;
             default -> throw new IllegalArgumentException("Unsupported metric type " + metric.getClass().getName());
         };
+    }
+
+    @SuppressWarnings("removal")
+    private static boolean hasScopeRestrictions(MetricsConfig metricsConfig) {
+        return metricsConfig.scoping()
+                .scopes()
+                .values()
+                .stream()
+                .anyMatch(scope -> !scope.enabled() || scope.include().isPresent() || scope.exclude().isPresent());
     }
 
     private static Optional<?> merge(List<Object> output) {
@@ -220,8 +231,13 @@ final class MpMetricsFeature {
                                Iterable<String> scopeSelection,
                                Iterable<String> nameSelection,
                                FormatterOperation formatterOperation) {
+        Set<String> requestedScopes = values(scopeSelection);
+        Set<String> requestedNames = values(nameSelection);
+        if (requestedScopes.isEmpty() && requestedNames.isEmpty() && !scopeRestrictions) {
+            return formatterOperation.apply(chooseFormatter(mediaType, Map.of(), List.of()));
+        }
         List<Object> output = new ArrayList<>();
-        nameGroups(scopeSelection, nameSelection).forEach((scopes, names) -> {
+        nameGroups(requestedScopes, requestedNames).forEach((scopes, names) -> {
             MeterRegistryFormatter formatter = chooseFormatter(mediaType,
                                                                Map.of(MpScope.TAG_NAME, scopes),
                                                                names);
@@ -230,10 +246,8 @@ final class MpMetricsFeature {
         return merge(output);
     }
 
-    private Map<Set<String>, Set<String>> nameGroups(Iterable<String> scopeSelection,
-                                                     Iterable<String> nameSelection) {
-        Set<String> requestedScopes = values(scopeSelection);
-        Set<String> requestedNames = values(nameSelection);
+    private Map<Set<String>, Set<String>> nameGroups(Set<String> requestedScopes,
+                                                     Set<String> requestedNames) {
         Set<String> candidateScopes = new TreeSet<>(registryFactory.scopes());
         if (!requestedScopes.isEmpty()) {
             candidateScopes.retainAll(requestedScopes);
