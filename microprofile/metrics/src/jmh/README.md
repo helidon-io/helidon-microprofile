@@ -4,8 +4,9 @@ The opt-in `jmh` profile compiles the benchmark as test code. It does not add
 benchmark classes or JMH dependencies to the production artifact.
 
 `MpMetricsEndpointBenchmark` exercises the real MP metrics routes and response
-serialization over loopback HTTP using a persistent client connection. CDI and
-server startup and metric registration are outside the measured operations.
+serialization over loopback HTTP using a persistent client connection. The benchmark
+does not bootstrap CDI. Server startup and metric registration are outside the
+measured operations.
 Trial setup creates the same counter names in application, base, and vendor
 scopes, removes initial system meters, and verifies response status, selection,
 and values. Responses are consumed and closed on every operation.
