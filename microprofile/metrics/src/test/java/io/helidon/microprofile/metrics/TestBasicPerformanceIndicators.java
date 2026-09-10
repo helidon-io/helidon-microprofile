@@ -24,6 +24,7 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,10 +51,11 @@ class TestBasicPerformanceIndicators {
 
         JsonObject vendorMetrics = response.readEntity(JsonObject.class);
 
-        assertThat("Vendor metric requests.count present", vendorMetrics.containsKey("requests.count"), is(true));
+        String meterName = "requests.count;" + MpScope.TAG_NAME + "=" + MetricRegistry.VENDOR_SCOPE;
+        assertThat("Vendor metric requests.count present", vendorMetrics.containsKey(meterName), is(true));
 
         // This test runs with isExtended KPI metrics disabled. Make sure the count and meter are still updated.
-        int count = vendorMetrics.getInt("requests.count");
+        int count = vendorMetrics.getInt(meterName);
         assertThat("requests.count", count, is(greaterThan(0)));
     }
 

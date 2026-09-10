@@ -18,6 +18,8 @@ package io.helidon.microprofile.metrics;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -27,6 +29,7 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
 @Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT + 100)
 final class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
     private final ServiceRegistry serviceRegistry;
     private final AtomicBoolean enabled = new AtomicBoolean();
@@ -51,6 +54,7 @@ final class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
 
     @Override
     public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        MpMicrometerSupport.configure(meterRegistry, metricsConfig);
         if (this.meterRegistry.compareAndSet(null, meterRegistry) && enabled.get()) {
             registryFactory(meterRegistry);
         }

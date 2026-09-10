@@ -145,7 +145,6 @@ public class MetricsTest extends MetricsBaseTest {
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(Services.get(MeterRegistry.class))
-                .scopeTagName("mp_scope")
                 .build();
         Optional<Object> outputOpt = formatter.format();
 

@@ -1,6 +1,8 @@
 <!--@frontmatter
 title: Overview
 description: "Helidon MP Overview"
+site:
+  editRef: main
 index:
   generate: true
   icon: i-lucide-layout-list
