@@ -1566,10 +1566,10 @@ kubectl delete -f ./metrics.yaml
 [counted]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/annotation/Counted.html
 [histogram]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/Histogram.html
 [timer]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/Timer.html
-[duration]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/time/Duration.html
+[duration]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/time/Duration.html
 [timed]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/annotation/Timed.html
 [gauge-extends-nu]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/Gauge.html
-[number]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java.lang.Number.html
+[number]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/lang/Number.html
 [gauge]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/annotation/Gauge.html
 [preview-feature]: https://helidon.io/docs/latest/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #inferred-publisher
@@ -1579,7 +1579,7 @@ kubectl delete -f ./metrics.yaml
 [openmetrics-and]: #openmetrics-and-prometheus-format
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 [prometheus-expos]: https://github.com/prometheus/docs/blob/main/docs/instrumenting/exposition_formats.md
-[timeunit]: https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/util/concurrent/TimeUnit.html
+[timeunit]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/util/concurrent/TimeUnit.html
 [microprofile-met-3]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/package-summary.html
 [metric]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/annotation/Metric.html
 [metricregistry]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/apidocs/org/eclipse/microprofile/metrics/MetricRegistry.html

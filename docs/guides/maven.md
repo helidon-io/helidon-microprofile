@@ -99,7 +99,7 @@ You can override many of the plugin attributes by passing a system property to
 the `mvn` command:
 
 ```shell [Terminal]
-mvn -Djlink.image.addClassDataSharingArchive=false package
+mvn package -Pjlink-image -Djlink.image.aotCache=false
 ```
 
 ### Set Property in pom.xml
@@ -108,7 +108,7 @@ Or you can set the properties in your project’s pom.xml:
 
 ```xml
 <properties>
-    <jlink.image.addClassDataSharingArchive>false</jlink.image.addClassDataSharingArchive>
+    <jlink.image.aotCache>false</jlink.image.aotCache>
 </properties>
 ```
 
@@ -117,7 +117,7 @@ Or you can set the properties in your project’s pom.xml:
 For full control you can override the plugin’s configuration using
 `pluginManagement`:
 
-Turn off generation of the CDS Archive when generating a custom Java runtime
+Turn off generation of the AOT cache when generating a custom Java runtime
 image:
 
 ```xml [pom.xml]
@@ -131,7 +131,7 @@ image:
           <execution>
             <id>jlink-image</id>
             <configuration>
-              <addClassDataSharingArchive>false</addClassDataSharingArchive>
+              <aotCache>false</aotCache>
             </configuration>
           </execution>
         </executions>

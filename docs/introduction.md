@@ -16,7 +16,7 @@ services, configuration, security, health checks, metrics, and other
 microservice features.
 
 Helidon MP applications run as standalone JVM processes, are powered by the
-Helidon WebServer, and use Java 26 virtual threads throughout the WebServer.
+Helidon WebServer, and use Java 27 virtual threads throughout the WebServer.
 
 > [!NOTE]
 > You get the productivity of MicroProfile and Jakarta EE APIs with the low

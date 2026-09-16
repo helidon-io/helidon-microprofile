@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.Stack;
 
 /**
- * Test-local override of the upstream TCK utility so Java 26 can still access
- * stack frame descriptors.
+ * Test-local override of the upstream TCK utility that retains class references
+ * so stack frame descriptors remain accessible.
  */
 public final class Utils {
     private static final Stack<String> CALL_STACK = new Stack<>();

@@ -45,7 +45,7 @@
     </modules>
 
     <properties>
-        <version.java>26</version.java>
+        <version.java>27</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -73,7 +73,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-        <version.lib.asm>9.9.1</version.lib.asm>
+        <version.lib.asm>9.10.1</version.lib.asm>
         <version.lib.antlr>4.13.2</version.lib.antlr>
         <version.lib.checkstyle>13.3.0</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>

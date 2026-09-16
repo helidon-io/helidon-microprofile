@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class TestPinnedThread {
     @Test
     void testPinnedThread() {
         String javaVersion = System.getProperty("java.version");
-        // when building on Java "tip" (currently 24), synchronized no longer pins
+        // Java 24 and later no longer pin on synchronized.
         boolean expectedToPin = javaVersion.startsWith("21");
 
         TestListenerAdapter tla = new TestNGRunner()

@@ -187,12 +187,12 @@ below), or using `MpConfigSources.create(Path)`, or
 <tr>
 <td><code>helidon.config.polling.duration</code></td>
 <td>Polling period duration, defaults to 10 seconds ('PT10S`).
-See the <a href="https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">Javadoc</a></td>
+See the <a href="https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">Javadoc</a></td>
 </tr>
 <tr>
 <td><code>helidon.config.watcher.enabled</code></td>
 <td>To enable watching file for changes using the Java <code>WatchService</code>.
-See the <a href="https://docs.oracle.com/en/java/javase/26/docs/api/java.base/java/nio/file/WatchService.html">Javadoc</a></td>
+See the <a href="https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/nio/file/WatchService.html">Javadoc</a></td>
 </tr>
 </tbody>
 </table>

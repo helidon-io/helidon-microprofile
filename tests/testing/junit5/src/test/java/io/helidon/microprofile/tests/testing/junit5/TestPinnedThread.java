@@ -71,7 +71,7 @@ class TestPinnedThread {
     }
 
     @Test
-    // disable for Java 21, which pins on synchronized, current "tip" of Java is 24, which is not pinning
+    // Java 21 pins on synchronized; Java 24 and later do not.
     @DisabledOnJre(JRE.JAVA_21)
     void engineTestNewJava() {
         Events events = EngineTestKit.engine("junit-jupiter")

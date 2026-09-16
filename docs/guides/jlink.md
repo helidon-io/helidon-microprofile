@@ -24,7 +24,7 @@ For this 10 minute tutorial, you will need the following:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
-| [Java 26][java-26] ([Open JDK 26][open-jdk-26]) | Helidon requires Java 26.                                      |
+| [Java 27][java-27] ([Open JDK 27][open-jdk-27]) | Helidon requires Java 27.                                      |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
@@ -44,16 +44,16 @@ Setting JAVA_HOME:
 
 ```shell [Terminal]
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 26`
+export JAVA_HOME=`/usr/libexec/java_home -v 27`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-26
+export JAVA_HOME=/usr/lib/jvm/jdk-27
 ```
 
 ## Verify JDK
 
-As noted in the prerequisites above, Java 26 or newer is required.
+As noted in the prerequisites above, Java 27 or newer is required.
 
 ```shell [Terminal]
 $JAVA_HOME/bin/java --version
@@ -133,35 +133,20 @@ using the provide `start` script:
 ./target/helidon-quickstart-mp-jri/bin/start
 ```
 
-### Class Data Sharing (CDS) Archive and AOT Cache
+### Ahead-of-Time (AOT) Cache
 
-If you are building with Java 24 or earlier a Class Data Sharing (CDS) archive
-is also included in your custom image by default. The CDS archive improves your
-application’s startup performance and in-memory footprint. You can learn more
-about Class Data Sharing in the [JDK documentation][jdk-documentatio].
-
-If you are building with Java 25 or later an AOT Cache is created instead of a
-CDS archive. The AOT Cache is more advanced than the CDS archive and over time
-will contain more optimizations for improving application startup performance.
-You can learn more about the AOT Cache in the following JEPS: [JEP
+An ahead-of-time (AOT) cache is included in your custom image by default to
+improve application startup performance.
+You can learn more about the AOT cache in the following JEPs: [JEP
 483](https://openjdk.org/jeps/483), [JEP 515](https://openjdk.org/jeps/515),
-[JEP 514](https://openjdk.org/jeps/514)
+[JEP 514](https://openjdk.org/jeps/514).
 
-An on-disk cache (CDS Archive or AOT Cache) increases the size of the custom
-image to get these performance optimizations. It can be of significant size
-(tens of MB). The size of the on-disk cache is reported at the end of the build
-output.
+The AOT cache increases the size of the custom image to get these performance
+optimizations. It can be of significant size (tens of MB). The size of the cache
+is reported at the end of the build output.
 
-If you want to skip the creation of the on-disk cache you can do so by executing
+If you want to skip the creation of the AOT cache you can do so by executing
 your build like this:
-
-#### For Java 24 or earlier
-
-```shell [Terminal]
-mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
-```
-
-#### For Java 25 or later
 
 ```shell [Terminal]
 mvn package -Pjlink-image -Djlink.image.aotCache=false
@@ -202,13 +187,12 @@ performance of the JDK JVM in a reasonably compact form.
 Measure the custom runtime image against your deployment requirements for
 startup time, runtime performance, and image size.
 
-[jlink]: https://docs.oracle.com/en/java/javase/26/docs/specs/man/jlink.html
-[java-26]: https://www.oracle.com/technetwork/java/javase/downloads
-[open-jdk-26]: http://jdk.java.net
+[jlink]: https://docs.oracle.com/en/java/javase/27/docs/specs/man/jlink.html
+[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-27]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [rpm-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#RPM-based
 [debian-based]: https://en.wikipedia.org/wiki/List_of_Linux_distributions#Debian-based
-[jdk-documentatio]: https://docs.oracle.com/en/java/javase/26/vm/class-data-sharing.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin#jlink-image

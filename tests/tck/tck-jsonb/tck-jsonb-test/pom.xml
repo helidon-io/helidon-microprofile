@@ -82,7 +82,7 @@
                     </includes>
                     <systemPropertyVariables>
                         <!--
-                            Java 26 no longer provides COMPAT locale data, so prefer the test SPI provider
+                            COMPAT locale data is no longer available, so prefer the test SPI provider
                             to restore the legacy French grouping separator still expected by the upstream TCK.
                         -->
                         <java.locale.providers>SPI,CLDR</java.locale.providers>
