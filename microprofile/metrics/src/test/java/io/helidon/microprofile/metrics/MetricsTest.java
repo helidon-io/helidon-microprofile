@@ -157,7 +157,7 @@ public class MetricsTest extends MetricsBaseTest {
         // the value formatted as a double (that's Prometheus exposition format standard).
         assertThat(promData, containsString("# TYPE gaugeForInjectionTest_minutes gauge"));
         assertThat(promData, containsString("# HELP gaugeForInjectionTest_minutes"));
-        assertThat(promData, containsString("gaugeForInjectionTest_minutes{mp_scope=\"application\",} "
+        assertThat(promData, containsString("gaugeForInjectionTest_minutes{mp_scope=\"application\"} "
                                                     + (double) expectedValue));
     }
 

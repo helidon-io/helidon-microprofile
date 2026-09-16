@@ -70,7 +70,7 @@ class MpMetricsScopeEndpointTest {
         registryFactory.getRegistry(MetricRegistry.APPLICATION_SCOPE).timer(SHARED_STRUCTURED_METER);
         registryFactory.getRegistry(MetricRegistry.BASE_SCOPE).counter(BASE_METER);
         registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).counter(VENDOR_METER);
-        registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_PROMETHEUS_METER);
+        registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).gauge(SHARED_PROMETHEUS_METER, () -> 2);
         registryFactory.getRegistry(MetricRegistry.VENDOR_SCOPE).histogram(SHARED_STRUCTURED_METER);
     }
 
@@ -155,7 +155,9 @@ class MpMetricsScopeEndpointTest {
                     .request()
                     .accept(mediaType)
                     .get(String.class);
-            assertThat(namedOutput, containsString(SHARED_PROMETHEUS_METER.replace('.', '_')));
+            String familyName = SHARED_PROMETHEUS_METER.replace('.', '_');
+            assertThat(namedOutput, containsString(familyName + "{mp_scope=\"application\"} 1.0"));
+            assertThat(namedOutput, containsString(familyName + "{mp_scope=\"vendor\"} 2.0"));
             assertUniquePrometheusMetadata(namedOutput);
 
             String aggregateOutput = webTarget.path("metrics")

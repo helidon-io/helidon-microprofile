@@ -44,6 +44,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 @AddConfig(key = "security.providers.1.oidc.oidc-metadata-well-known", value = "false")
+// These tests stop at the authorization redirect, so use introspection without requiring signing keys.
+@AddConfig(key = "security.providers.1.oidc.validate-jwt-with-jwk", value = "false")
 @AddConfig(key = "security.providers.1.oidc.fallback-to-default-tenant-enabled", value = "true")
 class TenantIdentificationIT {
 
