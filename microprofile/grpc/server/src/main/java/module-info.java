@@ -18,7 +18,7 @@ import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * gRPC microprofile server module
+ * gRPC microprofile server module.
  */
 @Features.Name("gRPC")
 @Features.Description("Helidon gRPC MP server")

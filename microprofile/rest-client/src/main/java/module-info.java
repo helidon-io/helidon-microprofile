@@ -40,12 +40,12 @@ module io.helidon.microprofile.restclient {
     requires transitive microprofile.rest.client.api;
 
     exports io.helidon.microprofile.restclient;
-    // needed for jersey injection
-    opens io.helidon.microprofile.restclient to org.glassfish.hk2.utilities, weld.core.impl, io.helidon.microprofile.cdi;
 
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclient.MpRestClientListener;
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
             with io.helidon.microprofile.restclient.HelidonRequestHeaderAutoDiscoverable;
 
+    // needed for jersey injection
+    opens io.helidon.microprofile.restclient to org.glassfish.hk2.utilities, weld.core.impl, io.helidon.microprofile.cdi;
 }

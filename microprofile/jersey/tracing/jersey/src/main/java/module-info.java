@@ -41,5 +41,5 @@ module io.helidon.tracing.jersey {
     requires transitive jakarta.ws.rs;
 
     exports io.helidon.tracing.jersey;
-	
+
 }

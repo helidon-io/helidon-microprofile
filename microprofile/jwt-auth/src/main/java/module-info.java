@@ -52,9 +52,6 @@ module io.helidon.microprofile.jwt.auth {
 
     exports io.helidon.microprofile.jwt.auth;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.jwt.auth to weld.core.impl, io.helidon.microprofile.cdi;
-
     provides io.helidon.security.providers.common.spi.AnnotationAnalyzer
             with io.helidon.microprofile.jwt.auth.JwtAuthAnnotationAnalyzer;
     provides io.helidon.security.spi.SecurityProviderService
@@ -62,4 +59,6 @@ module io.helidon.microprofile.jwt.auth {
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.jwt.auth.JwtAuthCdiExtension;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.jwt.auth to weld.core.impl, io.helidon.microprofile.cdi;
 }

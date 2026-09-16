@@ -38,8 +38,8 @@ module io.helidon.microprofile.scheduling {
     requires static jakarta.inject;
 
     exports io.helidon.microprofile.scheduling;
-    opens io.helidon.microprofile.scheduling;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.scheduling.SchedulingCdiExtension;
 
+    opens io.helidon.microprofile.scheduling;
 }

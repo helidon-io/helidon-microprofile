@@ -19,7 +19,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
 
 /**
- * MP Tyrus Integration
+ * MP Tyrus Integration.
  */
 @Features.Name("Websocket")
 @Features.Description("Jakarta Websocket implementation")
@@ -48,9 +48,6 @@ module io.helidon.microprofile.tyrus {
 
     exports io.helidon.microprofile.tyrus;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
-
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.tyrus.TyrusCdiExtension;
     provides org.glassfish.tyrus.core.ComponentProvider
@@ -58,4 +55,6 @@ module io.helidon.microprofile.tyrus {
     provides Http1UpgradeProvider
             with io.helidon.microprofile.tyrus.TyrusUpgradeProvider;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.tyrus to weld.core.impl, io.helidon.microprofile.cdi;
 }

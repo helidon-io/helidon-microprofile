@@ -47,9 +47,6 @@ module io.helidon.microprofile.health {
 
     exports io.helidon.microprofile.health;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.health to weld.core.impl, io.helidon.microprofile.cdi;
-
     uses io.helidon.microprofile.health.HealthCheckProvider;
     uses io.helidon.health.spi.HealthCheckProvider;
 
@@ -57,4 +54,6 @@ module io.helidon.microprofile.health {
             with io.helidon.microprofile.health.HealthCheckResponseProviderImpl;
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.health to weld.core.impl, io.helidon.microprofile.cdi;
 }

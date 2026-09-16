@@ -15,7 +15,7 @@
  */
 
 /**
- * gRPC microprofile core module
+ * gRPC microprofile core module.
  */
 module io.helidon.microprofile.grpc.core {
 

@@ -49,13 +49,13 @@ module io.helidon.microprofile.metrics {
     exports io.helidon.microprofile.metrics;
     exports io.helidon.microprofile.metrics.spi;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.metrics to weld.core.impl, io.helidon.microprofile.cdi;
-    opens io.helidon.microprofile.metrics.spi to io.helidon.microprofile.cdi, weld.core.impl;
+    uses io.helidon.metrics.spi.ExemplarService;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
     provides io.helidon.metrics.spi.MetricsProgrammaticConfig
             with io.helidon.microprofile.metrics.MpMetricsProgrammaticConfig;
 
-    uses io.helidon.metrics.spi.ExemplarService;
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.metrics to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.metrics.spi to io.helidon.microprofile.cdi, weld.core.impl;
 }

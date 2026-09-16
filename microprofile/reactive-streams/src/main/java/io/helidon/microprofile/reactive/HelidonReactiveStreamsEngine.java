@@ -522,7 +522,7 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
     }
 
     /**
-     * How should the graph be built?
+     * Determines how the graph should be built.
      * <p>
      * Some graph building modes have shared stages to consider.
      */
@@ -556,5 +556,4 @@ public final class HelidonReactiveStreamsEngine implements ReactiveStreamsEngine
         }
     }
 }
-
 

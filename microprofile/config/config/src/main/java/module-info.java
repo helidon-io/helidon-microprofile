@@ -43,9 +43,8 @@ module io.helidon.microprofile.config {
 
     exports io.helidon.microprofile.config;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.config to weld.core.impl, io.helidon.microprofile.cdi;
-
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.config.ConfigCdiExtension;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.config to weld.core.impl, io.helidon.microprofile.cdi;
 }

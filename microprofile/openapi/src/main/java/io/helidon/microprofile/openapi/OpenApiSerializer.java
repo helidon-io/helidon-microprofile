@@ -100,7 +100,7 @@ final class OpenApiSerializer {
     }
 
     /**
-     * Represents the nodes in the OpenAPI document output by:
+     * Represents nodes in the OpenAPI document output.
      * <ul>
      *     <li>adjusting the output of enum names and values to conform to the OpenAPI spec
      *     (lower-case) rather than the SmallRye implementations (upper-case),</li>

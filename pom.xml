@@ -75,7 +75,7 @@
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.10.1</version.lib.asm>
         <version.lib.antlr>4.13.2</version.lib.antlr>
-        <version.lib.checkstyle>13.3.0</version.lib.checkstyle>
+        <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>

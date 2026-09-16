@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 /**
  * General-purpose reusable artifacts to help write CDI extensions, annotation processing, and interceptors for Helidon
  * services.
@@ -29,9 +28,8 @@ module io.helidon.microprofile.servicecommon {
     requires transitive jakarta.cdi;
     requires transitive jakarta.interceptor;
 
-    // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.servicecommon to weld.core.impl, io.helidon.microprofile.cdi;
-
     exports io.helidon.microprofile.servicecommon;
 
+    // this is needed for CDI extensions that use non-public observer methods
+    opens io.helidon.microprofile.servicecommon to weld.core.impl, io.helidon.microprofile.cdi;
 }

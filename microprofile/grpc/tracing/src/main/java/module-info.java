@@ -17,6 +17,9 @@
 import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
 
+/**
+ * Tracing integration for MicroProfile gRPC services.
+ */
 @Features.Name("gRPC Tracing")
 @Features.Description("Helidon gRPC MP Tracing")
 @Features.Flavor(HelidonFlavor.MP)

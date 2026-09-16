@@ -27,6 +27,7 @@ module io.helidon.config.hocon.mp {
 
     exports io.helidon.config.hocon.mp;
 
-    provides io.helidon.microprofile.config.core.spi.MpMetaConfigProvider with io.helidon.config.hocon.mp.HoconMpMetaConfigProvider;
+    provides io.helidon.microprofile.config.core.spi.MpMetaConfigProvider
+            with io.helidon.config.hocon.mp.HoconMpMetaConfigProvider;
 
 }

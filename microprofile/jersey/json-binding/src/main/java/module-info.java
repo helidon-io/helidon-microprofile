@@ -31,8 +31,8 @@ module io.helidon.jersey.media.json.binding {
     requires transitive jakarta.ws.rs;
     requires jersey.common;
 
-    opens io.helidon.jersey.media.json.binding to org.glassfish.hk2.locator;
-
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
             with io.helidon.jersey.media.json.binding.JsonBindingAutoDiscoverable;
+
+    opens io.helidon.jersey.media.json.binding to org.glassfish.hk2.locator;
 }

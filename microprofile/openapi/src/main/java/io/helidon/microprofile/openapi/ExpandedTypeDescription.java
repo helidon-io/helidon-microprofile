@@ -39,7 +39,7 @@ import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
- * Extension of {@link TypeDescription} that handles:
+ * Extension of {@link TypeDescription} that handles additional OpenAPI types.
  * <ul>
  *     <li>nested enums,</li>
  *     <li>extensible types,</li>

@@ -36,7 +36,7 @@ module io.helidon.tracing.jersey.client {
     requires jersey.common;
 
     requires static io.helidon.common.features.api;
-    
+
     requires transitive jakarta.ws.rs;
     requires transitive jersey.client;
 

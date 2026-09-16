@@ -46,8 +46,6 @@ module io.helidon.microprofile.restclient.metrics {
 
     exports io.helidon.microprofile.restclientmetrics;
 
-    opens io.helidon.microprofile.restclientmetrics to weld.core.impl;
-
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.restclientmetrics.RestClientMetricsCdiExtension;
 
@@ -56,4 +54,6 @@ module io.helidon.microprofile.restclient.metrics {
 
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.restclientmetrics.RestClientMetricsClientListener;
+
+    opens io.helidon.microprofile.restclientmetrics to weld.core.impl;
 }
