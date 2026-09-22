@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.microprofile.applications</groupId>
     <artifactId>helidon-mp</artifactId>
-    <version>5.0.0-SNAPSHOT</version>
+    <version>28.0.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
     <name>Helidon MicroProfile applications parent pom</name>
@@ -38,7 +38,7 @@
     <properties>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jandex>3.3.0</version.plugin.jandex>
-        <helidon.mp.version>5.0.0-SNAPSHOT</helidon.mp.version>
+        <helidon.mp.version>28.0.0-SNAPSHOT</helidon.mp.version>
         <mainClass>io.helidon.Main</mainClass>
     </properties>
 

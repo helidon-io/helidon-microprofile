@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.messaging.connectors</groupId>
         <artifactId>helidon-microprofile-messaging-connectors-project</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.microprofile.messaging.connectors.jms</groupId>

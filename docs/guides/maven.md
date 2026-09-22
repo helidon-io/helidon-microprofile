@@ -54,7 +54,7 @@ Import Helidon Dependency Management:
     <dependency>
       <groupId>io.helidon.microprofile</groupId>
       <artifactId>helidon-microprofile-bom</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>28.0.0-SNAPSHOT</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>

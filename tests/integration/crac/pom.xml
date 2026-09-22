@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.applications</groupId>
         <artifactId>helidon-mp</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.microprofile.tests.integration.crac</groupId>

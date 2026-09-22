@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.bundles</groupId>
         <artifactId>bundles-project</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile</artifactId>
     <name>Helidon MicroProfile Full Bundle</name>

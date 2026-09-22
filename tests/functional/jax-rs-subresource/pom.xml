@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-microprofile-tests-functional-project</artifactId>
         <groupId>io.helidon.microprofile.tests.functional</groupId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-tests-functional-jax-rs-subresource</artifactId>
     <name>Helidon MicroProfile Tests Functional JAX-RS Subresources</name>

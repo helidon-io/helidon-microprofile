@@ -281,7 +281,7 @@
 -->
 <suppress>
     <notes><![CDATA[
-    file name: helidon-webserver-access-log-27.0.0-SNAPSHOT.jar
+    file name: helidon-webserver-access-log-28.0.0-SNAPSHOT.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.helidon\.webserver/helidon-webserver-access-log@.*$</packageUrl>
     <cve>CVE-2022-25760</cve>

@@ -64,7 +64,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     <parent> <!-- (1) -->
       <groupId>io.helidon.microprofile.applications</groupId>
       <artifactId>helidon-mp</artifactId>
-      <version>5.0.0-SNAPSHOT</version>
+      <version>28.0.0-SNAPSHOT</version>
       <relativePath/>
     </parent>
 
@@ -117,7 +117,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
    MicroProfile features in the application. The helidon-mp parent pom includes
    dependency management, so you don’t need to include a version number here. You
    will automatically use the version of Helidon that matches the version of the
-   parent pom (5.0.0-SNAPSHOT in this case).
+   parent pom (28.0.0-SNAPSHOT in this case).
 5. Adds plugins to be executed during the build. The `maven-dependency-plugin` is
    used to copy the runtime dependencies into your target directory. The
    `jandex-maven-plugin` builds an index of your class files for faster loading.

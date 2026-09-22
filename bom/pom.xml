@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-parent</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>28.0.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-microprofile-bom</artifactId>
@@ -31,7 +31,7 @@
     <name>Helidon MicroProfile BOM POM</name>
 
     <properties>
-        <helidon.mp.version>5.0.0-SNAPSHOT</helidon.mp.version>
+        <helidon.mp.version>28.0.0-SNAPSHOT</helidon.mp.version>
     </properties>
 
     <dependencyManagement>
