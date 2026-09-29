@@ -100,8 +100,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
-
-        CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
     private final WeldBootstrap bootstrap;
