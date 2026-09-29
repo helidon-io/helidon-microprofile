@@ -40,6 +40,7 @@ public interface HelidonContainer {
      * If already started, this method is a noop.
      *
      * @return the started container
+     * @throws IllegalStateException if this container has not been initialized or has been closed
      */
     SeContainer start();
 

@@ -37,6 +37,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link HelidonContainerInitializer}.
@@ -154,6 +155,39 @@ class HelidonContainerInitializerTest {
             assertThat(container.select(TestBean.class).get().test(), is("test"));
         }
         assertThat(GlobalServiceRegistry.configured(), is(false));
+    }
+
+    @Test
+    void testStartUninitializedContainer() {
+        HelidonContainer container = new HelidonContainerImpl();
+
+        assertThrows(IllegalStateException.class, container::start);
+
+        assertContainerLifecycle();
+    }
+
+    @Test
+    void testStartClosedContainer() {
+        HelidonContainer closedContainer;
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize()) {
+            closedContainer = HelidonContainer.instance();
+            assertThat(closedContainer.start(), sameInstance(container));
+        }
+
+        assertThrows(IllegalStateException.class, closedContainer::start);
+
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize()) {
+            assertThrows(IllegalStateException.class, closedContainer::start);
+            assertThat(container.isRunning(), is(true));
+            assertThat(container.select(TestBean.class).get().test(), is("test"));
+            assertThat(CDI.current(), sameInstance(container));
+        }
     }
 
     private void assertContainerLifecycle() {

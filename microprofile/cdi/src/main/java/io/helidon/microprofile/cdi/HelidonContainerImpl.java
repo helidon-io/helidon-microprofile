@@ -47,7 +47,6 @@ import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -154,7 +153,11 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      */
     @Override
     public SeContainer start() {
-        if (IN_RUNTIME.get()) {
+        if (cdi == null) {
+            throw new IllegalStateException("Helidon CDI container has not been initialized");
+        } else if (!cdi.isRunning()) {
+            throw new IllegalStateException("Helidon CDI container has been closed; initialize a new container instead");
+        } else if (IN_RUNTIME.get()) {
             // already started
             return cdi;
         }
@@ -171,7 +174,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             }
             throw e;
         }
-
         if (EXIT_ON_STARTED) {
             exitOnStarted();
         }
@@ -298,19 +300,11 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         IN_RUNTIME.set(true);
 
-        BeanManager bm = null;
-        try {
-            bm = CDI.current().getBeanManager();
-        } catch (IllegalStateException e) {
-            LOGGER.log(Level.FINEST, "Cannot get current CDI, probably restarted", e);
-            // cannot access CDI - CDI is not yet initialized (probably shut down and started again)
-            initInContext();
-            bm = CDI.current().getBeanManager();
-        }
-
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
         MpConfigProviderResolver.runtimeStart(config);
+
+        BeanManager bm = cdi.getBeanManager();
 
         bm.getEvent().select(RuntimeStart.Literal.INSTANCE).fire(config);
 

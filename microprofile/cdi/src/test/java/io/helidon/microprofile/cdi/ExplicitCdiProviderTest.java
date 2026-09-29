@@ -29,6 +29,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ExplicitCdiProviderTest {
     @Test
+    void testBootstrapDoesNotRequireCurrentCdi() {
+        CDI.setCDIProvider(() -> {
+            throw new IllegalStateException("No current CDI from the application provider");
+        });
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean2.class)
+                .initialize()) {
+            assertThat(container.isRunning(), is(true));
+            assertThat(container.select(TestBean2.class).get().message(), is("Hello"));
+        }
+    }
+
+    @Test
     void testBootstrapPreservesApplicationProvider() {
         HelidonCdiProvider delegate = new HelidonCdiProvider();
         AtomicBoolean providerCalled = new AtomicBoolean();
