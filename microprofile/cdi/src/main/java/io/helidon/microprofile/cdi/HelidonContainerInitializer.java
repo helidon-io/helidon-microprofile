@@ -17,45 +17,24 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.Extension;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
- * This class ensures that container is created by us.
+ * Initializes the Helidon CDI container through the CDI SE bootstrap API.
  */
 public class HelidonContainerInitializer extends SeContainerInitializer {
-    static final String CONFIG_ALLOW_INITIALIZER = "mp.initializer.allow";
-    static final String CONFIG_INITIALIZER_NO_WARN = "mp.initializer.no-warn";
-    private static final Logger LOGGER = Logger.getLogger(HelidonContainerInitializer.class.getName());
     private final HelidonContainerImpl container = new HelidonContainerImpl();
     private final boolean serviceRegistryOwner;
 
     /**
-     * This constructor ensures that we are not created through standard CDI means.
-     *
-     * @throws java.lang.IllegalStateException unless explicitly configured not to do so.
+     * Creates a Helidon CDI container initializer.
      */
     public HelidonContainerInitializer() {
         boolean newServiceRegistryOwner = MpServiceRegistry.start();
         try {
-            Config config = ConfigProvider.getConfig();
-            if (!config.getOptionalValue(CONFIG_ALLOW_INITIALIZER, Boolean.class).orElse(false)) {
-                throw new IllegalStateException("Helidon MUST be started using "
-                                                        + Main.class.getName()
-                                                        + ", or through io.helidon.microprofile.server.Server. "
-                                                        + "This is to ensure compatibility with GraalVM native-image. "
-                                                        + "If you want to still use SeContainerInitializer, please configure "
-                                                        + CONFIG_ALLOW_INITIALIZER + "=true to disable this exception.");
-            }
-            if (!config.getOptionalValue(CONFIG_INITIALIZER_NO_WARN, Boolean.class).orElse(false)) {
-                LOGGER.warning("You are using SeContainerInitializer. This application will not work with GraalVM native-image."
-                                       + " You can disable this warning by configuring " + CONFIG_INITIALIZER_NO_WARN + "=true.");
-            }
             ContainerInstanceHolder.set(container);
             serviceRegistryOwner = newServiceRegistryOwner;
         } catch (RuntimeException | Error e) {

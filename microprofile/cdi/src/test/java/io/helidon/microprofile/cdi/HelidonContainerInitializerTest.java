@@ -33,8 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link HelidonContainerInitializer}.
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class HelidonContainerInitializerTest {
     private static ConfigProviderResolver configResolver;
     private static ClassLoader cl;
-    private static org.eclipse.microprofile.config.Config defaultConfig;
+    private static Config defaultConfig;
 
     static {
         LogConfig.initClass();
@@ -65,13 +65,6 @@ class HelidonContainerInitializerTest {
     @Test
     void testRestart() {
         // this is a reproducer for bug 1554
-        Config config = ConfigProviderResolver.instance()
-                .getBuilder()
-                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
-                .build();
-
-        configResolver.registerConfig((org.eclipse.microprofile.config.Config) config, cl);
-        // now we can start using SeContainerInitializer
         SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
@@ -89,14 +82,6 @@ class HelidonContainerInitializerTest {
     @Test
     void testRestart2() {
         // this is a reproducer for bug 1554
-        Config config = ConfigProviderResolver.instance()
-                .getBuilder()
-                .withSources(MpConfigSources.create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true",
-                                                           HelidonContainerInitializer.CONFIG_INITIALIZER_NO_WARN, "true")))
-                .build();
-
-        configResolver.registerConfig(config, cl);
-        // now we can start using SeContainerInitializer
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
         assertThat(seContainerInitializer, instanceOf(HelidonContainerInitializer.class));
         seContainerInitializer
@@ -114,24 +99,31 @@ class HelidonContainerInitializerTest {
     }
 
     @Test
-    void testSeInitializerFails() {
+    void testSeInitializerWithoutOptIn() {
+        assertContainerLifecycle();
+    }
 
-        assertThrows(IllegalStateException.class, SeContainerInitializer::newInstance);
-
-        Config config = ConfigProviderResolver.instance()
-                .getBuilder()
-                .withSources(MpConfigSources
-                                     .create(Map.of(HelidonContainerInitializer.CONFIG_ALLOW_INITIALIZER, "true")))
+    @Test
+    void testSeInitializerIgnoresObsoleteProperties() {
+        Config config = configResolver.getBuilder()
+                .withSources(MpConfigSources.create(Map.of("mp.initializer.allow", "false",
+                                                           "mp.initializer.no-warn", "false")))
                 .build();
-
         configResolver.registerConfig(config, cl);
 
-        SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
-        assertThat(seContainerInitializer, instanceOf(HelidonContainerInitializer.class));
+        assertContainerLifecycle();
+    }
 
-        try (SeContainer container = seContainerInitializer.initialize()) {
-            // do nothing
+    private void assertContainerLifecycle() {
+        SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize();
+        try (container) {
+            assertThat(container.isRunning(), is(true));
+            assertThat(container.select(TestBean.class).get().test(), is("test"));
         }
+        assertThat(container.isRunning(), is(false));
     }
 
     @ApplicationScoped
