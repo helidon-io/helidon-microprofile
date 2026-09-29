@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.Api;
 import io.helidon.common.Builder;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.ResumableSupport;
@@ -109,7 +110,7 @@ public class ServerCdiExtension implements Extension {
             .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
             .port(7001);
     private ObserveFeatureConfig.Builder observeBuilder = ObserveFeature.builder();
-    private HttpRouting.Builder routingBuilder = HttpRouting.builder();
+    private LazyValue<HttpRouting.Builder> routingBuilderSupplier = LazyValue.create(HttpRouting::builder);
     private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
     private Map<String, Router.Builder> namedRouters = new HashMap<>();
     private String basePath;
@@ -138,7 +139,7 @@ public class ServerCdiExtension implements Extension {
      * @return server routing builder
      */
     public HttpRouting.Builder serverRoutingBuilder() {
-        return routingBuilder;
+        return routingBuilderSupplier == null ? null : routingBuilderSupplier.get();
     }
 
     /**
@@ -463,7 +464,7 @@ public class ServerCdiExtension implements Extension {
         serverBuilder.addFeature(observeBuilder.build());
 
         // start the webserver
-        serverBuilder.routing(routingBuilder);
+        serverBuilder.routing(serverRoutingBuilder());
 
         namedRouters.forEach((name, routerBuilder) -> {
             ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
@@ -533,7 +534,7 @@ public class ServerCdiExtension implements Extension {
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
         observeBuilder = null;
-        routingBuilder = null;
+        routingBuilderSupplier = null;
         namedRoutings = null;
         namedRouters = null;
 
@@ -579,7 +580,7 @@ public class ServerCdiExtension implements Extension {
     private void registerDefaultRedirect() {
         Optional.ofNullable(basePath)
                 .or(() -> config.get("server.base-path").asString().asOptional())
-                .ifPresent(basePath -> routingBuilder.any("/", (req, res) -> {
+                .ifPresent(basePath -> serverRoutingBuilder().any("/", (req, res) -> {
                     res.status(Status.MOVED_PERMANENTLY_301);
                     res.headers().set(HeaderNames.LOCATION, basePath);
                     res.send();
@@ -632,9 +633,9 @@ public class ServerCdiExtension implements Extension {
         HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
-            routingBuilder.register(context.asString().get(), staticContent);
+            serverRoutingBuilder().register(context.asString().get(), staticContent);
         } else {
-            routingBuilder.register(staticContent);
+            serverRoutingBuilder().register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
@@ -659,9 +660,9 @@ public class ServerCdiExtension implements Extension {
         HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
-            routingBuilder.register(context.asString().get(), staticContent);
+            serverRoutingBuilder().register(context.asString().get(), staticContent);
         } else {
-            routingBuilder.register(staticContent);
+            serverRoutingBuilder().register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static classpath");
     }
