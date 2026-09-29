@@ -21,6 +21,7 @@ import java.util.Map;
 import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.config.core.MpConfigSources;
 
+import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -99,12 +100,9 @@ class ParallelRunTest {
                 .build();
         resolver.registerConfig(config, cl);
 
-        try {
-            SeContainerInitializer.newInstance().initialize();
+        try (SeContainer _ = SeContainerInitializer.newInstance().initialize()) {
             assertThrows(IllegalStateException.class, () -> SeContainerInitializer.newInstance()
                     .initialize());
-        } finally {
-            Main.shutdown();
         }
     }
 

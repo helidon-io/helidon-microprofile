@@ -29,6 +29,8 @@ import io.helidon.service.registry.ServiceRegistry;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
@@ -51,16 +53,83 @@ import static org.hamcrest.Matchers.is;
 class MainTest {
     @Test
     void testCdiStarted() {
-        Main.main(new String[0]);
+        try {
+            Main.main(new String[0]);
 
-        Instance<TestBean> select = CDI.current().select(TestBean.class);
-        TestBean bean = select.get();
-        assertThat(bean, notNullValue());
-        TestBean2 testBean2 = bean.getTestBean2();
-        assertThat(testBean2, notNullValue());
-        assertThat(testBean2.message(), is("Hello"));
+            Instance<TestBean> select = CDI.current().select(TestBean.class);
+            TestBean bean = select.get();
+            assertThat(bean, notNullValue());
+            TestBean2 testBean2 = bean.getTestBean2();
+            assertThat(testBean2, notNullValue());
+            assertThat(testBean2.message(), is("Hello"));
+        } finally {
+            Main.shutdown();
+        }
+    }
 
+    @Test
+    void testRepeatedMainReusesContainer() {
+        SeContainer container;
+        try {
+            Main.main(new String[0]);
+            container = (SeContainer) CDI.current();
+
+            Main.main(new String[0]);
+            assertThat(CDI.current(), sameInstance(container));
+            assertThat(container.isRunning(), is(true));
+        } finally {
+            Main.shutdown();
+        }
+        assertThat(container.isRunning(), is(false));
         Main.shutdown();
+    }
+
+    @Test
+    void testRestartAfterExternalClose() {
+        SeContainer secondContainer;
+        try {
+            Main.main(new String[0]);
+            SeContainer firstContainer = (SeContainer) CDI.current();
+            firstContainer.close();
+            assertThat(firstContainer.isRunning(), is(false));
+
+            Main.main(new String[0]);
+            secondContainer = (SeContainer) CDI.current();
+            assertThat(secondContainer, not(sameInstance(firstContainer)));
+            assertThat(secondContainer.isRunning(), is(true));
+            assertThat(secondContainer.select(TestBean2.class).get().message(), is("Hello"));
+        } finally {
+            Main.shutdown();
+        }
+        assertThat(secondContainer.isRunning(), is(false));
+    }
+
+    @Test
+    void testShutdownLeavesIndependentContainerRunning() {
+        try (SeContainer container = SeContainerInitializer.newInstance().initialize()) {
+            Main.shutdown();
+            Main.shutdown();
+
+            assertThat(container.isRunning(), is(true));
+            assertThat(container.select(TestBean2.class).get().message(), is("Hello"));
+        }
+    }
+
+    @Test
+    void testShutdownAfterExternalCloseLeavesIndependentContainerRunning() {
+        try {
+            Main.main(new String[0]);
+            ((SeContainer) CDI.current()).close();
+
+            try (SeContainer container = SeContainerInitializer.newInstance().initialize()) {
+                Main.shutdown();
+
+                assertThat(container.isRunning(), is(true));
+                assertThat(container.select(TestBean2.class).get().message(), is("Hello"));
+            }
+        } finally {
+            Main.shutdown();
+        }
     }
 
     @Test
