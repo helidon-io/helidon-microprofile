@@ -27,22 +27,11 @@ import jakarta.enterprise.inject.spi.Extension;
  */
 public class HelidonContainerInitializer extends SeContainerInitializer {
     private final HelidonContainerImpl container = new HelidonContainerImpl();
-    private final boolean serviceRegistryOwner;
 
     /**
      * Creates a Helidon CDI container initializer.
      */
     public HelidonContainerInitializer() {
-        boolean newServiceRegistryOwner = MpServiceRegistry.start();
-        try {
-            ContainerInstanceHolder.set(container);
-            serviceRegistryOwner = newServiceRegistryOwner;
-        } catch (RuntimeException | Error e) {
-            if (newServiceRegistryOwner) {
-                MpServiceRegistry.shutdown();
-            }
-            throw e;
-        }
     }
 
     @Override
@@ -140,11 +129,13 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
         if (HelidonContainerImpl.isRuntime()) {
             throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
         }
+        boolean newServiceRegistryOwner = MpServiceRegistry.start();
         try {
+            ContainerInstanceHolder.set(container);
             container.initInContext();
             return container.start();
         } catch (RuntimeException | Error e) {
-            if (serviceRegistryOwner) {
+            if (newServiceRegistryOwner) {
                 MpServiceRegistry.shutdown();
             }
             throw e;

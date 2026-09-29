@@ -19,6 +19,7 @@ package io.helidon.microprofile.cdi;
 import java.util.Map;
 
 import io.helidon.microprofile.config.core.MpConfigSources;
+import io.helidon.service.registry.GlobalServiceRegistry;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -80,7 +81,7 @@ public class Gh1446Test {
         assertThat(thrown.getMessage(), is("Survive this!"));
 
         assertThrows(IllegalStateException.class, CDI::current, "There should be no CDI instance available");
-
+        assertThat("failed startup must close the service registry", GlobalServiceRegistry.configured(), is(false));
     }
 
     private static class FailingExtension implements Extension {

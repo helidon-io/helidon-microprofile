@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.config.core.MpConfigSources;
+import io.helidon.service.registry.GlobalServiceRegistry;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -112,6 +114,46 @@ class HelidonContainerInitializerTest {
         configResolver.registerConfig(config, cl);
 
         assertContainerLifecycle();
+    }
+
+    @Test
+    void testUnusedInitializerDoesNotStartServiceRegistry() {
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+        try {
+            SeContainerInitializer.newInstance()
+                    .disableDiscovery()
+                    .addBeanClasses(TestBean.class);
+
+            assertThat("preparing an initializer must not start the service registry",
+                       GlobalServiceRegistry.configured(),
+                       is(false));
+        } finally {
+            MpServiceRegistry.shutdown();
+        }
+    }
+
+    @Test
+    void testPrepareInitializerWhileContainerIsRunning() {
+        SeContainerInitializer nextInitializer;
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize()) {
+            nextInitializer = SeContainerInitializer.newInstance()
+                    .disableDiscovery()
+                    .addBeanClasses(TestBean.class);
+
+            assertThat("preparing another initializer must not replace the running container",
+                       HelidonContainer.instance().start(),
+                       sameInstance(container));
+        }
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+
+        try (SeContainer container = nextInitializer.initialize()) {
+            assertThat(GlobalServiceRegistry.configured(), is(true));
+            assertThat(container.select(TestBean.class).get().test(), is("test"));
+        }
+        assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
     private void assertContainerLifecycle() {
