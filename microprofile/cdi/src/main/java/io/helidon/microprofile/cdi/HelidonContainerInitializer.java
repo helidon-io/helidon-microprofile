@@ -110,7 +110,7 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
 
     @Override
     public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
-        container.enableDecorators(interceptorClasses);
+        container.enableInterceptors(interceptorClasses);
         return this;
     }
 
