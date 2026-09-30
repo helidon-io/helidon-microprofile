@@ -22,11 +22,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.cdi.HelidonContainer;
 import io.helidon.microprofile.config.core.MpConfigSources;
 
-import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.config.Config;
@@ -121,16 +118,19 @@ public interface Server {
     final class Builder implements io.helidon.common.Builder<Builder, Server> {
         private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.builder");
 
-        private final List<Class<?>> resourceClasses = new LinkedList<>();
-        private final List<JaxRsApplication> applications = new LinkedList<>();
+        private final List<Class<?>> resourceClasses;
+        private final List<JaxRsApplication> applications;
+
         private Config config;
         private String host;
         private String basePath;
-        private int port = -1;
-        private JaxRsCdiExtension jaxRs;
-        private boolean retainDiscovered = false;
+        private int port;
+        private boolean retainDiscovered;
 
         private Builder() {
+            this.resourceClasses = new LinkedList<>();
+            this.applications = new LinkedList<>();
+            this.port = -1;
             ServerCdiExtension server = null;
             try {
                 server = CDI.current()
@@ -140,22 +140,21 @@ public interface Server {
                 // CDI is not started, so we should be fine
             }
 
-            if (null != server) {
-                if (server.started()) {
-                    throw new IllegalStateException("Server is already started. Maybe you have initialized CDI yourself? "
-                                                            + "If you do so, then you cannot use Server.builder() to set up "
-                                                            + "your server. "
-                                                            + "Config is initialized with defaults or using "
-                                                            + "meta-config.yaml; applications are discovered using CDI. "
-                                                            + "To use custom configuration, you can use "
-                                                            + "ConfigProviderResolver.instance().registerConfig(config, "
-                                                            + "classLoader);");
-                }
+            if (server != null && server.started()) {
+                throw new IllegalStateException("Server is already started. Maybe you have initialized CDI yourself? "
+                                                        + "If you do so, then you cannot use Server.builder() to set up "
+                                                        + "your server. "
+                                                        + "Config is initialized with defaults or using "
+                                                        + "meta-config.yaml; applications are discovered using CDI. "
+                                                        + "To use custom configuration, you can use "
+                                                        + "ConfigProviderResolver.instance().registerConfig(config, "
+                                                        + "classLoader);");
             }
         }
 
         /**
          * Build a server based on this builder.
+         * CDI initialization is deferred until {@link Server#start()}.
          *
          * @return Server instance to be started
          */
@@ -169,28 +168,14 @@ public interface Server {
                 classLoader = Server.class.getClassLoader();
             }
 
-            if (null == config) {
+            if (this.config == null) {
                 this.config = ConfigProviderResolver.instance().getConfig(classLoader);
             }
 
             // make sure the config is available to application
-            ConfigProviderResolver.instance().registerConfig(config, classLoader);
+            ConfigProviderResolver.instance().registerConfig(this.config, classLoader);
 
-            // we may have shutdown the original instance, this is to ensure we use the current CDI.
-            HelidonContainer instance = HelidonContainer.instance();
-
-            try {
-                // now run the build within context already
-                return Contexts.runInContext(instance.context(), this::doBuild);
-            } catch (Exception e) {
-                try {
-                    ((SeContainer) CDI.current()).close();
-                } catch (IllegalStateException ignored) {
-                    // no cdi registered
-                }
-
-                throw e;
-            }
+            return this.doBuild();
         }
 
         /**
@@ -241,7 +226,6 @@ public interface Server {
                     .getBuilder()
                     .withSources(MpConfigSources.create(Objects.requireNonNull(config, "Config cannot be null")))
                     .build();
-
             return this;
         }
 
@@ -265,13 +249,12 @@ public interface Server {
          * @return modified builder
          */
         public Builder resourceConfig(ResourceConfig config) {
-            Application application = config.getApplication();
-
             JaxRsApplication.Builder builder = JaxRsApplication.builder()
                     .appName(config.getApplicationName())
                     .config(config);
 
-            if (null != application) {
+            Application application = config.getApplication();
+            if (application != null) {
                 builder.applicationClass(application.getClass());
             }
 
@@ -341,7 +324,7 @@ public interface Server {
         public Builder applications(Application... applications) {
             this.applications.clear();
             for (Application application : applications) {
-                addApplication(application);
+                this.addApplication(application);
             }
             return this;
         }
@@ -431,55 +414,35 @@ public interface Server {
             return this;
         }
 
+        Config config() {
+            return this.config;
+        }
+
         String host() {
-            return host;
+            return this.host;
         }
 
         int port() {
-            return port;
+            return this.port;
+        }
+
+        String basePath() {
+            return this.basePath;
+        }
+
+        boolean retainDiscoveredApplications() {
+            return this.retainDiscovered;
+        }
+
+        List<JaxRsApplication> applications() {
+            return this.applications;
+        }
+
+        List<Class<?>> resourceClasses() {
+            return this.resourceClasses;
         }
 
         private Server doBuild() {
-            ServerCdiExtension server = CDI.current()
-                    .getBeanManager()
-                    .getExtension(ServerCdiExtension.class);
-
-            if (null != basePath) {
-                server.basePath(basePath);
-            }
-
-            STARTUP_LOGGER.log(Level.TRACE, "Configuration obtained");
-
-            // explicit application configuration
-            // if there are any resource classes explicitly added, create an application for them
-            this.jaxRs = CDI.current()
-                    .getBeanManager()
-                    .getExtension(JaxRsCdiExtension.class);
-
-            if (!applications.isEmpty() || !resourceClasses.isEmpty()) {
-                // only use applications from container if none explicitly configured
-                if (!retainDiscovered) {
-                    jaxRs.removeApplications();
-                }
-            }
-
-            if (!resourceClasses.isEmpty()) {
-                jaxRs.removeResourceClasses();
-
-                // if resource classes are configured, use them as defaults
-                jaxRs.addResourceClasses(resourceClasses);
-            }
-
-            // add all explicit applications
-            jaxRs.addApplications(applications);
-
-            // and add a synthetic app (last)
-            if (!resourceClasses.isEmpty()) {
-                jaxRs.addSyntheticApplication(resourceClasses);
-            }
-
-            STARTUP_LOGGER.log(Level.TRACE, "Jersey resource configuration");
-
             if (null == host) {
                 host = config.getOptionalValue("server.host", String.class).orElse("0.0.0.0");
             }

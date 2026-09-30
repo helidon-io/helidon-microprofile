@@ -23,6 +23,7 @@ import io.helidon.microprofile.config.core.MpConfigSources;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
@@ -31,6 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -72,6 +76,22 @@ class ParallelRunTest {
             assertThrows(IllegalStateException.class, Server::builder);
         } finally {
             server.stop();
+        }
+    }
+
+    @Test
+    void testFailedStartDoesNotCloseRunningContainer() {
+        Server rejectedServer = Server.builder().port(0).build();
+        Server runningServer = Server.builder().port(0).build().start();
+        SeContainer runningContainer = (SeContainer) CDI.current();
+
+        try {
+            assertThrows(IllegalStateException.class, rejectedServer::start);
+            assertThrows(IllegalStateException.class, rejectedServer::stop);
+            assertThat(runningContainer.isRunning(), is(true));
+            assertThat(CDI.current(), sameInstance(runningContainer));
+        } finally {
+            runningServer.stop();
         }
     }
 
