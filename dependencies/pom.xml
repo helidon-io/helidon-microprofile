@@ -490,10 +490,6 @@
                 <version>${version.lib.jersey}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>org.eclipse</groupId>
-                        <artifactId>yasson</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.glassfish.hk2.external</groupId>
                         <artifactId>jakarta.inject</artifactId>
                     </exclusion>
@@ -560,6 +556,12 @@
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
+            <!-- Use the relocation POM so Jersey's legacy coordinates resolve to org.eclipse.yasson:yasson. -->
+            <dependency>
+                <groupId>org.eclipse</groupId>
+                <artifactId>yasson</artifactId>
+                <version>3.0.5</version>
+            </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
             <!-- Section 4: Testing -->
