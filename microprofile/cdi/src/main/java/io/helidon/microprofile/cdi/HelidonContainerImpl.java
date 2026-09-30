@@ -346,23 +346,24 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         @Override
         public void close() {
-            if (isRunning.compareAndSet(true, false)) {
+            if (!isRunning.compareAndSet(true, false)) {
+                throw new IllegalStateException("Helidon CDI container has already been closed");
+            }
+            try {
+                beanManager().getEvent().select(BeforeDestroyed.Literal.APPLICATION).fire(new ContainerBeforeShutdown(id));
+            } finally {
+                // Destroy all the dependent beans correctly
                 try {
-                    beanManager().getEvent().select(BeforeDestroyed.Literal.APPLICATION).fire(new ContainerBeforeShutdown(id));
-                } finally {
-                    // Destroy all the dependent beans correctly
-                    try {
-                        beanManager().getEvent().select(Destroyed.Literal.APPLICATION).fire(new ContainerShutdown(id));
-                    } catch (Exception e) {
-                        LOGGER.log(Level.SEVERE, e, () -> "Failed to fire ApplicationScoped Destroyed event");
-                    }
-                    try {
-                        bootstrap.shutdown();
-                    } finally {
-                        MpServiceRegistry.shutdown();
-                    }
-                    WeldSELogger.LOG.weldContainerShutdown(id);
+                    beanManager().getEvent().select(Destroyed.Literal.APPLICATION).fire(new ContainerShutdown(id));
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, e, () -> "Failed to fire ApplicationScoped Destroyed event");
                 }
+                try {
+                    bootstrap.shutdown();
+                } finally {
+                    MpServiceRegistry.shutdown();
+                }
+                WeldSELogger.LOG.weldContainerShutdown(id);
             }
             IN_RUNTIME.set(false);
             // need to reset - if somebody decides to restart CDI (such as a test)

@@ -190,6 +190,31 @@ class HelidonContainerInitializerTest {
         }
     }
 
+    @Test
+    void testCloseClosedContainer() {
+        SeContainer closedContainer = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize();
+        closedContainer.close();
+
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .initialize()) {
+            HelidonContainer helidonContainer = HelidonContainer.instance();
+
+            assertThrows(IllegalStateException.class, closedContainer::close);
+
+            assertThat(CDI.current(), sameInstance(container));
+            assertThat(HelidonContainer.instance(), sameInstance(helidonContainer));
+            assertThat(helidonContainer.start(), sameInstance(container));
+            assertThat(container.isRunning(), is(true));
+            assertThat(container.select(TestBean.class).get().test(), is("test"));
+        }
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+    }
+
     private void assertContainerLifecycle() {
         SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()

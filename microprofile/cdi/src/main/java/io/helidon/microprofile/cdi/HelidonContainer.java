@@ -53,6 +53,8 @@ public interface HelidonContainer {
 
     /**
      * Shutdown the container (and CDI).
+     *
+     * @throws IllegalStateException if this container has already been closed
      */
     void shutdown();
 }
