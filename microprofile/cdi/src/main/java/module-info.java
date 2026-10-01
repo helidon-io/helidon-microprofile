@@ -66,10 +66,9 @@ module io.helidon.microprofile.cdi {
             with io.helidon.microprofile.cdi.HelidonContainerInitializer;
     provides jakarta.enterprise.inject.spi.CDIProvider
             with io.helidon.microprofile.cdi.HelidonCdiProvider;
-
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.cdi.LifecycleExtension;
-
+            with io.helidon.microprofile.cdi.LifecycleExtension,
+                 io.helidon.microprofile.cdi.ExecuteOnExtension;
     provides org.jboss.weld.bootstrap.api.Service
             with io.helidon.microprofile.cdi.ExecutorServices;
 

@@ -230,10 +230,9 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         setProperties(new HashMap<>(properties));
 
-        // at least one extension must be added for correct startup, if the two extensions are removed
+        // at least one extension must be added for correct startup, if the registry extension is removed
         // uncomment the next line
         // addExtension(new Extension() {});
-        addExtension(new ExecuteOnExtension());
         addExtension(new ServiceRegistryExtension());
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
