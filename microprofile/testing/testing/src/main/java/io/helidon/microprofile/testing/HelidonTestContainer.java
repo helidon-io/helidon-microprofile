@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 import io.helidon.common.testing.virtualthreads.PinningRecorder;
+import io.helidon.microprofile.cdi.LifecycleExtension;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
@@ -166,7 +167,7 @@ public class HelidonTestContainer {
         HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         if (testInfo.disableDiscovery()) {
-            initializer.disableDiscovery();
+            initializer.disableDiscovery().addExtensions(LifecycleExtension.class);
         }
         for (AddExtension extension : testInfo.addExtensions()) {
             initializer.addExtensions(requirePublic(extension.value()));

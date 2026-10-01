@@ -31,17 +31,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -196,37 +193,31 @@ class MainTest {
 
     @Test
     void testEvents() {
-        // build time
-        HelidonContainer instance = HelidonContainer.instance();
-
-        BeanManager beanManager = CDI.current().getBeanManager();
-        TestExtension extension = beanManager.getExtension(TestExtension.class);
-
-        assertThat(extension.runtimeConfig(), nullValue());
-        assertThat(extension.events(), contains(TestExtension.BUILD_TIME_START,
-                                                TestExtension.BUILD_TIME_END));
-
-        Config config = ConfigProviderResolver.instance()
-                .getBuilder()
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Config originalConfig = resolver.getConfig(classLoader);
+        Config config = resolver.getBuilder()
                 .withSources(MpConfigSources.create(Map.of("key", "value")))
                 .build();
-
-        ConfigProviderResolver.instance()
-                .registerConfig(config, Thread.currentThread().getContextClassLoader());
-
-        instance.start();
-
-        Object runtimeConfig = extension.runtimeConfig();
-        assertThat(runtimeConfig, instanceOf(Config.class));
-        Config mpConfig = (Config) runtimeConfig;
+        TestExtension testExtension;
         try {
-            mpConfig = ((Config) runtimeConfig).unwrap(Config.class);
-        } catch (Exception ignored) {
-        }
-        assertThat(mpConfig, sameInstance(config));
+            resolver.registerConfig(config, classLoader);
+            Main.main(new String[0]);
+            testExtension = CDI.current().getBeanManager().getExtension(TestExtension.class);
 
-        instance.shutdown();
-        assertThat(extension.events(), is(List.of(TestExtension.BUILD_TIME_START,
+            assertThat(((Config) testExtension.runtimeConfig()).unwrap(Config.class), sameInstance(config));
+            assertThat(testExtension.events(), contains(TestExtension.BUILD_TIME_START,
+                                                    TestExtension.BUILD_TIME_END,
+                                                    TestExtension.RUNTIME_INIT,
+                                                    TestExtension.APPLICATION_INIT));
+        } finally {
+            try {
+                Main.shutdown();
+            } finally {
+                resolver.registerConfig(originalConfig, classLoader);
+            }
+        }
+        assertThat(testExtension.events(), is(List.of(TestExtension.BUILD_TIME_START,
                                                   TestExtension.BUILD_TIME_END,
                                                   TestExtension.RUNTIME_INIT,
                                                   TestExtension.APPLICATION_INIT,

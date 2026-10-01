@@ -71,6 +71,7 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
         container.addExtensions(extensions);
         return this;
@@ -95,6 +96,7 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer selectAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
         container.selectAlternativeStereotypes(alternativeStereotypeClasses);
         return this;

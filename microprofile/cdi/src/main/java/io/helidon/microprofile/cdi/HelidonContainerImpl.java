@@ -37,12 +37,12 @@ import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.config.core.MpConfig;
-import io.helidon.microprofile.config.core.MpConfigProviderResolver;
 import io.helidon.spi.HelidonShutdownHandler;
 
 import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Destroyed;
 import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -268,16 +268,10 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         if (archives.isEmpty()) {
             throw new IllegalStateException("No deployment archive");
         }
-        BeanManagerImpl beanManager = bootstrap.getManager(archives.iterator().next());
-
-        beanManager.getEvent().select(BuildTimeStart.Literal.INSTANCE).fire(id);
-
         bootstrap.deployBeans();
 
         cdi = new HelidonCdi(id, bootstrap, deployment);
         HelidonCdiProvider.setCdi(cdi);
-
-        beanManager.getEvent().select(BuildTimeEnd.Literal.INSTANCE).fire(id);
 
         return this;
     }
@@ -302,19 +296,14 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
-        MpConfigProviderResolver.runtimeStart(config);
-
-        BeanManager bm = cdi.getBeanManager();
-
-        bm.getEvent().select(RuntimeStart.Literal.INSTANCE).fire(config);
-
         bootstrap.validateBeans();
         bootstrap.endInitialization();
 
-        shutdownHandler = new CdiShutdownHandler(cdi);
+        shutdownHandler = new CdiShutdownHandler(this.cdi);
 
-        bm.getEvent().select(Initialized.Literal.APPLICATION).fire(new ContainerInitialized(id));
-        bm.getEvent().select(Any.Literal.INSTANCE).fire(new Startup());
+        Event<Object> e = this.cdi.getBeanManager().getEvent();
+        e.select(Initialized.Literal.APPLICATION).fire(new ContainerInitialized(id));
+        e.select(Any.Literal.INSTANCE).fire(new Startup());
 
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
