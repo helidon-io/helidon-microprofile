@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.microprofile.testing.AddBean;
 
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.junit.jupiter.api.Test;
@@ -117,8 +118,7 @@ class BulkheadTest extends FaultToleranceTest {
     }
 
     @Test
-    void testSynchronousWithAsyncCaller() throws Exception {
-        AsynchronousCallerBean callerBean = newBean(AsynchronousCallerBean.class);
+    void testSynchronousWithAsyncCaller(@Default AsynchronousCallerBean callerBean) throws Exception {
         Callable<Integer> callable = () -> {
             try {
                 bean.executeSynchronous(1000);

@@ -16,13 +16,10 @@
 
 package io.helidon.microprofile.faulttolerance;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
-
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.util.AnnotationLiteral;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
@@ -34,32 +31,15 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
-/**
- * Utility class to register and fetch FT metrics.
- */
-class FaultToleranceMetrics {
+import static java.util.Objects.requireNonNull;
+import static org.eclipse.microprofile.metrics.MetricRegistry.Type.BASE;
 
-    private static LazyValue<MetricRegistry> metricRegistry = metricRegistryLazyValue();
+/**
+ * Utility class housing FT metrics.
+ */
+final class FaultToleranceMetrics {
 
     private FaultToleranceMetrics() {
-    }
-
-    static boolean enabled() {
-        return getMetricRegistry() != null;
-    }
-
-    static MetricRegistry getMetricRegistry() {
-        return metricRegistry.get();
-    }
-
-    static void close() {
-        // Facilitates reuse in successive tests in the same JVM.
-        metricRegistry = metricRegistryLazyValue();
-    }
-
-    private static LazyValue<MetricRegistry> metricRegistryLazyValue() {
-        return LazyValue.create(
-                () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
     }
 
     enum InvocationResult implements Supplier<Tag> {
@@ -198,17 +178,6 @@ class FaultToleranceMetrics {
         }
     }
 
-    /**
-     * Annotation literal to inject base registry.
-     */
-    static class BaseRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
-
-        @Override
-        public MetricRegistry.Type type() {
-            return MetricRegistry.Type.BASE;
-        }
-    }
-
     // -- Timeouts ------------------------------------------------------------
 
     /**
@@ -216,6 +185,13 @@ class FaultToleranceMetrics {
      * and lookup of metrics.
      */
     abstract static class FaultToleranceMetric {
+
+        private final MetricRegistry mr;
+
+        FaultToleranceMetric(MetricRegistry mr) {
+            super();
+            this.mr = requireNonNull(mr, "mr");
+        }
 
         abstract String name();
 
@@ -227,7 +203,7 @@ class FaultToleranceMetrics {
 
         protected Counter getCounter(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Counter) getMetricRegistry().getMetrics().get(metricID);
+            return (Counter) this.mr.getMetrics().get(metricID);
         }
 
         protected Counter registerCounter(Tag... tags) {
@@ -239,11 +215,11 @@ class FaultToleranceMetrics {
                         .withUnit(unit())
                         .build();
                 try {
-                    counter = getMetricRegistry().counter(metadata, tags);
+                    counter = this.mr.counter(metadata, tags);
                 } catch (IllegalArgumentException e) {
                     // Looks like we lost registration race
                     counter = getCounter(tags);
-                    Objects.requireNonNull(counter);
+                    requireNonNull(counter);
                 }
             }
             return counter;
@@ -251,7 +227,7 @@ class FaultToleranceMetrics {
 
         protected Histogram getHistogram(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Histogram) getMetricRegistry().getMetrics().get(metricID);
+            return (Histogram) this.mr.getMetrics().get(metricID);
         }
 
         protected Histogram registerHistogram(Tag... tags) {
@@ -263,11 +239,11 @@ class FaultToleranceMetrics {
                         .withUnit(unit())
                         .build();
                 try {
-                    histogram = getMetricRegistry().histogram(metadata, tags);
+                    histogram = this.mr.histogram(metadata, tags);
                 } catch (IllegalArgumentException e) {
                     // Looks like we lost the registration race
                     histogram = getHistogram(tags);
-                    Objects.requireNonNull(histogram);
+                    requireNonNull(histogram);
                 }
             }
             return histogram;
@@ -276,7 +252,7 @@ class FaultToleranceMetrics {
         @SuppressWarnings("unchecked")
         protected <T extends Number> Gauge<T> getGauge(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Gauge<T>) getMetricRegistry().getMetrics().get(metricID);
+            return (Gauge<T>) this.mr.getMetrics().get(metricID);
         }
 
         protected <T extends Number> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
@@ -288,11 +264,11 @@ class FaultToleranceMetrics {
                         .withUnit(unit())
                         .build();
                 try {
-                    gauge = getMetricRegistry().gauge(metadata, newGauge::getValue, tags);
+                    gauge = this.mr.gauge(metadata, newGauge::getValue, tags);
                 } catch (IllegalArgumentException e) {
                     // Looks like we lost the registration race
                     gauge = getGauge(tags);
-                    Objects.requireNonNull(gauge);
+                    requireNonNull(gauge);
                 }
             }
             return gauge;
@@ -302,15 +278,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.invocations.total" counters.
      */
+    @Singleton
     static class InvocationsTotal extends FaultToleranceMetric {
 
-        static final InvocationsTotal INSTANCE = new InvocationsTotal();
-
-        private InvocationsTotal() {
+        @Inject
+        InvocationsTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -337,15 +314,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.retry.calls.total" counters.
      */
+    @Singleton
     static class RetryCallsTotal extends FaultToleranceMetric {
 
-        static final RetryCallsTotal INSTANCE = new RetryCallsTotal();
-
-        private RetryCallsTotal() {
+        @Inject
+        RetryCallsTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -374,15 +352,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.retry.retries.total" counters.
      */
+    @Singleton
     static class RetryRetriesTotal extends FaultToleranceMetric {
 
-        static final RetryRetriesTotal INSTANCE = new RetryRetriesTotal();
-
-        private RetryRetriesTotal() {
+        @Inject
+        RetryRetriesTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -409,15 +388,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.timeout.calls.total" counters.
      */
+    @Singleton
     static class TimeoutCallsTotal extends FaultToleranceMetric {
 
-        static final TimeoutCallsTotal INSTANCE = new TimeoutCallsTotal();
-
-        private TimeoutCallsTotal() {
+        @Inject
+        private TimeoutCallsTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -446,15 +426,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.timeout.executionDuration" histograms.
      */
+    @Singleton
     static class TimeoutExecutionDuration extends FaultToleranceMetric {
 
-        static final TimeoutExecutionDuration INSTANCE = new TimeoutExecutionDuration();
-
-        private TimeoutExecutionDuration() {
+        @Inject
+        TimeoutExecutionDuration(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
+        Histogram get(Tag... tags) {
+            return this.registerHistogram(tags);
         }
 
         @Override
@@ -478,15 +459,16 @@ class FaultToleranceMetrics {
         }
     }
 
+    @Singleton
     static class CircuitBreakerCallsTotal extends FaultToleranceMetric {
 
-        static final CircuitBreakerCallsTotal INSTANCE = new CircuitBreakerCallsTotal();
-
-        private CircuitBreakerCallsTotal() {
+        @Inject
+        CircuitBreakerCallsTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -514,19 +496,20 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.circuitbreaker.state.total" gauges.
      */
+    @Singleton
     static class CircuitBreakerStateTotal extends FaultToleranceMetric {
 
-        static final CircuitBreakerStateTotal INSTANCE = new CircuitBreakerStateTotal();
-
-        private CircuitBreakerStateTotal() {
+        @Inject
+        CircuitBreakerStateTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.getGauge(tags);
+        Gauge<Long> get(Tag... tags) {
+            return this.getGauge(tags);
         }
 
-        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
-            return INSTANCE.registerGauge(gauge, tags);
+        Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return this.registerGauge(gauge, tags);
         }
 
         @Override
@@ -555,19 +538,20 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.circuitbreaker.opened.total" counters.
      */
+    @Singleton
     static class CircuitBreakerOpenedTotal extends FaultToleranceMetric {
 
-        static final CircuitBreakerOpenedTotal INSTANCE = new CircuitBreakerOpenedTotal();
-
-        private CircuitBreakerOpenedTotal() {
+        @Inject
+        CircuitBreakerOpenedTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
-        static Counter register(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter register(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -594,15 +578,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.bulkhead.calls.total" counters.
      */
+    @Singleton
     static class BulkheadCallsTotal extends FaultToleranceMetric {
 
-        static final BulkheadCallsTotal INSTANCE = new BulkheadCallsTotal();
-
-        private BulkheadCallsTotal() {
+        @Inject
+        BulkheadCallsTotal(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Counter get(Tag... tags) {
-            return INSTANCE.registerCounter(tags);
+        Counter get(Tag... tags) {
+            return this.registerCounter(tags);
         }
 
         @Override
@@ -631,19 +616,20 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.bulkhead.executionsRunning" gauges.
      */
+    @Singleton
     static class BulkheadExecutionsRunning extends FaultToleranceMetric {
 
-        static final BulkheadExecutionsRunning INSTANCE = new BulkheadExecutionsRunning();
-
-        private BulkheadExecutionsRunning() {
+        @Inject
+        BulkheadExecutionsRunning(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.getGauge(tags);
+        Gauge<Long> get(Tag... tags) {
+            return this.getGauge(tags);
         }
 
-        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
-            return INSTANCE.registerGauge(gauge, tags);
+        Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return this.registerGauge(gauge, tags);
         }
 
         @Override
@@ -670,19 +656,20 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.bulkhead.executionsWaiting" gauges.
      */
+    @Singleton
     static class BulkheadExecutionsWaiting extends FaultToleranceMetric {
 
-        static final BulkheadExecutionsWaiting INSTANCE = new BulkheadExecutionsWaiting();
-
-        private BulkheadExecutionsWaiting() {
+        @Inject
+        BulkheadExecutionsWaiting(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Gauge<Long> get(Tag... tags) {
-            return INSTANCE.getGauge(tags);
+        Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
+            return this.registerGauge(gauge, tags);
         }
 
-        static Gauge<Long> register(Gauge<Long> gauge, Tag... tags) {
-            return INSTANCE.registerGauge(gauge, tags);
+        Gauge<Long> get(Tag... tags) {
+            return this.getGauge(tags);
         }
 
         @Override
@@ -709,15 +696,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.bulkhead.runningDuration" histograms.
      */
+    @Singleton
     static class BulkheadRunningDuration extends FaultToleranceMetric {
 
-        static final BulkheadRunningDuration INSTANCE = new BulkheadRunningDuration();
-
-        private BulkheadRunningDuration() {
+        @Inject
+        BulkheadRunningDuration(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
+        Histogram get(Tag... tags) {
+            return this.registerHistogram(tags);
         }
 
         @Override
@@ -744,15 +732,16 @@ class FaultToleranceMetrics {
     /**
      * Class for "ft.bulkhead.waitingDuration" histograms.
      */
+    @Singleton
     static class BulkheadWaitingDuration extends FaultToleranceMetric {
 
-        static final BulkheadWaitingDuration INSTANCE = new BulkheadWaitingDuration();
-
-        private BulkheadWaitingDuration() {
+        @Inject
+        BulkheadWaitingDuration(@RegistryType(type = BASE) MetricRegistry mr) {
+            super(mr);
         }
 
-        static Histogram get(Tag... tags) {
-            return INSTANCE.registerHistogram(tags);
+        Histogram get(Tag... tags) {
+            return this.registerHistogram(tags);
         }
 
         @Override
