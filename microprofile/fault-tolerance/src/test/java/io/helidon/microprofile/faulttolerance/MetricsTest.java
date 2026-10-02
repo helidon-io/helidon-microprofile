@@ -446,7 +446,7 @@ class MetricsTest extends FaultToleranceTest {
 
     @Test
     void testBulkheadMetricsAsync(@Default MetricsBean bean,
-                                  @Default BulkheadExecutionsWaiting ber,
+                                  @Default BulkheadExecutionsRunning ber,
                                   @Default BulkheadExecutionsWaiting bew,
                                   @Default BulkheadCallsTotal bct,
                                   @Default BulkheadRunningDuration brd,
