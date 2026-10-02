@@ -30,8 +30,6 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import jakarta.enterprise.inject.literal.NamedLiteral;
-import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -53,14 +51,6 @@ abstract class FaultToleranceTest {
     private static final int NUMBER_OF_THREADS = 20;
 
     private static final Executor executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
-
-    protected static <T> T newBean(Class<T> beanClass) {
-        return CDI.current().select(beanClass).get();
-    }
-
-    protected static <T> T newNamedBean(Class<T> beanClass) {
-        return CDI.current().select(beanClass, NamedLiteral.of(beanClass.getSimpleName())).get();
-    }
 
     static void printStatus(String message, String status) {
         if (LOGGER.isLoggable(Level.DEBUG)) {

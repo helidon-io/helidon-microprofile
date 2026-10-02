@@ -19,18 +19,24 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Unmanaged;
+import jakarta.enterprise.inject.spi.Unmanaged.UnmanagedInstance;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.ExecutionContext;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.FallbackHandler;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Implements invocation callback logic.
  */
 class FallbackHelper {
+
+    private final BeanManager bm;
 
     private final InvocationContext context;
 
@@ -64,7 +70,8 @@ class FallbackHelper {
      * @param introspector Method introspector.
      * @param throwable    Throwable that caused execution of fallback
      */
-    FallbackHelper(InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
+    FallbackHelper(BeanManager bm, InvocationContext context, MethodIntrospector introspector, Throwable throwable) {
+        this.bm = requireNonNull(bm, "bm");
         this.context = context;
         this.throwable = throwable;
 
@@ -93,39 +100,46 @@ class FallbackHelper {
      * @throws Exception If something fails.
      */
     public Object execute() throws Exception {
-
         Object result;
         try {
-            if (handlerClass != null) {
-                // Instantiate handler using CDI
-                Instance<? extends FallbackHandler> instance = CDI.current().select(handlerClass);
-                if (instance.isResolvable()) {
-                    FallbackHandler<?> handler = instance.get();
-                    result = handler.handle(executionContext);
-                } else {
+            if (this.handlerClass == null) {
+                result = this.fallbackMethod.invoke(this.context.getTarget(), this.context.getParameters());
+            } else {
+                Instance<? extends FallbackHandler<?>> instance = this.bm.createInstance().select(this.handlerClass);
+                if (instance.isUnsatisfied()) {
                     // It is not required that FallbackHandler is a bean. TCKs will fail otherwise
-                    Unmanaged<FallbackHandler<?>> unmanaged = new Unmanaged<>(CDI.current().getBeanManager(),
-                                                                              (Class<FallbackHandler<?>>) handlerClass);
-                    Unmanaged.UnmanagedInstance<FallbackHandler<?>> unmanagedInstance = unmanaged.newInstance();
-                    FallbackHandler<?> handler = unmanagedInstance.produce().inject().postConstruct().get();
+                    UnmanagedInstance<? extends FallbackHandler<?>> ui =
+                        new Unmanaged<>(this.bm, this.handlerClass).newInstance();
+                    FallbackHandler<?> fh = ui.produce().inject().postConstruct().get();
                     try {
-                        result = handler.handle(executionContext);
+                        result = fh.handle(this.executionContext);
                     } finally {
                         // The instance exists to service a single invocation only
-                        unmanagedInstance.preDestroy().dispose();
+                        ui.preDestroy().dispose();
+                    }
+                } else {
+                    var h = instance.getHandle();
+                    try {
+                        result = h.get().handle(this.executionContext);
+                    } finally {
+                        if (h.getBean().getScope() == Dependent.class) {
+                            h.destroy();
+                        }
                     }
                 }
-            } else {
-                result = fallbackMethod.invoke(context.getTarget(), context.getParameters());
             }
+        } catch (InvocationTargetException e) {
+            switch (e.getCause()) {
+            case null -> throw new AssertionError();
+            case Exception ex -> throw ex;
+            case Error err -> throw err;
+            case Throwable t -> throw new RuntimeException(t);
+            }
+        } catch (Exception | Error e) {
+            throw e;
         } catch (Throwable t) {
-            // If InvocationTargetException, then unwrap underlying cause
-            if (t instanceof InvocationTargetException) {
-                t = t.getCause();
-            }
-            throw t instanceof Exception ? (Exception) t : new RuntimeException(t);
+            throw new RuntimeException(t);
         }
-
         return result;
     }
 }

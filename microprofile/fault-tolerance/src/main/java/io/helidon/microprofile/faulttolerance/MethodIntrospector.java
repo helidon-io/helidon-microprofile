@@ -25,7 +25,6 @@ import io.helidon.microprofile.faulttolerance.MethodAntn.LookupResult;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
 import org.eclipse.microprofile.faulttolerance.Bulkhead;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -41,6 +40,8 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceParameter.get
 import static io.helidon.microprofile.faulttolerance.MethodAntn.lookupAnnotation;
 
 class MethodIntrospector {
+
+    private final BeanManager bm;
 
     private final AnnotatedMethod<?> annotatedMethod;
 
@@ -59,12 +60,14 @@ class MethodIntrospector {
     /**
      * Constructor.
      *
+     * @param bm a {@link BeanManager}
+     * @param beanClass The declaring class.
      * @param method The method to introspect.
      */
     @SuppressWarnings("unchecked")
-    MethodIntrospector(Class<?> beanClass, Method method) {
-        BeanManager bm = CDI.current().getBeanManager();
+    MethodIntrospector(BeanManager bm, Class<?> beanClass, Method method) {
         AnnotatedType<?> annotatedType = bm.createAnnotatedType(beanClass);
+        this.bm = bm;
         Optional<AnnotatedMethod<?>> annotatedMethodOptional =
                 (Optional<AnnotatedMethod<?>>) annotatedType.getMethods()
                         .stream()
@@ -181,8 +184,7 @@ class MethodIntrospector {
      * @return Outcome of test.
      */
     private boolean isAnnotationEnabled(Class<? extends Annotation> clazz) {
-        BeanManager bm = CDI.current().getBeanManager();
-        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedMethod, clazz, bm);
+        LookupResult<? extends Annotation> lookupResult = lookupAnnotation(annotatedMethod, clazz, this.bm);
         if (lookupResult == null) {
             return false;       // not present
         }

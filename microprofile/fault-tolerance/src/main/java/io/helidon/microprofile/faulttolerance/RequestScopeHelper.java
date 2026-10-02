@@ -20,8 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.enterprise.inject.spi.CDI;
+import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
@@ -32,29 +35,43 @@ import org.jboss.weld.context.bound.BoundLiteral;
 import org.jboss.weld.context.bound.BoundRequestContext;
 import org.jboss.weld.manager.api.WeldManager;
 
+import static java.util.Objects.requireNonNull;
+
+@Dependent
 class RequestScopeHelper {
 
+    /**
+     * Store access to {@code WeldManager} for instance migration.
+     */
+    private final WeldManager weldManager;
+    /**
+     * A {@link Provider} of Jersey's request scope.
+     */
+    private final Provider<RequestScope> requestScopeProvider;
     private State state = State.CLEARED;
+    /**
+     * Jersey's request scope object.
+     */
+    private RequestContext jerseyRequestContext;
     /**
      * Jersey's request scope object. Will be non-null if request scope is active.
      */
     private RequestScope requestScope;
     /**
-     * Jersey's request scope object.
-     */
-    private RequestContext requestContext;
-    /**
      * Jersey's injection manager.
      */
     private InjectionManager injectionManager;
     /**
-     * Store access to {@code WeldManager} for instance migration.
-     */
-    private WeldManager weldManager;
-    /**
      * Collection of instances in request scope.
      */
     private Collection<ContextualInstance<?>> requestScopeInstances;
+
+    @Inject
+    RequestScopeHelper(WeldManager weldManager, Provider<RequestScope> requestScopeProvider) {
+        super();
+        this.weldManager = requireNonNull(weldManager, "weldManager");
+        this.requestScopeProvider = requireNonNull(requestScopeProvider, "requestScopeProvider");
+    }
 
     /**
      * Store request context information from the current thread. State
@@ -62,29 +79,26 @@ class RequestScopeHelper {
      * injections.
      */
     void saveScope() {
-        if (state == State.STORED) {
+        if (this.state == State.STORED) {
             throw new IllegalStateException("Request scope state already stored");
         }
 
         // Collect instances for request scope only
-        weldManager = CDI.current().select(WeldManager.class).get();
-        if (weldManager != null) {
-            for (WeldAlterableContext context : weldManager.getActiveWeldAlterableContexts()) {
-                if (context.getScope() == RequestScoped.class) {
-                    requestScopeInstances = context.getAllContextualInstances();
-                }
+        for (WeldAlterableContext context : weldManager.getActiveWeldAlterableContexts()) {
+            if (context.getScope() == RequestScoped.class) {
+                this.requestScopeInstances = context.getAllContextualInstances();
             }
         }
 
         // Jersey scope
-        injectionManager = WeldRequestScope.actualInjectorManager.get();        // thread local
+        this.injectionManager = WeldRequestScope.actualInjectorManager.get();        // thread local
         try {
-            requestScope = CDI.current().select(RequestScope.class).get();
-            requestContext = requestScope.referenceCurrent();
+            this.requestScope = this.requestScopeProvider.get();
+            this.jerseyRequestContext = this.requestScope.referenceCurrent();
         } catch (Exception e) {
             // Ignored, Jersey request scope not active
         } finally {
-            state = State.STORED;
+            this.state = State.STORED;
         }
     }
 
@@ -96,35 +110,15 @@ class RequestScopeHelper {
      * @return wrapped supplier
      */
     FtSupplier<Object> wrapInScope(FtSupplier<Object> supplier) {
-        if (state != State.STORED) {
+        if (this.state != State.STORED) {
             throw new IllegalStateException("Request scope state never stored");
         }
-        if (requestScope != null && requestContext != null) {       // Jersey and CDI
-            return () -> requestScope.runInScope(requestContext,
-                                                 (Callable<?>) (
-                                                         () -> {
-                                                             InjectionManager old = WeldRequestScope.actualInjectorManager.get();
-                                                             Runnable migrationCleaner = null;
-                                                             try {
-                                                                 migrationCleaner = migrateRequestContext();
-                                                                 WeldRequestScope.actualInjectorManager.set(injectionManager);
-                                                                 return supplier.get();
-                                                             } catch (Throwable t) {
-                                                                 throw t instanceof Exception
-                                                                         ? ((Exception) t)
-                                                                         : new RuntimeException(t);
-                                                             } finally {
-                                                                 if (migrationCleaner != null) {
-                                                                     migrationCleaner.run();
-                                                                 }
-                                                                 WeldRequestScope.actualInjectorManager.set(old);
-                                                             }
-                                                         }));
-        } else if (weldManager != null) {         // CDI only
+
+        if (this.jerseyRequestContext == null) {
             return () -> {
                 Runnable migrationCleaner = null;
                 try {
-                    migrationCleaner = migrateRequestContext();
+                    migrationCleaner = this.migrateRequestContext();
                     return supplier.get();
                 } finally {
                     if (migrationCleaner != null) {
@@ -133,29 +127,44 @@ class RequestScopeHelper {
                 }
             };
         } else {
-            return supplier;
+            return () -> this.requestScope
+                .runInScope(this.jerseyRequestContext,
+                            (Callable<?>) (() -> {
+                                    InjectionManager old = WeldRequestScope.actualInjectorManager.get();
+                                    Runnable migrationCleaner = null;
+                                    try {
+                                        migrationCleaner = this.migrateRequestContext();
+                                        WeldRequestScope.actualInjectorManager.set(this.injectionManager);
+                                        return supplier.get();
+                                    } catch (Throwable t) {
+                                        throw t instanceof Exception
+                                            ? ((Exception) t)
+                                            : new RuntimeException(t);
+                                    } finally {
+                                        if (migrationCleaner != null) {
+                                            migrationCleaner.run();
+                                        }
+                                        WeldRequestScope.actualInjectorManager.set(old);
+                                    }
+                                }));
         }
     }
 
     /**
      * Clears internal state saved by calling {@link #saveScope()}.
      */
-    void clearScope() {
-        if (requestContext != null) {
-            requestContext.release();
-            requestContext = null;
+    @PreDestroy
+    private void clearScope() {
+        if (this.jerseyRequestContext != null) {
+            this.jerseyRequestContext.release();
+            this.jerseyRequestContext = null;
         }
-        if (requestScope != null) {
-            CDI.current().destroy(requestScope);
-            requestScope = null;
+        this.injectionManager = null;
+        if (this.requestScopeInstances != null) {
+            this.requestScopeInstances.clear();
+            this.requestScopeInstances = null;
         }
-        injectionManager = null;
-        if (requestScopeInstances != null) {
-            requestScopeInstances.clear();
-            requestScopeInstances = null;
-        }
-        weldManager = null;
-        state = State.CLEARED;
+        this.state = State.CLEARED;
     }
 
     /**
@@ -168,27 +177,27 @@ class RequestScopeHelper {
      * @return runnable that cleans up after migration or {@code null}
      */
     private Runnable migrateRequestContext() {
-        if (requestScopeInstances != null) {
+        if (this.requestScopeInstances != null) {
             // Access CDI context instance
-            BoundRequestContext requestContext = weldManager.instance()
+            BoundRequestContext boundRequestContext = this.weldManager.instance()
                     .select(BoundRequestContext.class, BoundLiteral.INSTANCE).get();
 
             // Ensure a storage and activate if necessary
             Map<String, Object> requestMap = new HashMap<>();
-            boolean wasAssociated = requestContext.associate(requestMap);
-            requestContext.clearAndSet(requestScopeInstances);
-            boolean wasActive = requestContext.isActive();
+            boolean wasAssociated = boundRequestContext.associate(requestMap);
+            boundRequestContext.clearAndSet(this.requestScopeInstances);
+            boolean wasActive = boundRequestContext.isActive();
             if (!wasActive) {
-                requestContext.activate();
+                boundRequestContext.activate();
             }
 
             // Return runnable that properly cleans up after context migration
             return () -> {
                 if (!wasActive) {
-                    requestContext.deactivate();
+                    boundRequestContext.deactivate();
                 }
                 if (wasAssociated) {
-                    requestContext.dissociate(requestMap);
+                    boundRequestContext.dissociate(requestMap);
                 }
             };
         }
