@@ -29,15 +29,17 @@ import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.microprofile.config.core.MpConfig;
 
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.NamedLiteral;
-import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Intercepts calls to bean methods to be executed on a new thread.
@@ -76,8 +78,15 @@ class ExecuteOnInterceptor {
                 .build()
                 .get();
     });
+    private final ExecuteOnExtension extension;
+    private final Instance<ExecutorService> executors;
+
     @Inject
-    private ExecuteOnExtension extension;
+    ExecuteOnInterceptor(ExecuteOnExtension extension, @Any Instance<ExecutorService> executors) {
+        super();
+        this.extension = requireNonNull(extension, "extension");
+        this.executors = requireNonNull(executors, "executors");
+    }
 
     /**
      * Intercepts a call to bean method annotated by {@link io.helidon.microprofile.cdi.ExecuteOn}.
@@ -90,16 +99,16 @@ class ExecuteOnInterceptor {
     @SuppressWarnings("unchecked")
     public Object executeOn(InvocationContext context) throws Throwable {
         Method method = context.getMethod();
-        ExecuteOn executeOn = extension.getAnnotation(method);
+        ExecuteOn executeOn = this.extension.getAnnotation(method);
 
         // find executor service to use
         ExecutorService executorService = switch (executeOn.value()) {
             case PLATFORM -> PLATFORM_EXECUTOR_SERVICE.get();
             case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get();
-            case EXECUTOR -> findExecutor(executeOn.executorName());
+            case EXECUTOR -> this.executors.select(NamedLiteral.of(executeOn.executorName())).get();
         };
 
-        switch (extension.getMethodType(method)) {
+        switch (this.extension.getMethodType(method)) {
         case BLOCKING:
             // block until call completes
             return executorService.submit(context::proceed).get(executeOn.timeout(), executeOn.unit());
@@ -155,16 +164,6 @@ class ExecuteOnInterceptor {
         default:
             throw new IllegalStateException("Unrecognized ExecuteOn method type");
         }
-    }
-
-    /**
-     * Find executor by name. Validation in {@link ExecuteOnExtension#validateAnnotations(BeanManager, Object)}.
-     *
-     * @param executorName name of executor
-     * @return executor instance looked up via CDI
-     */
-    private static ExecutorService findExecutor(String executorName) {
-        return CDI.current().select(ExecutorService.class, NamedLiteral.of(executorName)).get();
     }
 
     /**
