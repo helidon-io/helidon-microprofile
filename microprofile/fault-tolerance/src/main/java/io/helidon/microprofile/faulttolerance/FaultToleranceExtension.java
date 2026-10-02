@@ -29,6 +29,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -188,6 +189,37 @@ public class FaultToleranceExtension implements Extension {
         registerFaultToleranceMethods(bm, event.getAnnotatedBeanClass());
     }
 
+    void addFaultToleranceMetricsBean(@Observes AfterBeanDiscovery event, BeanManager bm) {
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadCallsTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadExecutionsRunning.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadExecutionsWaiting.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadRunningDuration.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadWaitingDuration.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerCallsTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerOpenedTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerStateTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.InvocationsTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.RetryCallsTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.RetryRetriesTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.TimeoutCallsTotal.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(FaultToleranceMetrics.TimeoutExecutionDuration.class));
+        event.addBean()
+            .read(bm.createAnnotatedType(RequestScopeHelper.class));
+    }
+
     /**
      * Validates annotations.
      *
@@ -196,35 +228,32 @@ public class FaultToleranceExtension implements Extension {
     void validateAnnotations(BeanManager bm,
                              @Observes @Priority(LIBRARY_BEFORE + 10 + 5)
                              @Initialized(ApplicationScoped.class) Object event) {
-        if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().forEach(annotatedMethod -> {
-                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
+        getRegisteredMethods().forEach(annotatedMethod -> {
+            final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
-                // Metrics depending on the annotationSet present
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
-                    new RetryAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
-                    new CircuitBreakerAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
-                    new TimeoutAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
-                    new BulkheadAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
-                    new FallbackAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
-                    new AsynchronousAntn(annotatedMethod).validate();
-                }
-            });
-        }
+            // Metrics depending on the annotationSet present
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
+                new RetryAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
+                new CircuitBreakerAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
+                new TimeoutAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
+                new BulkheadAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
+                new FallbackAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
+                new AsynchronousAntn(annotatedMethod).validate();
+            }
+        });
     }
 
     void close(@Observes BeforeShutdown shutdown) {
-        FaultToleranceMetrics.close();
         // we need to clear method cache, as the next start could use different config
         MethodInvoker.clearMethodStatesMap();
     }
