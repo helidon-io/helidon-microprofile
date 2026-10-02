@@ -65,6 +65,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.Circu
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerResult;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerState;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.FaultToleranceMetric;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
@@ -97,6 +98,10 @@ class MethodInvoker implements FtSupplier<Object> {
      * A {@link BeanManager}.
      */
     private final BeanManager bm;
+    /**
+     * An {@link Instance} providing access to various {@link FaultToleranceMetric} instances.
+     */
+    private final Instance<FaultToleranceMetric> instance;
     /**
      * The method being intercepted.
      */
@@ -153,8 +158,12 @@ class MethodInvoker implements FtSupplier<Object> {
      * @param context      The invocation context.
      * @param introspector The method introspector.
      */
-    MethodInvoker(BeanManager bm, InvocationContext context, MethodIntrospector introspector) {
+    MethodInvoker(BeanManager bm,
+                  Instance<FaultToleranceMetric> instance,
+                  InvocationContext context,
+                  MethodIntrospector introspector) {
         this.bm = requireNonNull(bm, "bm");
+        this.instance = requireNonNull(instance, "instance");
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();
@@ -291,11 +300,9 @@ class MethodInvoker implements FtSupplier<Object> {
         if (!isFaultToleranceMetricsEnabled()) {
             return;
         }
-        Instance<FaultToleranceMetrics.FaultToleranceMetric> instance =
-            this.bm.createInstance().select(FaultToleranceMetrics.FaultToleranceMetric.class);
 
         if (introspector.hasCircuitBreaker()) {
-            CircuitBreakerStateTotal cbst = instance.select(CircuitBreakerStateTotal.class).get();
+            CircuitBreakerStateTotal cbst = this.instance.select(CircuitBreakerStateTotal.class).get();
             cbst.register(
                     () -> methodState.breakerTimerOpen,
                     introspector.getMethodNameTag(),
@@ -308,17 +315,17 @@ class MethodInvoker implements FtSupplier<Object> {
                     () -> methodState.breakerTimerClosed,
                     introspector.getMethodNameTag(),
                     CircuitBreakerState.CLOSED.get());
-            instance.select(CircuitBreakerOpenedTotal.class)
+            this.instance.select(CircuitBreakerOpenedTotal.class)
                 .get()
                 .register(introspector.getMethodNameTag());
         }
         if (introspector.hasBulkhead()) {
-            BulkheadExecutionsRunning ber = instance.select(BulkheadExecutionsRunning.class).get();
+            BulkheadExecutionsRunning ber = this.instance.select(BulkheadExecutionsRunning.class).get();
             ber.register(
                     () -> methodState.bulkhead.stats().concurrentExecutions(),
                     introspector.getMethodNameTag());
             if (introspector.isAsynchronous()) {
-                BulkheadExecutionsWaiting bew = instance.select(BulkheadExecutionsWaiting.class).get();
+                BulkheadExecutionsWaiting bew = this.instance.select(BulkheadExecutionsWaiting.class).get();
                 bew.register(
                         () -> methodState.bulkhead.stats().waitingQueueSize(),
                         introspector.getMethodNameTag());
@@ -553,20 +560,18 @@ class MethodInvoker implements FtSupplier<Object> {
         try {
             // Calculate execution time
             long executionTime = System.nanoTime() - handlerStartNanos;
-            Instance<FaultToleranceMetrics.FaultToleranceMetric> instance =
-                this.bm.createInstance().select(FaultToleranceMetrics.FaultToleranceMetric.class);
             // Retries
             if (introspector.hasRetry()) {
                 long retryCounter = methodState.retry.retryCounter();
                 boolean wasRetried = retryCounter > 0;
-                Counter retryRetriesTotal = instance.select(RetryRetriesTotal.class)
+                Counter retryRetriesTotal = this.instance.select(RetryRetriesTotal.class)
                     .get()
                     .get(introspector.getMethodNameTag());
                 // Update retry counter
                 if (wasRetried) {
                     retryRetriesTotal.inc(retryCounter);
                 }
-                RetryCallsTotal rct = instance.select(RetryCallsTotal.class).get();
+                RetryCallsTotal rct = this.instance.select(RetryCallsTotal.class).get();
                 // Update retry metrics based on outcome
                 if (cause == null) {
                     rct.get(introspector.getMethodNameTag(),
@@ -595,13 +600,13 @@ class MethodInvoker implements FtSupplier<Object> {
             }
             // Timeout
             if (introspector.hasTimeout()) {
-                TimeoutCallsTotal tct = instance.select(TimeoutCallsTotal.class).get();
+                TimeoutCallsTotal tct = this.instance.select(TimeoutCallsTotal.class).get();
                 if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
                     tct.get(introspector.getMethodNameTag(), TimeoutTimedOut.TRUE.get()).inc();
                 } else {
                     tct.get(introspector.getMethodNameTag(), TimeoutTimedOut.FALSE.get()).inc();
                 }
-                instance.select(TimeoutExecutionDuration.class)
+                this.instance.select(TimeoutExecutionDuration.class)
                     .get()
                     .get(introspector.getMethodNameTag())
                     .update(executionTime);
@@ -609,11 +614,11 @@ class MethodInvoker implements FtSupplier<Object> {
             // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
                 requireNonNull(methodState.breaker);
-                CircuitBreakerCallsTotal cbct = instance.select(CircuitBreakerCallsTotal.class).get();
+                CircuitBreakerCallsTotal cbct = this.instance.select(CircuitBreakerCallsTotal.class).get();
                 if (methodState.lastBreakerState == State.OPEN) {
                     cbct.get(introspector.getMethodNameTag(), CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
                 } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
-                    instance.select(CircuitBreakerOpenedTotal.class)
+                    this.instance.select(CircuitBreakerOpenedTotal.class)
                         .get()
                         .get(introspector.getMethodNameTag())
                         .inc();
@@ -654,7 +659,7 @@ class MethodInvoker implements FtSupplier<Object> {
             if (introspector.hasBulkhead()) {
                 requireNonNull(methodState.bulkhead);
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
-                BulkheadCallsTotal bct = instance.select(BulkheadCallsTotal.class).get();
+                BulkheadCallsTotal bct = this.instance.select(BulkheadCallsTotal.class).get();
                 Counter bulkheadAccepted = bct.get(introspector.getMethodNameTag(), BulkheadResult.ACCEPTED.get());
                 if (stats.callsAccepted() > bulkheadAccepted.getCount()) {
                     bulkheadAccepted.inc(stats.callsAccepted() - bulkheadAccepted.getCount());
@@ -666,12 +671,12 @@ class MethodInvoker implements FtSupplier<Object> {
                 // Update histograms if task accepted
                 if (!(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
-                    instance.select(BulkheadRunningDuration.class)
+                    this.instance.select(BulkheadRunningDuration.class)
                         .get()
                         .get(introspector.getMethodNameTag())
                         .update(executionTime - waitingTime);
                     if (introspector.isAsynchronous()) {
-                        instance.select(BulkheadWaitingDuration.class)
+                        this.instance.select(BulkheadWaitingDuration.class)
                             .get()
                             .get(introspector.getMethodNameTag())
                             .update(waitingTime);
@@ -679,7 +684,7 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
             }
             // Global method counters
-            InvocationsTotal i = instance.select(InvocationsTotal.class).get();
+            InvocationsTotal i = this.instance.select(InvocationsTotal.class).get();
             if (cause == null) {
                 i.get(introspector.getMethodNameTag(),
                       VALUE_RETURNED.get(),

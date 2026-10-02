@@ -18,7 +18,11 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.System.Logger.Level;
 
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.FaultToleranceMetric;
+
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
@@ -37,11 +41,14 @@ class CommandInterceptor {
 
     private static final System.Logger LOGGER = System.getLogger(CommandInterceptor.class.getName());
 
+    private final Instance<FaultToleranceMetric> i;
+
     private final BeanManager bm;
 
     @Inject
-    CommandInterceptor(BeanManager bm) {
+    CommandInterceptor(BeanManager bm, @Any Instance<FaultToleranceMetric> i) {
         super();
+        this.i = requireNonNull(i, "i");
         this.bm = requireNonNull(bm, "bm");
     }
 
@@ -63,7 +70,7 @@ class CommandInterceptor {
             MethodIntrospector introspector = new MethodIntrospector(this.bm,
                                                                      context.getTarget().getClass(),
                                                                      context.getMethod());
-            MethodInvoker runner = new MethodInvoker(this.bm, context, introspector);
+            MethodInvoker runner = new MethodInvoker(this.bm, this.i, context, introspector);
             return runner.get();
         } catch (Throwable t) {
             LOGGER.log(Level.DEBUG, "Throwable caught by interceptor '" + t.getMessage() + "'");
