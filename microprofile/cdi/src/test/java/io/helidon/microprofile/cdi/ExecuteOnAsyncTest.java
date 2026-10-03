@@ -33,7 +33,6 @@ import io.helidon.common.context.Contexts;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,7 +61,7 @@ class ExecuteOnAsyncTest {
                 .addExtensions(ExecuteOnExtension.class)
                 .addBeanClasses(OnNewThreadBean.class)
                 .initialize();
-        bean = CDI.current().select(OnNewThreadBean.class).get();
+        bean = seContainer.select(OnNewThreadBean.class).get();
     }
 
     @AfterAll
