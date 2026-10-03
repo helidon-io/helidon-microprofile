@@ -39,6 +39,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,8 +68,12 @@ class HelloWorldTest {
     MetricRegistry registry;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     MetricRegistry restRequestMetricsRegistry;
+
+    @Inject
+    @RegistryType(type = MetricRegistry.Type.BASE)
+    MetricRegistry restRequestMetricsRegistryInjectedViaDeprecatedRegistryType;
 
     @BeforeAll
     public static void initialize() {
@@ -166,6 +171,12 @@ class HelloWorldTest {
                             () -> timer.getCount() - successfulBeforeRequest,
                             is(1L));
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(0L));
+    }
+
+    @Test
+    public void testInjectionViaDeprecatedAnnotationRegistryType() {
+        assertThat("MetricsRegistry should be injected via deprecated @RegistryType", restRequestMetricsRegistryInjectedViaDeprecatedRegistryType, notNullValue());
+        assertThat("Scope should be BASE", restRequestMetricsRegistryInjectedViaDeprecatedRegistryType.getScope(), is(MetricRegistry.Type.BASE.getName()));
     }
 
     @Test
