@@ -38,16 +38,17 @@ collector or observability backend.
 ## Compatibility
 
 MicroProfile Telemetry 1.1 uses the current REST span naming convention, which
-includes the HTTP method. To enable that convention, add the following
-configuration:
+includes the HTTP method. Helidon uses that convention by default. To
+temporarily retain the older convention, add the following configuration:
 
 ```properties [microprofile-config.properties]
-telemetry.span.name-includes-method=true
+telemetry.span.name-includes-method=false
 ```
 
-Helidon retains the MicroProfile Telemetry 1.0 naming convention for
-compatibility if this property is not set, but logs a warning. Support for the
-older format is deprecated.
+Helidon then uses the MicroProfile Telemetry 1.0 naming convention and logs a
+warning. Support for the older format is deprecated. See
+[Helidon automatic span compatibility](#helidon-automatic-span-compatibility)
+for details about this setting and the response-writing compatibility setting.
 
 ## Usage
 
@@ -303,6 +304,41 @@ to a collector or backend listening on port 4318.
 You can configure batching, sampling, resource attributes, headers, TLS, and
 other exporter settings using the standard [OpenTelemetry Java SDK
 configuration][opentelemetry-config].
+
+### Helidon Automatic Span Compatibility
+
+Helidon supports the following deprecated vendor-specific compatibility
+settings for automatic incoming REST request spans:
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `telemetry.span.name-includes-method` | `Boolean` | `true` | **Deprecated.** Whether the span name includes the HTTP request method. |
+| `telemetry.span.full.url` | `Boolean` | `true` | **Deprecated.** Whether the span name includes the absolute request URL instead of the matched route. |
+| `telemetry.span.includes-response-write` | `Boolean` | `true` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
+
+Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
+not include the HTTP method in automatic incoming REST span names. Setting
+`telemetry.span.name-includes-method` to `false` selects the older convention
+and causes Helidon to log a warning. Leaving it unset or setting it to `true`
+uses the current convention, which includes the method. The setting is
+deprecated because a future major release will use the current span naming
+convention unconditionally.
+
+By default, automatic incoming REST span names use the absolute request URL.
+Setting `telemetry.span.full.url` to `false` uses the matched route instead.
+This setting is deprecated for removal in a future major release, and Helidon
+logs a warning if it is present in the configuration.
+
+By default, Helidon ends the incoming REST span after response serialization
+and encoding, when the last byte has been buffered for writing to the socket.
+Setting `telemetry.span.includes-response-write` to `false` ends the span before
+serializing the response entity, preserving the behavior of earlier Helidon 4
+releases. This setting is also deprecated for removal in a future major release.
+Helidon logs a warning if the setting is present in the configuration.
+
+For `telemetry.span.includes-response-write`, `true` measures the
+server-side work of preparing the response. It does not measure network delivery
+or wait for the client to receive or acknowledge the response.
 
 ### OpenTelemetry Java Agent
 
