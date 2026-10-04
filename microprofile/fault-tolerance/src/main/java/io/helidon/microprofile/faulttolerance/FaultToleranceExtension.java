@@ -25,11 +25,24 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsWaiting;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadRunningDuration;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadWaitingDuration;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerOpenedTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetriesTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutExecutionDuration;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
@@ -152,10 +165,38 @@ public class FaultToleranceExtension implements Extension {
                 new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Fallback.class),
                                            LiteralCommandBinding.getInstance()));
 
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadCallsTotal.class),
+                                   BulkheadCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadExecutionsRunning.class),
+                                   BulkheadExecutionsRunning.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadExecutionsWaiting.class),
+                                   BulkheadExecutionsWaiting.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadRunningDuration.class),
+                                   BulkheadRunningDuration.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadWaitingDuration.class),
+                                   BulkheadWaitingDuration.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerCallsTotal.class),
+                                   CircuitBreakerCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerOpenedTotal.class),
+                                   CircuitBreakerOpenedTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerStateTotal.class),
+                                   CircuitBreakerStateTotal.class.getName());
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
                                    CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(InvocationsTotal.class),
+                                   InvocationsTotal.class.getName());
         discovery.addAnnotatedType(bm.createAnnotatedType(JerseyRequestScopeAsCdiBean.class),
                                    JerseyRequestScopeAsCdiBean.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RequestScopeHelper.class),
+                                   RequestScopeHelper.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RetryCallsTotal.class),
+                                   RetryCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RetryRetriesTotal.class),
+                                   RetryRetriesTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(TimeoutCallsTotal.class),
+                                   TimeoutCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(TimeoutExecutionDuration.class),
+                                   TimeoutExecutionDuration.class.getName());
     }
 
     /**
@@ -187,37 +228,6 @@ public class FaultToleranceExtension implements Extension {
      */
     void registerFaultToleranceMethods(BeanManager bm, @Observes ProcessManagedBean<?> event) {
         registerFaultToleranceMethods(bm, event.getAnnotatedBeanClass());
-    }
-
-    void addFaultToleranceMetricsBean(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadCallsTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadExecutionsRunning.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadExecutionsWaiting.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadRunningDuration.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.BulkheadWaitingDuration.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerCallsTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerOpenedTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.CircuitBreakerStateTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.InvocationsTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.RetryCallsTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.RetryRetriesTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.TimeoutCallsTotal.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(FaultToleranceMetrics.TimeoutExecutionDuration.class));
-        event.addBean()
-            .read(bm.createAnnotatedType(RequestScopeHelper.class));
     }
 
     /**
