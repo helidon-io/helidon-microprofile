@@ -36,6 +36,7 @@ final class MpMeterBuilderCustomizer implements MeterBuilderCustomizer {
             Map.entry("io.helidon.dbclient.metrics.DbClientMetrics", MetricRegistry.VENDOR_SCOPE),
             Map.entry("io.helidon.dbclient.metrics.hikari.DropwizardMetricsListener", MetricRegistry.VENDOR_SCOPE),
             Map.entry("io.helidon.faulttolerance.FaultTolerance", MetricRegistry.VENDOR_SCOPE),
+            Map.entry("io.helidon.http.metrics.HttpTransportMetrics", MetricRegistry.VENDOR_SCOPE),
             Map.entry("io.helidon.webclient.grpc.GrpcClient", MetricRegistry.VENDOR_SCOPE),
             Map.entry("io.helidon.webserver.grpc.GrpcRouting", MetricRegistry.VENDOR_SCOPE),
             Map.entry("io.helidon.webserver.observe.metrics.KeyPerformanceIndicatorMetricsImpls",
