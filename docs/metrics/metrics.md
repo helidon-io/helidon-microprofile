@@ -312,6 +312,12 @@ When you add the metrics dependency to your project, Helidon provides a built-in
 REST endpoint `/metrics` which responds with a report of the registered metrics
 and their values.
 
+With the Micrometer provider, the endpoint requires an enabled Prometheus
+publisher, either inferred or explicitly configured. Configuring only an OTLP
+publisher disables `/metrics` for all output formats, including JSON, and
+requests return `404`. To export through OTLP and retain the endpoint, configure
+both `otlp` and `prometheus` publishers as shown above.
+
 Clients can request a particular output format from the endpoint.
 
 | Format                   | Requested by                      |
