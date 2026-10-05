@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.metrics;
 
+import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
@@ -51,16 +52,14 @@ public class ProducerTest extends MetricsBaseTest {
 
     @Test
     public void testFieldProducer() {
-        ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().containsKey(counter1), is(true));
-        assertThat(getMetricRegistry().getCounters().get(counter1).getCount(), is(0L));
+        assertThat(appRegistry.getCounters().containsKey(counter1), is(true));
+        assertThat(appRegistry.getCounters().get(counter1).getCount(), is(0L));
     }
 
     @Test
     public void testMethodProducer() {
-        ProducerBean bean = newBean(ProducerBean.class);
-        assertThat(getMetricRegistry().getCounters().containsKey(counter2), is(true));
-        assertThat(getMetricRegistry().getCounters().get(counter2).getCount(), is(1L));
+        assertThat(appRegistry.getCounters().containsKey(counter2), is(true));
+        assertThat(appRegistry.getCounters().get(counter2).getCount(), is(1L));
     }
 
     @Test
@@ -88,7 +87,6 @@ public class ProducerTest extends MetricsBaseTest {
 
     @Test
     void testDirectMetricRegistryLookup() {
-        MetricRegistry appRegistry = CDI.current().select(MetricRegistry.class).get();
         assertThat("Directly-looked-up app registry", appRegistry, notNullValue());
     }
 }

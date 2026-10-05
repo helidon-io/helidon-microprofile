@@ -17,6 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -32,8 +33,7 @@ public class ReusabilityInterceptorTest extends MetricsBaseTest {
     private MetricRegistry metricRegistry;
 
     @Test
-    public void testReusedMetricWithInterceptor() {
-        ResourceWithReusedMetricForInvocation resource = newBean(ResourceWithReusedMetricForInvocation.class);
+    public void testReusedMetricWithInterceptor(@Default ResourceWithReusedMetricForInvocation resource) {
         resource.method1();
 
         Counter counter = metricRegistry.counter(ResourceWithReusedMetricForInvocation.OTHER_REUSED_NAME,

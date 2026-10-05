@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedMember;
 import jakarta.enterprise.inject.spi.AnnotatedType;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 
 /**
@@ -159,10 +158,6 @@ final class MetricUtil {
             }
         }
         return result.toArray(new Tag[result.size()]);
-    }
-
-    private static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
     }
 
     private static MatchingType matchingType(Annotated annotated) {

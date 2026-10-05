@@ -143,6 +143,7 @@ class RegistryFactoryLifecycleTest {
         }
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     private static SeContainer startContainer() {
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()

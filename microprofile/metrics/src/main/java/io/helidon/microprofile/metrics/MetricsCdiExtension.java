@@ -62,6 +62,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Default;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Stereotype;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.Annotated;
@@ -92,6 +95,7 @@ import jakarta.ws.rs.PUT;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
@@ -99,9 +103,13 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static java.util.Objects.requireNonNull;
+import static org.eclipse.microprofile.metrics.MetricRegistry.APPLICATION_SCOPE;
+import static org.eclipse.microprofile.metrics.MetricRegistry.BASE_SCOPE;
 
 /**
  * MetricsCdiExtension class.
@@ -201,28 +209,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         return result;
     }
 
-    static MetricRegistry getMetricRegistry() {
-        return RegistryProducer.getDefaultRegistry();
-    }
-
-    static MetricRegistry getRegistryForSyntheticRestRequestMetrics() {
-        return RegistryProducer.getBaseRegistry();
-    }
-
     /**
      * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
      *
      * @param clazz  The {@code Class} on which the method to be timed exists
      * @param method the {@code Method} for which the Timer instance is needed
+     * @param baseRegistry the base {@link MetricRegistry}
      * @return the located or created {@code Timer}
      */
-    static Timer restEndpointTimer(Class<?> clazz, Method method) {
+    static Timer restEndpointTimer(Class<?> clazz, Method method, MetricRegistry baseRegistry) {
         // By spec, the synthetic Timers are always in the base registry.
         LOGGER.log(Level.DEBUG,
                    () -> String.format("Registering synthetic SimpleTimer for %s#%s", clazz.getName(),
                                        method.getName()));
-        return getRegistryForSyntheticRestRequestMetrics()
-                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(clazz, method));
+        return baseRegistry.timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
@@ -230,14 +230,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      *
      * @param clazz  the {@code Class} on which the method to be counted exists
      * @param method the {@code Method} for which the Counter instance is needed
+     * @param baseRegistry the base {@link MetricRegistry}
      * @return the located or created {@code Counter}
      */
-    static Counter restEndpointCounter(Class<?> clazz, Method method) {
+     static Counter restEndpointCounter(Class<?> clazz, Method method, MetricRegistry baseRegistry) {
         LOGGER.log(Level.DEBUG,
                    () -> String.format("Registering synthetic Counter for %s#%s", clazz.getName(),
                                        method.getName()));
-        return getRegistryForSyntheticRestRequestMetrics()
-                .counter(syntheticTimerUnmappedExceptionMetadata, syntheticRestRequestMetricTags(clazz, method));
+        return baseRegistry.counter(syntheticTimerUnmappedExceptionMetadata, syntheticRestRequestMetricTags(clazz, method));
     }
 
     /**
@@ -302,14 +302,40 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * Register the Metrics observer with server observer feature.
      * This is a CDI observer method invoked by CDI machinery.
      *
-     * @param event  event object
-     * @param bm     CDI bean manager
-     * @param server Server CDI extension
+     * @param event               event object
+     * @param bm                  CDI bean manager
+     * @param server              Server CDI extension
+     *
+     * @deprecated This method was unintentionally public and should not be used.
      */
-    public void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
-                                Object event,
+    @Deprecated // for CDI use only
+    public void registerService(Object event,
                                 BeanManager bm,
                                 ServerCdiExtension server) {
+    Instance<Object> i = bm.createInstance();
+    Instance<MetricRegistry> registries = i.select(MetricRegistry.class, Any.Literal.INSTANCE);
+    this.registerService(
+            event,
+            bm,
+            registries.select(new RegistryScopeLiteral(APPLICATION_SCOPE)).get(),
+            registries.select(new RegistryScopeLiteral(BASE_SCOPE)).get(),
+            registries,
+            i.select(MetricsFactory.class, Default.Literal.INSTANCE).get(),
+            i.select(MeterRegistry.class, Default.Literal.INSTANCE).get(),
+            server);
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class)
+                         Object event,
+                         BeanManager bm,
+                         @RegistryScope(scope = APPLICATION_SCOPE) MetricRegistry applicationRegistry,
+                         @RegistryScope(scope = BASE_SCOPE) MetricRegistry baseRegistry,
+                         @Any Instance<MetricRegistry> registries,
+                         MetricsFactory metricsFactory,
+                         MeterRegistry meterRegistry,
+                         ServerCdiExtension serverExtension) {
+        MetricRegistry defaultRegistry = applicationRegistry;
         Errors problems = errors.collect();
         errors = null;
         if (problems.hasFatal()) {
@@ -317,13 +343,13 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         }
 
         // this needs to be done early on, so the registry is configured before accessed
-        MpMetricsObserver observer = configure();
+        MpMetricsObserver observer = configure(metricsFactory, meterRegistry);
 
         autoHttpMetricsConfig = observer.prototype().autoHttpMetrics();
 
-        registerMetricsForAnnotatedSites();
-        registerAnnotatedGauges(bm);
-        registerRestRequestMetrics();
+        registerMetricsForAnnotatedSites(registries);
+        registerAnnotatedGauges(bm, defaultRegistry);
+        registerRestRequestMetrics(baseRegistry);
 
         Set<String> vendorMetricsAdded = new HashSet<>();
 
@@ -333,12 +359,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 .orElseGet(List::of)
                 .forEach(routeName -> {
                     if (!vendorMetricsAdded.contains(routeName)) {
-                        observer.configureVendorMetrics(server.serverNamedRoutingBuilder(routeName));
+                        observer.configureVendorMetrics(serverExtension.serverNamedRoutingBuilder(routeName));
                         vendorMetricsAdded.add(routeName);
                     }
                 });
 
-        server.addObserver(observer);
+        serverExtension.addObserver(observer);
     }
 
     // register metrics with server after security and when
@@ -538,15 +564,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         return narrowedReturnType;
     }
 
-    private MpMetricsObserver configure() {
+    private MpMetricsObserver configure(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         Config config = componentConfig();
 
         MetricsObserverConfig.Builder builder = MetricsObserverConfig.builder();
         builder.endpoint("/metrics")
                 .config(config);
 
-        metricsFactory = Services.get(MetricsFactory.class);
-        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        this.metricsFactory = metricsFactory;
 
         Contexts.globalContext().register(metricsFactory);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
@@ -566,22 +591,19 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                                                 .buildPrototype());
     }
 
-    private void registerMetricsForAnnotatedSites() {
-        for (RegistrationPrep registrationPrep : annotatedSites) {
-            metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
+    private void registerMetricsForAnnotatedSites(Instance<MetricRegistry> registries) {
+        for (RegistrationPrep prep : annotatedSites) {
+            metricAnnotationDiscoveriesByExecutable.get(prep.executable())
                     .forEach(discovery -> {
                         if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
-                            org.eclipse.microprofile.metrics.Metric metric =
-                                    registrationPrep.register(RegistryFactory
-                                                                      .getInstance()
-                                                                      .getRegistry(registrationPrep.scope()));
-                            MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
+                            Metric metric = prep.register(registries.select(new RegistryScopeLiteral(prep.scope())).get());
+                            MetricID metricID = new MetricID(prep.metricName(), prep.tags());
                             metricRegistrationObservers.forEach(
-                                    o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));
-                            workItemsManager.put(registrationPrep.executable(), registrationPrep.annotationType(),
+                                    o -> o.onRegistration(discovery, prep.metadata(), metricID, metric));
+                            workItemsManager.put(prep.executable(), prep.annotationType(),
                                                  BasicMetricWorkItem
-                                                         .create(new MetricID(registrationPrep.metricName(),
-                                                                              registrationPrep.tags()),
+                                                         .create(new MetricID(prep.metricName(),
+                                                                              prep.tags()),
                                                                  metric));
                         }
                     });
@@ -788,7 +810,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         }
     }
 
-    private void registerAndSaveRestRequestMetrics(Class<?> clazz, Method method) {
+    private void registerAndSaveRestRequestMetrics(Class<?> clazz, Method method, MetricRegistry baseRegistry) {
         /*
         If the auto config section is absent, or if it is present but there are no path matchers specified, then
         we know we need to measure all REST endpoints and can register those metrics here.
@@ -802,10 +824,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         workItemsManager.put(method, SyntheticRestRequest.class,
                              autoHttpMetricsConfig.isEmpty() || autoHttpMetricsConfig.get().paths().isEmpty()
                                      ? SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(clazz, method),
-                                                                           restEndpointTimer(clazz, method),
+                                                                           restEndpointTimer(clazz, method, baseRegistry),
                                                                            restEndpointCounterMetricID(clazz, method),
-                                                                           restEndpointCounter(clazz, method))
-                                     : SyntheticRestRequestWorkItem.create(this, clazz, method));
+                                                                           restEndpointCounter(clazz, method, baseRegistry))
+                                     : SyntheticRestRequestWorkItem.create(this, clazz, method, baseRegistry));
     }
 
     private void collectRestRequestMetrics(@Observes ProcessManagedBean<?> pmb) {
@@ -821,9 +843,9 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         restRequestMethods.put(clazz, methodsWithRestRequestMetrics.get(clazz));
     }
 
-    private void registerRestRequestMetrics() {
+    private void registerRestRequestMetrics(MetricRegistry br) {
         restRequestMethods.forEach((clazz, methods) ->
-                                           methods.forEach(method -> registerAndSaveRestRequestMetrics(clazz, method)));
+                                           methods.forEach(method -> registerAndSaveRestRequestMetrics(clazz, method, br)));
         if (LOGGER.isLoggable(Level.DEBUG)) {
             Set<Class<?>> syntheticTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
             syntheticTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
@@ -892,9 +914,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
         shutdown();
     }
 
-    private void registerAnnotatedGauges(BeanManager bm) {
+    private void registerAnnotatedGauges(BeanManager bm, MetricRegistry registry) {
         LOGGER.log(Level.DEBUG, () -> "registerGauges");
-        MetricRegistry registry = getMetricRegistry();
 
         List<Exception> gaugeProblems = new ArrayList<>();
 
@@ -973,6 +994,22 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 site.getJavaMember(),
                 getReference(bm, bean.getBeanClass(), bean),
                 narrowedReturnType);
+    }
+
+    private static final class RegistryScopeLiteral extends AnnotationLiteral<RegistryScope> implements RegistryScope {
+
+        private final String scope;
+
+        private RegistryScopeLiteral(String scope) {
+            super();
+            this.scope = requireNonNull(scope, "scope");
+        }
+
+        @Override
+        public String scope() {
+            return this.scope;
+        }
+
     }
 
     record StereotypeMetricsInfo(Set<Annotation> metricsAnnotations) {

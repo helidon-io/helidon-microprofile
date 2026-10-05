@@ -17,6 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.Default;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -34,8 +35,7 @@ public class TestRemovedInterceptorMetric extends MetricsBaseTest {
     private MetricRegistry registry;
 
     @Test
-    public void ensureExceptionThrown() {
-        CountedBean bean = newBean(CountedBean.class);
+    public void ensureExceptionThrown(@Default CountedBean bean) {
 
         Counter counter = registry.counter(CountedBean.DOOMED_COUNTER);
         bean.method4();
