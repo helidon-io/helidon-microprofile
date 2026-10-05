@@ -48,7 +48,7 @@ final class RegistryProducer {
     @Produces
     @Default
     @RegistryScope
-    public static MetricRegistry getScopedRegistry(RegistryFactory registryFactory, InjectionPoint injectionPoint) {
+    private static MetricRegistry getScopedRegistry(RegistryFactory registryFactory, InjectionPoint injectionPoint) {
         if (injectionPoint != null) {
             for (Annotation qualifier : injectionPoint.getQualifiers()) {
                 if (qualifier instanceof RegistryScope scope) {
@@ -62,35 +62,27 @@ final class RegistryProducer {
     // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = APPLICATION)
-    public static MetricRegistry getApplicationRegistry(RegistryFactory registryFactory) {
+    private static MetricRegistry getApplicationRegistry(RegistryFactory registryFactory) {
         return registryFactory.getRegistry(APPLICATION_SCOPE);
     }
 
     // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = BASE)
-    public static MetricRegistry getBaseRegistry(RegistryFactory registryFactory) {
+    private static MetricRegistry getBaseRegistry(RegistryFactory registryFactory) {
         return registryFactory.getRegistry(BASE_SCOPE);
     }
 
     // Remove if MP Metrics ever removes @RegistryType.
     @Produces
     @RegistryType(type = VENDOR)
-    public static MetricRegistry getVendorRegistry(RegistryFactory registryFactory) {
+    private static MetricRegistry getVendorRegistry(RegistryFactory registryFactory) {
         return registryFactory.getRegistry(VENDOR_SCOPE);
     }
 
     @Produces
-    public static RegistryFactory getRegistryFactory() {
+    private static RegistryFactory getRegistryFactory() {
         return RegistryFactory.getInstance();
     }
 
-    /**
-     * Clears Application registry. This is required for the Metric TCKs as they
-     * all run on the same VM and must not interfere with each other.
-     */
-    static void clearApplicationRegistry() {
-        MetricRegistry applicationRegistry = getApplicationRegistry(getRegistryFactory());
-        applicationRegistry.getNames().forEach(applicationRegistry::remove);
-    }
 }

@@ -280,7 +280,7 @@ class MetricStore {
     Stream<MetricInstance> stream() {
         return allMetrics.entrySet()
                 .stream()
-                .filter(entry -> metricsConfig.isMeterEnabled(entry.getKey().getName(), scope))
+                .filter(entry -> metricsConfig.isMeterEnabled(entry.getKey().getName()))
                 .map(it -> new MetricInstance(it.getKey(), it.getValue()));
     }
 
@@ -453,7 +453,7 @@ class MetricStore {
     }
 
     private HelidonMetric<?> registerMetricLocked(MetricID metricID, HelidonMetric<?> metric) {
-        if (metricsConfig.isMeterEnabled(metricID.getName(), scope)) {
+        if (metricsConfig.isMeterEnabled(metricID.getName())) {
             allMetrics.put(metricID, metric);
             allMetricIDsByName
                     .computeIfAbsent(metricID.getName(), k -> new ArrayList<>())

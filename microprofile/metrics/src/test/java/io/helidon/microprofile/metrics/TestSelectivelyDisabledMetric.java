@@ -15,13 +15,13 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.Meter;
-import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.Default;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,7 +29,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 @HelidonTest
-@AddBean(CountedBean.class)
 @AddConfigBlock("""
         metrics.scoping.scopes.0.name=application
         metrics.scoping.scopes.0.filter.exclude=.*oome.*"""
@@ -37,10 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 class TestSelectivelyDisabledMetric {
 
     @Test
-    void testDisabledCounter() {
-        RegistryFactory rf = RegistryFactory.getInstance();
-        Registry reg = rf.registry(Meter.Scope.APPLICATION);
-
+    void testDisabledCounter(@Default MetricRegistry reg) {
         MetricID metricID = new MetricID(CountedBean.DOOMED_COUNTER);
         Counter counter = reg.getCounter(metricID);
         assertThat("Disabled counter looked up", counter, is(nullValue()));
