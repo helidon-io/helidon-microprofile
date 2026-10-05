@@ -328,9 +328,12 @@ Clients can request a particular output format from the endpoint.
 
 Formats for `/metrics` output
 
-When histogram buckets are configured, the MicroProfile text format also
-includes configured quantile samples. OpenMetrics output retains the histogram
-buckets and omits those quantile samples to conform to the OpenMetrics format.
+With the Helidon provider, when histogram buckets are configured, the MicroProfile
+Prometheus text format also includes configured quantile samples. With the
+Micrometer provider, configuring histogram buckets suppresses quantile samples
+in Prometheus text output. For both providers, OpenMetrics output retains the
+histogram buckets and omits those quantile samples to conform to the OpenMetrics
+format.
 
 <a id="scope-specific-retrieval"></a>
 
