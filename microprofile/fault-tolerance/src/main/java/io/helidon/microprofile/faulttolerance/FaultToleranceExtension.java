@@ -25,6 +25,20 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsWaiting;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadRunningDuration;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadWaitingDuration;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerOpenedTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.RetryRetriesTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutCallsTotal;
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutExecutionDuration;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -151,10 +165,38 @@ public class FaultToleranceExtension implements Extension {
                 new AnnotatedTypeWrapper<>(bm.createAnnotatedType(Fallback.class),
                                            LiteralCommandBinding.getInstance()));
 
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadCallsTotal.class),
+                                   BulkheadCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadExecutionsRunning.class),
+                                   BulkheadExecutionsRunning.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadExecutionsWaiting.class),
+                                   BulkheadExecutionsWaiting.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadRunningDuration.class),
+                                   BulkheadRunningDuration.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(BulkheadWaitingDuration.class),
+                                   BulkheadWaitingDuration.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerCallsTotal.class),
+                                   CircuitBreakerCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerOpenedTotal.class),
+                                   CircuitBreakerOpenedTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(CircuitBreakerStateTotal.class),
+                                   CircuitBreakerStateTotal.class.getName());
         discovery.addAnnotatedType(bm.createAnnotatedType(CommandInterceptor.class),
                                    CommandInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(InvocationsTotal.class),
+                                   InvocationsTotal.class.getName());
         discovery.addAnnotatedType(bm.createAnnotatedType(JerseyRequestScopeAsCdiBean.class),
                                    JerseyRequestScopeAsCdiBean.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RequestScopeHelper.class),
+                                   RequestScopeHelper.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RetryCallsTotal.class),
+                                   RetryCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(RetryRetriesTotal.class),
+                                   RetryRetriesTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(TimeoutCallsTotal.class),
+                                   TimeoutCallsTotal.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(TimeoutExecutionDuration.class),
+                                   TimeoutExecutionDuration.class.getName());
     }
 
     /**
@@ -196,35 +238,32 @@ public class FaultToleranceExtension implements Extension {
     void validateAnnotations(BeanManager bm,
                              @Observes @Priority(LIBRARY_BEFORE + 10 + 5)
                              @Initialized(ApplicationScoped.class) Object event) {
-        if (FaultToleranceMetrics.enabled()) {
-            getRegisteredMethods().forEach(annotatedMethod -> {
-                final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
+        getRegisteredMethods().forEach(annotatedMethod -> {
+            final AnnotatedType<?> annotatedType = annotatedMethod.getDeclaringType();
 
-                // Metrics depending on the annotationSet present
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
-                    new RetryAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
-                    new CircuitBreakerAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
-                    new TimeoutAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
-                    new BulkheadAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
-                    new FallbackAntn(annotatedMethod).validate();
-                }
-                if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
-                    new AsynchronousAntn(annotatedMethod).validate();
-                }
-            });
-        }
+            // Metrics depending on the annotationSet present
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Retry.class, bm)) {
+                new RetryAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, CircuitBreaker.class, bm)) {
+                new CircuitBreakerAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Timeout.class, bm)) {
+                new TimeoutAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Bulkhead.class, bm)) {
+                new BulkheadAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Fallback.class, bm)) {
+                new FallbackAntn(annotatedMethod).validate();
+            }
+            if (MethodAntn.isAnnotationPresent(annotatedMethod, Asynchronous.class, bm)) {
+                new AsynchronousAntn(annotatedMethod).validate();
+            }
+        });
     }
 
     void close(@Observes BeforeShutdown shutdown) {
-        FaultToleranceMetrics.close();
         // we need to clear method cache, as the next start could use different config
         MethodInvoker.clearMethodStatesMap();
     }

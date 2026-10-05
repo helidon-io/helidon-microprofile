@@ -18,10 +18,18 @@ package io.helidon.microprofile.faulttolerance;
 
 import java.lang.System.Logger.Level;
 
+import io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.FaultToleranceMetric;
+
 import jakarta.annotation.Priority;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Intercepts calls to FT methods and implements annotation semantics.
@@ -32,6 +40,17 @@ import jakarta.interceptor.InvocationContext;
 class CommandInterceptor {
 
     private static final System.Logger LOGGER = System.getLogger(CommandInterceptor.class.getName());
+
+    private final Instance<FaultToleranceMetric> i;
+
+    private final BeanManager bm;
+
+    @Inject
+    CommandInterceptor(BeanManager bm, @Any Instance<FaultToleranceMetric> i) {
+        super();
+        this.i = requireNonNull(i, "i");
+        this.bm = requireNonNull(bm, "bm");
+    }
 
     /**
      * Intercepts a call to bean method annotated by any of the fault tolerance
@@ -48,9 +67,10 @@ class CommandInterceptor {
                     + "::" + context.getMethod().getName() + "'");
 
             // Create method introspector and executer retrier
-            MethodIntrospector introspector = new MethodIntrospector(context.getTarget().getClass(),
+            MethodIntrospector introspector = new MethodIntrospector(this.bm,
+                                                                     context.getTarget().getClass(),
                                                                      context.getMethod());
-            MethodInvoker runner = new MethodInvoker(context, introspector);
+            MethodInvoker runner = new MethodInvoker(this.bm, this.i, context, introspector);
             return runner.get();
         } catch (Throwable t) {
             LOGGER.log(Level.DEBUG, "Throwable caught by interceptor '" + t.getMessage() + "'");

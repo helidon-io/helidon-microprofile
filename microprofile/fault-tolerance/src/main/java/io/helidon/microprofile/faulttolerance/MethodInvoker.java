@@ -44,6 +44,8 @@ import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryTimeoutException;
 import io.helidon.faulttolerance.Timeout;
 
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -63,6 +65,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.Circu
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerResult;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerState;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.CircuitBreakerStateTotal;
+import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.FaultToleranceMetric;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.EXCEPTION_THROWN;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationResult.VALUE_RETURNED;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.InvocationsTotal;
@@ -75,6 +78,7 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.Timeo
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance
@@ -90,6 +94,14 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private static final MethodStateCache METHOD_STATES = new MethodStateCache();
 
+    /**
+     * A {@link BeanManager}.
+     */
+    private final BeanManager bm;
+    /**
+     * An {@link Instance} providing access to various {@link FaultToleranceMetric} instances.
+     */
+    private final Instance<FaultToleranceMetric> instance;
     /**
      * The method being intercepted.
      */
@@ -142,10 +154,16 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * Constructor.
      *
+     * @param bm           A {@link BeanManager}.
      * @param context      The invocation context.
      * @param introspector The method introspector.
      */
-    MethodInvoker(InvocationContext context, MethodIntrospector introspector) {
+    MethodInvoker(BeanManager bm,
+                  Instance<FaultToleranceMetric> instance,
+                  InvocationContext context,
+                  MethodIntrospector introspector) {
+        this.bm = requireNonNull(bm, "bm");
+        this.instance = requireNonNull(instance, "instance");
         this.context = context;
         this.introspector = introspector;
         this.method = context.getMethod();
@@ -284,27 +302,31 @@ class MethodInvoker implements FtSupplier<Object> {
         }
 
         if (introspector.hasCircuitBreaker()) {
-            CircuitBreakerStateTotal.register(
+            CircuitBreakerStateTotal cbst = this.instance.select(CircuitBreakerStateTotal.class).get();
+            cbst.register(
                     () -> methodState.breakerTimerOpen,
                     introspector.getMethodNameTag(),
                     CircuitBreakerState.OPEN.get());
-            CircuitBreakerStateTotal.register(
+            cbst.register(
                     () -> methodState.breakerTimerHalfOpen,
                     introspector.getMethodNameTag(),
                     CircuitBreakerState.HALF_OPEN.get());
-            CircuitBreakerStateTotal.register(
+            cbst.register(
                     () -> methodState.breakerTimerClosed,
                     introspector.getMethodNameTag(),
                     CircuitBreakerState.CLOSED.get());
-            CircuitBreakerOpenedTotal.register(
-                    introspector.getMethodNameTag());
+            this.instance.select(CircuitBreakerOpenedTotal.class)
+                .get()
+                .register(introspector.getMethodNameTag());
         }
         if (introspector.hasBulkhead()) {
-            BulkheadExecutionsRunning.register(
+            BulkheadExecutionsRunning ber = this.instance.select(BulkheadExecutionsRunning.class).get();
+            ber.register(
                     () -> methodState.bulkhead.stats().concurrentExecutions(),
                     introspector.getMethodNameTag());
             if (introspector.isAsynchronous()) {
-                BulkheadExecutionsWaiting.register(
+                BulkheadExecutionsWaiting bew = this.instance.select(BulkheadExecutionsWaiting.class).get();
+                bew.register(
                         () -> methodState.bulkhead.stats().waitingQueueSize(),
                         introspector.getMethodNameTag());
             }
@@ -327,55 +349,62 @@ class MethodInvoker implements FtSupplier<Object> {
     }
 
     private CompletableFuture<Object> callSupplierNewThread(FtSupplier<Object> supplier) {
-        RequestScopeHelper requestScopeHelper = new RequestScopeHelper();
-        requestScopeHelper.saveScope();
-        FtSupplier<Object> wrappedSupplier = requestScopeHelper.wrapInScope(supplier);
+        Instance<RequestScopeHelper> i = this.bm.createInstance().select(RequestScopeHelper.class);
+        CompletableFuture<Object> asyncFuture;
+        RequestScopeHelper requestScopeHelper = i.get();
+        try {
+            requestScopeHelper.saveScope();
+            FtSupplier<Object> wrappedSupplier = requestScopeHelper.wrapInScope(supplier);
 
-        // Call supplier in new thread
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        CompletableFuture<Object> asyncFuture = Async.create().invoke(() -> {
-            Thread.currentThread().setContextClassLoader(ccl);
-            try {
-                return callSupplier(wrappedSupplier);
-            } catch (Throwable t) {
-                throw toRuntimeException(t);
-            }
-        });
+            // Call supplier in new thread
+            ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+            asyncFuture = Async.create().invoke(() -> {
+                    Thread.currentThread().setContextClassLoader(ccl);
+                    try {
+                        return callSupplier(wrappedSupplier);
+                    } catch (Throwable t) {
+                        throw toRuntimeException(t);
+                    }
+                });
+        } catch (RuntimeException | Error e) {
+            i.destroy(requestScopeHelper);
+            throw e;
+        }
 
         // Set resultFuture based on supplier's outcome
         AtomicBoolean mayInterrupt = new AtomicBoolean(false);
         CompletableFuture<Object> resultFuture = new CompletableFuture<>() {
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                mayInterrupt.set(mayInterruptIfRunning);
-                return super.cancel(mayInterruptIfRunning);
-            }
-        };
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    mayInterrupt.set(mayInterruptIfRunning);
+                    return super.cancel(mayInterruptIfRunning);
+                }
+            };
         asyncFuture.whenComplete((result, throwable) -> {
-            requestScopeHelper.clearScope();
-            Throwable cause = unwrapThrowable(throwable);
-            updateMetricsAfter(cause);
-            if (throwable != null) {
-                resultFuture.completeExceptionally(cause);
-            } else {
-                resultFuture.complete(result);
-            }
-        });
+                i.destroy(requestScopeHelper);
+                Throwable cause = unwrapThrowable(throwable);
+                updateMetricsAfter(cause);
+                if (throwable != null) {
+                    resultFuture.completeExceptionally(cause);
+                } else {
+                    resultFuture.complete(result);
+                }
+            });
 
         // If resultFuture is cancelled, then cancel supplier call
         resultFuture.exceptionally(t -> {
-            if (t instanceof CancellationException
+                if (t instanceof CancellationException
                     || t instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
-                Objects.requireNonNull(cancellableSupplier);
-                cancellableSupplier.cancel();
-                // Cancel supplier in bulkhead in case it is queued
-                if (introspector.hasBulkhead()) {
-                    methodState.bulkhead.cancelSupplier(handlerSupplier);
+                    requireNonNull(cancellableSupplier);
+                    cancellableSupplier.cancel();
+                    // Cancel supplier in bulkhead in case it is queued
+                    if (introspector.hasBulkhead()) {
+                        methodState.bulkhead.cancelSupplier(handlerSupplier);
+                    }
+                    asyncFuture.cancel(mayInterrupt.get());
                 }
-                asyncFuture.cancel(mayInterrupt.get());
-            }
-            return null;
-        });
+                return null;
+            });
 
         return resultFuture;
     }
@@ -460,7 +489,7 @@ class MethodInvoker implements FtSupplier<Object> {
         if (introspector.hasFallback()) {
             Fallback<Object> fallback = Fallback.create(fallbackBuilder -> fallbackBuilder
                     .fallback(throwable -> {
-                        FallbackHelper cfb = new FallbackHelper(context, introspector, throwable);
+                        FallbackHelper cfb = new FallbackHelper(this.bm, context, introspector, throwable);
 
                         // Fallback executed in another thread
                         if (introspector.isAsynchronous()) {
@@ -527,32 +556,31 @@ class MethodInvoker implements FtSupplier<Object> {
         if (!isFaultToleranceMetricsEnabled()) {
             return;
         }
-
         methodState.lock.lock();
         try {
             // Calculate execution time
             long executionTime = System.nanoTime() - handlerStartNanos;
-
             // Retries
             if (introspector.hasRetry()) {
                 long retryCounter = methodState.retry.retryCounter();
                 boolean wasRetried = retryCounter > 0;
-                Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
-
+                Counter retryRetriesTotal = this.instance.select(RetryRetriesTotal.class)
+                    .get()
+                    .get(introspector.getMethodNameTag());
                 // Update retry counter
                 if (wasRetried) {
                     retryRetriesTotal.inc(retryCounter);
                 }
-
+                RetryCallsTotal rct = this.instance.select(RetryCallsTotal.class).get();
                 // Update retry metrics based on outcome
                 if (cause == null) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.VALUE_RETURNED.get()).inc();
+                    rct.get(introspector.getMethodNameTag(),
+                          wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                          RetryResult.VALUE_RETURNED.get()).inc();
                 } else if (cause instanceof RetryTimeoutException) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.MAX_DURATION_REACHED.get()).inc();
+                    rct.get(introspector.getMethodNameTag(),
+                          wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                          RetryResult.MAX_DURATION_REACHED.get()).inc();
                 } else {
                     // Exception thrown but not RetryTimeoutException
                     int maxRetries = introspector.getRetry().maxRetries();
@@ -560,43 +588,43 @@ class MethodInvoker implements FtSupplier<Object> {
                         maxRetries = Integer.MAX_VALUE;
                     }
                     if (retryCounter == maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.MAX_RETRIES_REACHED.get()).inc();
+                        rct.get(introspector.getMethodNameTag(),
+                              wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                              RetryResult.MAX_RETRIES_REACHED.get()).inc();
                     } else if (retryCounter < maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
+                        rct.get(introspector.getMethodNameTag(),
+                              wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                              RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
                     }
                 }
             }
-
             // Timeout
             if (introspector.hasTimeout()) {
+                TimeoutCallsTotal tct = this.instance.select(TimeoutCallsTotal.class).get();
                 if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
-                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
-                                          TimeoutTimedOut.TRUE.get()).inc();
+                    tct.get(introspector.getMethodNameTag(), TimeoutTimedOut.TRUE.get()).inc();
                 } else {
-                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
-                                          TimeoutTimedOut.FALSE.get()).inc();
+                    tct.get(introspector.getMethodNameTag(), TimeoutTimedOut.FALSE.get()).inc();
                 }
-                TimeoutExecutionDuration.get(introspector.getMethodNameTag()).update(executionTime);
+                this.instance.select(TimeoutExecutionDuration.class)
+                    .get()
+                    .get(introspector.getMethodNameTag())
+                    .update(executionTime);
             }
-
             // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
-                Objects.requireNonNull(methodState.breaker);
-
+                requireNonNull(methodState.breaker);
+                CircuitBreakerCallsTotal cbct = this.instance.select(CircuitBreakerCallsTotal.class).get();
                 if (methodState.lastBreakerState == State.OPEN) {
-                    CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
-                                                 CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
+                    cbct.get(introspector.getMethodNameTag(), CircuitBreakerResult.CIRCUIT_BREAKER_OPEN.get()).inc();
                 } else if (methodState.breaker.state() == State.OPEN) {     // closed -> open
-                    CircuitBreakerOpenedTotal.get(introspector.getMethodNameTag()).inc();
+                    this.instance.select(CircuitBreakerOpenedTotal.class)
+                        .get()
+                        .get(introspector.getMethodNameTag())
+                        .inc();
                 }
-
                 if (cause == null) {
-                    CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
-                                                 CircuitBreakerResult.SUCCESS.get()).inc();
+                    cbct.get(introspector.getMethodNameTag(), CircuitBreakerResult.SUCCESS.get()).inc();
                 } else if (!(cause instanceof CircuitBreakerOpenException)) {
                     boolean skipOnThrowable = Arrays.stream(introspector.getCircuitBreaker().skipOn())
                             .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
@@ -604,14 +632,11 @@ class MethodInvoker implements FtSupplier<Object> {
                             .anyMatch(c -> c.isAssignableFrom(cause.getClass()));
 
                     if (skipOnThrowable || !failOnThrowable) {
-                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
-                                                     CircuitBreakerResult.SUCCESS.get()).inc();
+                        cbct.get(introspector.getMethodNameTag(), CircuitBreakerResult.SUCCESS.get()).inc();
                     } else {
-                        CircuitBreakerCallsTotal.get(introspector.getMethodNameTag(),
-                                                     CircuitBreakerResult.FAILURE.get()).inc();
+                        cbct.get(introspector.getMethodNameTag(), CircuitBreakerResult.FAILURE.get()).inc();
                     }
                 }
-
                 // Update times for gauges
                 switch (methodState.lastBreakerState) {
                 case OPEN:
@@ -626,47 +651,48 @@ class MethodInvoker implements FtSupplier<Object> {
                 default:
                     throw new IllegalStateException("Unknown breaker state " + methodState.lastBreakerState);
                 }
-
                 // Update internal state
                 methodState.lastBreakerState = methodState.breaker.state();
                 methodState.startNanos = System.nanoTime();
             }
-
             // Bulkhead
             if (introspector.hasBulkhead()) {
-                Objects.requireNonNull(methodState.bulkhead);
+                requireNonNull(methodState.bulkhead);
                 Bulkhead.Stats stats = methodState.bulkhead.stats();
-                Counter bulkheadAccepted = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
-                                                                  BulkheadResult.ACCEPTED.get());
+                BulkheadCallsTotal bct = this.instance.select(BulkheadCallsTotal.class).get();
+                Counter bulkheadAccepted = bct.get(introspector.getMethodNameTag(), BulkheadResult.ACCEPTED.get());
                 if (stats.callsAccepted() > bulkheadAccepted.getCount()) {
                     bulkheadAccepted.inc(stats.callsAccepted() - bulkheadAccepted.getCount());
                 }
-                Counter bulkheadRejected = BulkheadCallsTotal.get(introspector.getMethodNameTag(),
-                                                                  BulkheadResult.REJECTED.get());
+                Counter bulkheadRejected = bct.get(introspector.getMethodNameTag(), BulkheadResult.REJECTED.get());
                 if (stats.callsRejected() > bulkheadRejected.getCount()) {
                     bulkheadRejected.inc(stats.callsRejected() - bulkheadRejected.getCount());
                 }
-
                 // Update histograms if task accepted
                 if (!(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
-                    BulkheadRunningDuration.get(introspector.getMethodNameTag())
-                            .update(executionTime - waitingTime);
+                    this.instance.select(BulkheadRunningDuration.class)
+                        .get()
+                        .get(introspector.getMethodNameTag())
+                        .update(executionTime - waitingTime);
                     if (introspector.isAsynchronous()) {
-                        BulkheadWaitingDuration.get(introspector.getMethodNameTag()).update(waitingTime);
+                        this.instance.select(BulkheadWaitingDuration.class)
+                            .get()
+                            .get(introspector.getMethodNameTag())
+                            .update(waitingTime);
                     }
                 }
             }
-
             // Global method counters
+            InvocationsTotal i = this.instance.select(InvocationsTotal.class).get();
             if (cause == null) {
-                InvocationsTotal.get(introspector.getMethodNameTag(),
-                                     VALUE_RETURNED.get(),
-                                     introspector.getFallbackTag(fallbackCalled.get())).inc();
+                i.get(introspector.getMethodNameTag(),
+                      VALUE_RETURNED.get(),
+                      introspector.getFallbackTag(fallbackCalled.get())).inc();
             } else {
-                InvocationsTotal.get(introspector.getMethodNameTag(),
-                                     EXCEPTION_THROWN.get(),
-                                     introspector.getFallbackTag(fallbackCalled.get())).inc();
+                i.get(introspector.getMethodNameTag(),
+                      EXCEPTION_THROWN.get(),
+                      introspector.getFallbackTag(fallbackCalled.get())).inc();
             }
         } finally {
             methodState.lock.unlock();
@@ -744,7 +770,7 @@ class MethodInvoker implements FtSupplier<Object> {
                     return methodState;
                 }
                 MethodState newMethodState = function.apply(key);
-                Objects.requireNonNull(newMethodState);
+                requireNonNull(newMethodState);
                 cache.put(key, newMethodState);
                 return newMethodState;
             } finally {
