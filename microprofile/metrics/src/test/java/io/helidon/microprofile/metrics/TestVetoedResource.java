@@ -70,7 +70,6 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                 "Metrics CDI extension incorrectly registered a synthetic timer on JAX-RS endpoint method with no "
                         + "explicit metrics annotation: "
                         + VetoedJaxRsButOtherwiseUnmeasuredResource.class.getName() + "#" + method.getName(),
-                // MetricsCdiExtension.getRegistryForSyntheticRestRequestMetrics()
                 baseRegistry
                         .getTimers()
                         .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(VetoedJaxRsButOtherwiseUnmeasuredResource.class,

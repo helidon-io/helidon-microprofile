@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import jakarta.enterprise.inject.Default;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;

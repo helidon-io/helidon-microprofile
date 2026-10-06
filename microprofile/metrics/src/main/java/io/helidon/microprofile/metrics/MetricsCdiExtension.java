@@ -233,7 +233,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * @param baseRegistry the base {@link MetricRegistry}
      * @return the located or created {@code Counter}
      */
-     static Counter restEndpointCounter(Class<?> clazz, Method method, MetricRegistry baseRegistry) {
+    static Counter restEndpointCounter(Class<?> clazz, Method method, MetricRegistry baseRegistry) {
         LOGGER.log(Level.DEBUG,
                    () -> String.format("Registering synthetic Counter for %s#%s", clazz.getName(),
                                        method.getName()));
@@ -312,17 +312,17 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     public void registerService(Object event,
                                 BeanManager bm,
                                 ServerCdiExtension server) {
-    Instance<Object> i = bm.createInstance();
-    Instance<MetricRegistry> registries = i.select(MetricRegistry.class, Any.Literal.INSTANCE);
-    this.registerService(
-            event,
-            bm,
-            registries.select(new RegistryScopeLiteral(APPLICATION_SCOPE)).get(),
-            registries.select(new RegistryScopeLiteral(BASE_SCOPE)).get(),
-            registries,
-            i.select(MetricsFactory.class, Default.Literal.INSTANCE).get(),
-            i.select(MeterRegistry.class, Default.Literal.INSTANCE).get(),
-            server);
+        Instance<Object> i = bm.createInstance();
+        Instance<MetricRegistry> registries = i.select(MetricRegistry.class, Any.Literal.INSTANCE);
+        this.registerService(
+                event,
+                bm,
+                registries.select(new RegistryScopeLiteral(APPLICATION_SCOPE)).get(),
+                registries.select(new RegistryScopeLiteral(BASE_SCOPE)).get(),
+                registries,
+                i.select(MetricsFactory.class, Default.Literal.INSTANCE).get(),
+                i.select(MeterRegistry.class, Default.Literal.INSTANCE).get(),
+                server);
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")

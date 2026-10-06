@@ -372,11 +372,6 @@ class RegistryTest {
             return delegate.meters(filter);
         }
 
-        // @Override
-        // public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
-        //     return delegate.meters(scopeSelection);
-        // }
-
         @Override
         public void close() {
             delegate.close();

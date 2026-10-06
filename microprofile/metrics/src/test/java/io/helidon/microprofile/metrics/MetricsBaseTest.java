@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
