@@ -47,6 +47,7 @@ import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -106,6 +107,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private final Context rootContext;
 
     private HelidonCdi cdi;
+    private ServiceRegistryExtension serviceRegistryExtension;
 
     HelidonContainerImpl() {
         this.bootstrap = new WeldBootstrap();
@@ -133,17 +135,27 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      * @return a new initialized CDI container
      */
     static HelidonContainerImpl create() {
-        boolean serviceRegistryOwner = MpServiceRegistry.start();
+        HelidonContainerImpl container = new HelidonContainerImpl();
+        container.startServiceRegistry();
         try {
-            HelidonContainerImpl container = new HelidonContainerImpl();
             container.initInContext();
             return container;
         } catch (RuntimeException | Error e) {
-            if (serviceRegistryOwner) {
-                MpServiceRegistry.shutdown();
-            }
+            container.shutdownServiceRegistry();
             throw e;
         }
+    }
+
+    @Override
+    public HelidonContainerImpl addExtension(Extension extension) {
+        if (extension instanceof ServiceRegistryExtension sre) {
+            if (this.serviceRegistryExtension != null && this.serviceRegistryExtension != sre) {
+                throw new IllegalArgumentException("Only one ServiceRegistryExtension may be registered");
+            }
+            serviceRegistryExtension = sre;
+        }
+        super.addExtension(extension);
+        return this;
     }
 
     /**
@@ -200,6 +212,20 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine("Container initialized in " + t + " millis");
     }
 
+    void startServiceRegistry() {
+        if (this.serviceRegistryExtension == null) {
+            addExtension(new ServiceRegistryExtension());
+        }
+        // Acquire before bootstrap, in the caller's context, and retain ownership in this extension.
+        this.serviceRegistryExtension.start();
+    }
+
+    void shutdownServiceRegistry() {
+        if (this.serviceRegistryExtension != null) {
+            this.serviceRegistryExtension.shutdown();
+        }
+    }
+
     private HelidonContainerImpl init() {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
@@ -229,11 +255,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 .orElseGet(Map::of);
 
         setProperties(new HashMap<>(properties));
-
-        // at least one extension must be added for correct startup, if the registry extension is removed
-        // uncomment the next line
-        // addExtension(new Extension() {});
-        addExtension(new ServiceRegistryExtension());
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
         // we need to configure custom proxy services to
@@ -269,7 +290,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
         bootstrap.deployBeans();
 
-        cdi = new HelidonCdi(id, bootstrap, deployment);
+        cdi = new HelidonCdi(id, bootstrap, deployment, this.serviceRegistryExtension);
         HelidonCdiProvider.setCdi(cdi);
 
         return this;
@@ -325,11 +346,16 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         private final String id;
         private final WeldBootstrap bootstrap;
         private final Deployment deployment;
+        private final ServiceRegistryExtension serviceRegistryExtension;
 
-        private HelidonCdi(String id, WeldBootstrap bootstrap, Deployment deployment) {
+        private HelidonCdi(String id,
+                           WeldBootstrap bootstrap,
+                           Deployment deployment,
+                           ServiceRegistryExtension serviceRegistryExtension) {
             this.id = id;
             this.bootstrap = bootstrap;
             this.deployment = deployment;
+            this.serviceRegistryExtension = serviceRegistryExtension;
         }
 
         @Override
@@ -349,7 +375,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 try {
                     bootstrap.shutdown();
                 } finally {
-                    MpServiceRegistry.shutdown();
+                    this.serviceRegistryExtension.shutdown();
                 }
                 WeldSELogger.LOG.weldContainerShutdown(id);
             }

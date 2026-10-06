@@ -131,15 +131,13 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
         if (HelidonContainerImpl.isRuntime()) {
             throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
         }
-        boolean newServiceRegistryOwner = MpServiceRegistry.start();
+        container.startServiceRegistry();
         try {
             ContainerInstanceHolder.set(container);
             container.initInContext();
             return container.start();
         } catch (RuntimeException | Error e) {
-            if (newServiceRegistryOwner) {
-                MpServiceRegistry.shutdown();
-            }
+            container.shutdownServiceRegistry();
             throw e;
         }
     }

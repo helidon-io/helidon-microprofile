@@ -120,17 +120,13 @@ class HelidonContainerInitializerTest {
     @Test
     void testUnusedInitializerDoesNotStartServiceRegistry() {
         assertThat(GlobalServiceRegistry.configured(), is(false));
-        try {
-            SeContainerInitializer.newInstance()
-                    .disableDiscovery()
-                    .addBeanClasses(TestBean.class);
+        SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class);
 
-            assertThat("preparing an initializer must not start the service registry",
-                       GlobalServiceRegistry.configured(),
-                       is(false));
-        } finally {
-            MpServiceRegistry.shutdown();
-        }
+        assertThat("preparing an initializer must not start the service registry",
+                   GlobalServiceRegistry.configured(),
+                   is(false));
     }
 
     @Test

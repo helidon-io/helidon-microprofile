@@ -89,7 +89,7 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 import static java.util.Objects.requireNonNull;
 
 /**
- * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
+ * CDI extension that exposes service registry types as CDI beans and registers eligible CDI beans in the service registry.
  */
 public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
@@ -109,23 +109,45 @@ public class ServiceRegistryExtension implements Extension {
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
 
-    private final Set<CdiServiceId> processedBeans;
+    private final Set<CdiServiceId> processedBeans = new HashSet<>();
+    private final MpServiceRegistry mpServiceRegistry;
 
     private ServiceRegistry serviceRegistry;
 
     /**
-     * Creates a new {@link ServiceRegistryExtension} for CDI use only.
+     * Creates an extension whose registry is selected during Helidon CDI initialization.
+     * An existing contextual or MP-owned registry is borrowed; otherwise a registry is created and owned by this extension.
      */
     @Api.Internal
     public ServiceRegistryExtension() {
         super();
-        this.processedBeans = new HashSet<>();
+        this.mpServiceRegistry = new MpServiceRegistry();
     }
 
-    void registerTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
-        this.serviceRegistry = MpServiceRegistry.registry();
-        var registry = this.serviceRegistry;
-        List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
+    /**
+     * Creates an extension using the supplied registry. The caller remains responsible for its configuration and shutdown.
+     * This does not change the registry selected by unrelated {@link io.helidon.service.registry.Services} calls.
+     *
+     * @param serviceRegistry registry to use
+     * @throws NullPointerException if {@code serviceRegistry} is {@code null}
+     */
+    @Api.Internal
+    public ServiceRegistryExtension(ServiceRegistry serviceRegistry) {
+        super();
+        this.mpServiceRegistry = new MpServiceRegistry(requireNonNull(serviceRegistry, "serviceRegistry"));
+    }
+
+    void start() {
+        mpServiceRegistry.start();
+    }
+
+    void shutdown() {
+        mpServiceRegistry.shutdown();
+    }
+
+    void obtainServiceRegistryAndRegisterTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
+        this.serviceRegistry = this.mpServiceRegistry.registry();
+        List<ServiceInfo> allServices = this.serviceRegistry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
 

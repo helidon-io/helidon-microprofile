@@ -37,7 +37,6 @@ module io.helidon.microprofile.cdi {
     requires io.helidon.microprofile.config.core;
     requires io.helidon.config;
     requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
     requires io.helidon.metadata.reflection;
     requires jakarta.el; // weld requires jakarta.el.ELResolver on module path
     requires java.sql; // weld requires java.sql.Date and we fail if not on classpath
@@ -45,6 +44,7 @@ module io.helidon.microprofile.cdi {
     requires microprofile.config.api;
 
     requires transitive io.helidon;
+    requires transitive io.helidon.service.registry;
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
     requires transitive weld.spi;

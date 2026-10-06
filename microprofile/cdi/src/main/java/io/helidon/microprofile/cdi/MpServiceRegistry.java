@@ -43,12 +43,25 @@ final class MpServiceRegistry {
 
     private static RegistryShutdownHandler shutdownHandler;
 
-    private MpServiceRegistry() {
+    private ServiceRegistry registry;
+    private RegistryShutdownHandler createdShutdownHandler;
+
+    MpServiceRegistry() {
+        this((ServiceRegistry) null);
     }
 
-    static boolean start() {
-        if (contextualRegistry().isPresent()) {
-            return false;
+    MpServiceRegistry(ServiceRegistry registry) {
+        this.registry = registry;
+    }
+
+    void start() {
+        if (this.registry != null) {
+            return;
+        }
+        Optional<ServiceRegistry> contextualRegistry = contextualRegistry();
+        if (contextualRegistry.isPresent()) {
+            this.registry = contextualRegistry.get();
+            return;
         }
 
         LOCK.lock();
@@ -57,7 +70,8 @@ final class MpServiceRegistry {
                 if (!shutdownHandler.shutdown.get()
                         && GlobalServiceRegistry.configured()
                         && GlobalServiceRegistry.registry() == shutdownHandler.registry) {
-                    return false;
+                    this.registry = shutdownHandler.registry;
+                    return;
                 }
                 throw new ServiceRegistryException("Helidon MP service registry is already started.");
             }
@@ -80,7 +94,8 @@ final class MpServiceRegistry {
                 RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
                 shutdownHandler = newShutdownHandler;
                 Main.addShutdownHandler(newShutdownHandler);
-                return true;
+                this.createdShutdownHandler = newShutdownHandler;
+                this.registry = registry;
             } catch (RuntimeException | Error e) {
                 shutdownHandler = null;
                 if (manager != null) {
@@ -97,32 +112,26 @@ final class MpServiceRegistry {
         }
     }
 
-    static ServiceRegistry registry() {
-        Optional<ServiceRegistry> contextualRegistry = contextualRegistry();
-        if (contextualRegistry.isPresent()) {
-            return contextualRegistry.get();
+    ServiceRegistry registry() {
+        if (this.registry == null) {
+            throw new IllegalStateException("No service registry has been supplied or created");
         }
-
-        LOCK.lock();
-        try {
-            RegistryShutdownHandler current = shutdownHandler;
-            if (current == null || current.shutdown.get()) {
-                throw new ServiceRegistryException(REGISTRY_SHUTDOWN_MESSAGE);
-            }
-            return current.registry;
-        } finally {
-            LOCK.unlock();
+        if (this.createdShutdownHandler != null && this.createdShutdownHandler.shutdown.get()) {
+            throw new IllegalStateException(REGISTRY_SHUTDOWN_MESSAGE);
         }
+        return this.registry;
     }
 
-    static void shutdown() {
+    void shutdown() {
         LOCK.lock();
         try {
-            RegistryShutdownHandler current = shutdownHandler;
-            if (current != null) {
-                Main.removeShutdownHandler(current);
-                current.shutdown();
-                shutdownHandler = null;
+            if (this.createdShutdownHandler != null) {
+                Main.removeShutdownHandler(this.createdShutdownHandler);
+                this.createdShutdownHandler.shutdown();
+                if (shutdownHandler == this.createdShutdownHandler) {
+                    // Clear the static shutdownHandler only if it still "belongs" to us.
+                    shutdownHandler = null;
+                }
             }
         } finally {
             LOCK.unlock();
@@ -131,10 +140,7 @@ final class MpServiceRegistry {
 
     private static Config config() {
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-        if (config instanceof Config helidonConfig) {
-            return helidonConfig;
-        }
-        return config.unwrap(Config.class);
+        return config instanceof Config helidonConfig ? helidonConfig : config.unwrap(Config.class);
     }
 
     private static void configureRegistry(ServiceRegistry registry, Config config) {
