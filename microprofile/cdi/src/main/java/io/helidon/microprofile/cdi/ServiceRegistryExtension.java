@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
+import io.helidon.common.context.Context;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -80,13 +81,16 @@ import jakarta.inject.Singleton;
 import jakarta.interceptor.Interceptor;
 import org.jboss.weld.literal.NamedLiteral;
 
+import static io.helidon.common.context.Contexts.context;
+import static io.helidon.common.context.Contexts.globalContext;
+import static io.helidon.common.context.Contexts.runInContext;
 import static io.helidon.service.registry.Service.Named.DEFAULT_NAME;
 import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
+import static java.util.Objects.requireNonNull;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
  */
-@SuppressWarnings({"unchecked", "rawtypes"})
 public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
     private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
@@ -94,7 +98,6 @@ public class ServiceRegistryExtension implements Extension {
     // Helidon tracer producers must be excluded, as telemetry adds the application tracer directly
     private static final ResolvedType TRACER = ResolvedType.create("io.helidon.tracing.Tracer");
     private static final TypeName CDI_NAMED_TYPE = TypeName.create(Named.class);
-
     /*
     - we add all Helidon Service Registry qualifiers as CDI qualifiers (registerTypes)
     - we add ServiceRegistry itself as a bean (afterBeanDiscovery)
@@ -105,7 +108,10 @@ public class ServiceRegistryExtension implements Extension {
     private static final int SYNTHETIC_BEAN_PRIORITY = 0;
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
-    private final Set<CdiServiceId> processedBeans = new HashSet<>();
+
+    private final Set<CdiServiceId> processedBeans;
+
+    private ServiceRegistry serviceRegistry;
 
     /**
      * Creates a new {@link ServiceRegistryExtension} for CDI use only.
@@ -113,11 +119,12 @@ public class ServiceRegistryExtension implements Extension {
     @Api.Internal
     public ServiceRegistryExtension() {
         super();
+        this.processedBeans = new HashSet<>();
     }
 
-    @SuppressWarnings("unchecked")
     void registerTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
-        var registry = MpServiceRegistry.registry();
+        this.serviceRegistry = MpServiceRegistry.registry();
+        var registry = this.serviceRegistry;
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
@@ -127,7 +134,9 @@ public class ServiceRegistryExtension implements Extension {
             for (Qualifier qualifier : service.qualifiers()) {
                 TypeName typeName = qualifier.typeName();
                 if (addedQualifiers.add(typeName)) {
-                    bbd.addQualifier((Class<? extends Annotation>) TypeFactory.toClass(typeName));
+                    @SuppressWarnings("unchecked")
+                    Class<? extends Annotation> q = (Class<? extends Annotation>) TypeFactory.toClass(typeName);
+                    bbd.addQualifier(q);
                 }
             }
         }
@@ -146,7 +155,7 @@ public class ServiceRegistryExtension implements Extension {
         this.doProcessBean(bm, pb);
     }
 
-    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessProducer pb,
+    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessProducer<?, ?> pb,
                          BeanManager bm) {
         // make sure we also add produced stuff
         var member = pb.getAnnotatedMember();
@@ -163,7 +172,7 @@ public class ServiceRegistryExtension implements Extension {
 
     void registryToCdi(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) AfterBeanDiscovery abd,
                        BeanManager bm) {
-        var registry = MpServiceRegistry.registry();
+        var registry = this.serviceRegistry;
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();
 
@@ -184,7 +193,7 @@ public class ServiceRegistryExtension implements Extension {
                 // workaround = use `TelemetryCdiExtension`
                 continue;
             }
-            addServiceInfo(abd, bm, registry, processedTypes, service);
+            addServiceInfo(abd, bm, registry, processedTypes, service, TypeFactory.toClass(service.providedType()));
         }
 
         // add support for injecting the service registry itself into CDI beans
@@ -193,7 +202,24 @@ public class ServiceRegistryExtension implements Extension {
                 .scope(ApplicationScoped.class)
                 .beanClass(ServiceRegistry.class)
                 .addType(ServiceRegistry.class)
-                .createWith(context -> MpServiceRegistry.registry());
+                .createWith(_ -> this.serviceRegistry);
+    }
+
+    private void addServiceDescriptor(ServiceDescriptor<?> descriptor) {
+        requireNonNull(descriptor, "descriptor");
+        // Preserve access to other contextual values while directing this addition to our retained registry.
+        Context registrationContext = Context.create(context().orElse(globalContext()));
+
+        // GlobalServiceRegistry first uses this exact key to find the Context containing the registry.
+        // Point it here so that "global" lookup uses this context instead of an inherited or JVM-wide location.
+        registrationContext.register("helidon-registry-static-context", registrationContext);
+
+        // It then uses this exact key to find the ServiceRegistry within that selected context.
+        registrationContext.register("helidon-registry", this.serviceRegistry);
+
+        // runInContext restores the previous binding on return or failure.
+        // A successfully added descriptor remains in the registry after the temporary binding ends.
+        runInContext(registrationContext, () -> Services.add(descriptor));
     }
 
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {
@@ -223,31 +249,31 @@ public class ServiceRegistryExtension implements Extension {
 
     // all the parameters are needed, private method
     @SuppressWarnings("checkstyle:ParameterNumber")
-    private void addNamedBean(BeanManager bm,
-                              AfterBeanDiscovery abd,
-                              AnnotatedType<?> annotatedType,
-                              TypeName serviceType,
-                              Class<?> beanClass,
-                              Set<Type> typeClosure,
-                              Class<? extends Annotation> cdiScope,
-                              String name,
-                              Supplier<Object> instanceSupplier) {
+    private <T> void addNamedBean(BeanManager bm,
+                                  AfterBeanDiscovery abd,
+                                  AnnotatedType<T> annotatedType,
+                                  TypeName serviceType,
+                                  Class<T> beanClass,
+                                  Set<Type> typeClosure,
+                                  Class<? extends Annotation> cdiScope,
+                                  String name,
+                                  Supplier<T> instanceSupplier) {
         if (typeClosure.isEmpty()) {
             return;
         }
-        var configurator = addBean(abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
+        BeanConfigurator<T> configurator = addBean(abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
         beanCreateWith(bm, annotatedType, beanClass, configurator, instanceSupplier);
         configurator.addQualifier(new NamedLiteral(name));
     }
 
-    private BeanConfigurator<Object> addBean(AfterBeanDiscovery abd,
-                                             TypeName serviceType,
-                                             Class<?> beanClass,
-                                             Set<Type> typeClosure,
-                                             Class<? extends Annotation> cdiScope,
-                                             String idSuffix) {
+    private <T> BeanConfigurator<T> addBean(AfterBeanDiscovery abd,
+                                            TypeName serviceType,
+                                            Class<T> beanClass,
+                                            Set<Type> typeClosure,
+                                            Class<? extends Annotation> cdiScope,
+                                            String idSuffix) {
 
-        return abd.addBean()
+        return abd.<T>addBean()
                 .beanClass(beanClass)
                 .types(typeClosure)
                 .id("service-registry-" + serviceType.fqName() + idSuffix)
@@ -265,21 +291,21 @@ public class ServiceRegistryExtension implements Extension {
      * @param configurator  CDI bean configurator
      * @param instance      service registry instance
      */
-    private void beanCreateWith(BeanManager bm,
-                                AnnotatedType<?> annotatedType,
-                                Class<?> beanClass,
-                                BeanConfigurator<Object> configurator,
-                                Supplier<Object> instance) {
-        configurator.createWith(ctx -> {
-            return interceptInstance(bm, beanClass, annotatedType, ctx, instance.get());
+    private <T> void beanCreateWith(BeanManager bm,
+                                    AnnotatedType<T> annotatedType,
+                                    Class<T> beanClass,
+                                    BeanConfigurator<T> configurator,
+                                    Supplier<T> instance) {
+        configurator.<T>createWith(ctx -> {
+            return this.<T>interceptInstance(bm, beanClass, annotatedType, ctx, instance.get());
         });
     }
 
-    private Object interceptInstance(BeanManager bm,
-                                     Class<?> beanClass,
-                                     AnnotatedType<?> annotatedType,
-                                     CreationalContext ctx,
-                                     Object instance) {
+    private <T> T interceptInstance(BeanManager bm,
+                                    Class<T> beanClass,
+                                    AnnotatedType<T> annotatedType,
+                                    CreationalContext<T> ctx,
+                                    T instance) {
         var factory = bm.createInterceptionFactory(ctx, beanClass);
         if (annotatedType != null) {
             updateFromAnnotatedType(annotatedType, factory.configure());
@@ -294,33 +320,33 @@ public class ServiceRegistryExtension implements Extension {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    private void updateFromAnnotatedType(AnnotatedType<?> type, AnnotatedTypeConfigurator builder) {
-        AnnotatedType beforeChanges = builder.getAnnotated();
+    private <T> void updateFromAnnotatedType(AnnotatedType<T> type, AnnotatedTypeConfigurator<T> builder) {
+        AnnotatedType<T> beforeChanges = builder.getAnnotated();
 
         // fix annotations on type itself
         fixAnnotations(type, beforeChanges, builder::add);
 
-        for (AnnotatedMethod<?> method : type.getMethods()) {
-            Predicate<AnnotatedMethod<?>> p = it -> it.getJavaMember().equals(method.getJavaMember());
-            Optional<AnnotatedMethodConfigurator<?>> found = builder.filterMethods(p)
+        for (AnnotatedMethod<? super T> method : type.getMethods()) {
+            Predicate<AnnotatedMethod<? super T>> p = it -> it.getJavaMember().equals(method.getJavaMember());
+            Optional<AnnotatedMethodConfigurator<? super T>> found = builder.filterMethods(p)
                     .findFirst();
 
             found.ifPresent(it -> fixAnnotations(method,
                                                  it.getAnnotated(),
                                                  it::add));
         }
-        for (AnnotatedField<?> field : type.getFields()) {
-            Predicate<AnnotatedField<?>> p = it -> it.getJavaMember().equals(field.getJavaMember());
-            Optional<AnnotatedFieldConfigurator<?>> found = builder.filterFields(p)
+        for (AnnotatedField<? super T> field : type.getFields()) {
+            Predicate<AnnotatedField<? super T>> p = it -> it.getJavaMember().equals(field.getJavaMember());
+            Optional<AnnotatedFieldConfigurator<? super T>> found = builder.filterFields(p)
                     .findFirst();
 
             found.ifPresent(it -> fixAnnotations(field,
                                                  it.getAnnotated(),
                                                  it::add));
         }
-        for (AnnotatedConstructor<?> constructor : type.getConstructors()) {
-            Predicate<AnnotatedConstructor<?>> p = it -> it.getJavaMember().equals(constructor.getJavaMember());
-            Optional<AnnotatedConstructorConfigurator<?>> found = builder.filterConstructors(p)
+        for (AnnotatedConstructor<? super T> constructor : type.getConstructors()) {
+            Predicate<AnnotatedConstructor<T>> p = it -> it.getJavaMember().equals(constructor.getJavaMember());
+            Optional<AnnotatedConstructorConfigurator<T>> found = builder.filterConstructors(p)
                     .findFirst();
 
             found.ifPresent(it -> fixAnnotations(constructor,
@@ -362,7 +388,7 @@ public class ServiceRegistryExtension implements Extension {
         Annotation[] cdiQualifiers = findCdiQualifiers(bm, cdiProducer.annotations());
 
         try {
-            Services.add(new CdiProducerDescriptor(bm, actualScope, cdiProducer, cdiQualifiers));
+            this.addServiceDescriptor(new CdiProducerDescriptor(bm, actualScope, cdiProducer, cdiQualifiers));
         } catch (ServiceRegistryException e) {
             // the service is not used by service registry, so it cannot be added, or already used
             // make sure we can debug problems
@@ -387,7 +413,7 @@ public class ServiceRegistryExtension implements Extension {
                 continue;
             }
             try {
-                Services.add(new CdiBeanDescriptor(bm, cdiBean, type, actualScope));
+                this.addServiceDescriptor(new CdiBeanDescriptor(bm, cdiBean, type, actualScope));
             } catch (ServiceRegistryException e) {
                 // the service was already used - we do not throw, as this may be expected, still log, to make
                 // sure we can debug problems
@@ -546,11 +572,12 @@ public class ServiceRegistryExtension implements Extension {
         return Dependent.class;
     }
 
-    private void addServiceInfo(AfterBeanDiscovery abd,
-                                BeanManager bm,
-                                ServiceRegistry registry,
-                                Set<UniqueBean> processedTypes,
-                                ServiceInfo service) {
+    private <T> void addServiceInfo(AfterBeanDiscovery abd,
+                                    BeanManager bm,
+                                    ServiceRegistry registry,
+                                    Set<UniqueBean> processedTypes,
+                                    ServiceInfo service,
+                                    Class<T> beanClass) {
         Set<ResolvedType> contracts = service.contracts();
         TypeName serviceType = service.serviceType();
         Set<ResolvedType> usedContracts = new HashSet<>();
@@ -583,9 +610,9 @@ public class ServiceRegistryExtension implements Extension {
         id: provided type fq name with our prefix
         scope: "guessed" from registry scope
          */
-        Class<?> beanClass = TypeFactory.toClass(serviceProvidedType);
+
         // annotated type of our provided type, to support interception
-        var annotatedType = abd.getAnnotatedType(beanClass, serviceProvidedType.fqName());
+        AnnotatedType<T> annotatedType = abd.getAnnotatedType(beanClass, serviceProvidedType.fqName());
 
         Optional<Qualifier> named = namedQualifier(service.qualifiers());
         /*
@@ -609,7 +636,7 @@ public class ServiceRegistryExtension implements Extension {
                         cdiScope,
                         "")
                         .createWith(ctx -> {
-                            Object instance = registry.get(serviceProvidedType);
+                            T instance = registry.get(serviceProvidedType);
                             return interceptInstance(bm, beanClass, annotatedType, ctx, instance);
                         });
             }
@@ -621,10 +648,10 @@ public class ServiceRegistryExtension implements Extension {
                         .addContract(serviceProvidedType)
                         .serviceType(serviceType)
                         .build();
-                List<ServiceInstance<Object>> instances = registry.lookupInstances(lookup);
+                List<ServiceInstance<T>> instances = registry.lookupInstances(lookup);
                 // add each named instance as its own bean
                 Set<String> names = new HashSet<>();
-                for (ServiceInstance<Object> instance : instances) {
+                for (ServiceInstance<T> instance : instances) {
                     String name = namedQualifier(instance.qualifiers())
                             .flatMap(Qualifier::stringValue)
                             .orElse(DEFAULT_NAME);
