@@ -36,93 +36,93 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
 
     @Override
     public SeContainerInitializer addBeanClasses(Class<?>... classes) {
-        container.addBeanClasses(classes);
+        this.container.addBeanClasses(classes);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Class<?>... packageClasses) {
-        container.addPackages(packageClasses);
+        this.container.addPackages(packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Class<?>... packageClasses) {
-        container.addPackages(scanRecursively, packageClasses);
+        this.container.addPackages(scanRecursively, packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Package... packages) {
-        container.addPackages(packages);
+        this.container.addPackages(packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Package... packages) {
-        container.addPackages(scanRecursively, packages);
+        this.container.addPackages(scanRecursively, packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addExtensions(Extension... extensions) {
-        container.addExtensions(extensions);
+        this.container.addExtensions(extensions);
         return this;
     }
 
     @Override
     @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
-        container.addExtensions(extensions);
+        this.container.addExtensions(extensions);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
-        container.enableInterceptors(interceptorClasses);
+        this.container.enableInterceptors(interceptorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableDecorators(Class<?>... decoratorClasses) {
-        container.enableDecorators(decoratorClasses);
+        this.container.enableDecorators(decoratorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer selectAlternatives(Class<?>... alternativeClasses) {
-        container.selectAlternatives(alternativeClasses);
+        this.container.selectAlternatives(alternativeClasses);
         return this;
     }
 
     @Override
     @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer selectAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
-        container.selectAlternativeStereotypes(alternativeStereotypeClasses);
+        this.container.selectAlternativeStereotypes(alternativeStereotypeClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addProperty(String key, Object value) {
-        container.addProperty(key, value);
+        this.container.addProperty(key, value);
         return this;
     }
 
     @Override
     public SeContainerInitializer setProperties(Map<String, Object> properties) {
-        container.setProperties(properties);
+        this.container.setProperties(properties);
         return this;
     }
 
     @Override
     public SeContainerInitializer disableDiscovery() {
-        container.disableDiscovery();
+        this.container.disableDiscovery();
         return this;
     }
 
     @Override
     public SeContainerInitializer setClassLoader(ClassLoader classLoader) {
-        container.setClassLoader(classLoader);
+        this.container.setClassLoader(classLoader);
         return this;
     }
 
@@ -131,14 +131,8 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
         if (HelidonContainerImpl.isRuntime()) {
             throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
         }
-        container.ensureServiceRegistryExtension();
-        try {
-            ContainerInstanceHolder.set(container);
-            container.initInContext();
-            return container.start();
-        } catch (RuntimeException | Error e) {
-            container.shutdownServiceRegistry();
-            throw e;
-        }
+        ContainerInstanceHolder.set(container);
+        this.container.initInContext();
+        return this.container.start();
     }
 }

@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
@@ -33,6 +34,7 @@ import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -59,7 +61,7 @@ class ServiceRegistryExtensionTest {
             ServiceRegistryExtension extension = new ServiceRegistryExtension(supplied);
 
             runInContext(context(contextual), () -> {
-                try (SeContainer container = initializer().addExtensions(extension).initialize()) {
+                try (SeContainer container = initializer(extension).initialize()) {
                     assertThat(container.getBeanManager().getExtension(ServiceRegistryExtension.class), sameInstance(extension));
                     // (RegistryUser is a nested class below.)
                     assertThat(container.select(RegistryUser.class).get().config(), sameInstance(config));
@@ -90,7 +92,9 @@ class ServiceRegistryExtensionTest {
             Config config = Config.empty();
             runInContext(context(registry), () -> {
                 Services.set(Config.class, config);
-                try (SeContainer container = initializer().initialize()) {
+                try (SeContainer container = SeContainerInitializer.newInstance()
+                        .addBeanClasses(RegistryUser.class)
+                        .initialize()) {
                     // (RegistryUser is a nested class below.)
                     assertThat(container.select(RegistryUser.class).get().config(), sameInstance(config));
                 }
@@ -119,7 +123,7 @@ class ServiceRegistryExtensionTest {
             // (ValidationFailure is a nested class below.)
             ValidationFailure failure = new ValidationFailure();
             assertThrows(RuntimeException.class,
-                         () -> initializer().addExtensions(extension, failure).initialize());
+                         () -> initializer(extension).addExtensions(failure).initialize());
             assertThat(failure.observed, is(true));
             assertThat(service.destructions, is(0));
             assertThat(supplied.get(RegistryService.class), sameInstance(service));
@@ -133,7 +137,9 @@ class ServiceRegistryExtensionTest {
     @Test
     void ownedRegistryOutlivesCdiBeanDestruction() {
         RegistryService service;
-        try (SeContainer container = initializer().initialize()) {
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .addBeanClasses(RegistryUser.class)
+                .initialize()) {
             service = GlobalServiceRegistry.registry().get(RegistryService.class);
             // (RegistryUser is a nested class below.)
             container.select(RegistryUser.class).get().config();
@@ -145,7 +151,8 @@ class ServiceRegistryExtensionTest {
     }
 
     @Test
-    void ownedRegistryIsClosedOnEarlyFailure() {
+    void ownedRegistryRemainsOnEarlyFailure() {
+        ServiceRegistryExtension extension = new ServiceRegistryExtension();
         AtomicReference<RegistryService> service = new AtomicReference<>();
         Extension failure = new Extension() {
             void fail(@Observes @Priority(PLATFORM_AFTER + 1) BeforeBeanDiscovery event) {
@@ -153,25 +160,42 @@ class ServiceRegistryExtensionTest {
                 throw new IllegalStateException("Deliberate failure during bean discovery");
             }
         };
-        assertThrows(RuntimeException.class, () -> initializer().addExtensions(failure).initialize());
-        assertThat(service.get().destructions, is(1));
-        assertThat(GlobalServiceRegistry.configured(), is(false));
+        try {
+            assertThrows(RuntimeException.class, () -> initializer(extension).addExtensions(failure).initialize());
+            assertThat(service.get().destructions, is(0));
+            assertThat(GlobalServiceRegistry.configured(), is(true));
+        } finally {
+            // Rescue the test's registry; failed initialization has no portable cleanup callback.
+            extension.shutdown();
+        }
     }
 
     @Test
-    void ownedRegistryIsClosedOnValidationFailure() {
+    void ownedRegistryCleanupFollowsShutdownNotificationOnValidationFailure() {
+        ServiceRegistryExtension extension = new ServiceRegistryExtension();
         AtomicReference<RegistryService> service = new AtomicReference<>();
+        AtomicInteger shutdowns = new AtomicInteger();
         Extension capture = new Extension() {
             void capture(@Observes BeforeBeanDiscovery event) {
                 service.set(GlobalServiceRegistry.registry().get(RegistryService.class));
             }
+
+            void shutdown(@Observes BeforeShutdown event) {
+                shutdowns.incrementAndGet();
+            }
         };
         ValidationFailure failure = new ValidationFailure();
-        assertThrows(RuntimeException.class,
-                     () -> initializer().addExtensions(capture, failure).initialize());
-        assertThat(failure.observed, is(true));
-        assertThat(service.get().destructions, is(1));
-        assertThat(GlobalServiceRegistry.configured(), is(false));
+        try {
+            assertThrows(RuntimeException.class,
+                         () -> initializer(extension).addExtensions(capture, failure).initialize());
+            assertThat(failure.observed, is(true));
+            // Helidon's remaining bootstrap emits BeforeShutdown on this failure; stock Weld does not.
+            assertThat(service.get().destructions, is(shutdowns.get()));
+            assertThat(GlobalServiceRegistry.configured(), is(shutdowns.get() == 0));
+        } finally {
+            // Rescue the test's registry; failed initialization has no portable cleanup callback.
+            extension.shutdown();
+        }
     }
 
     @Test
@@ -207,9 +231,10 @@ class ServiceRegistryExtensionTest {
         }
     }
 
-    private static SeContainerInitializer initializer() {
+    private static SeContainerInitializer initializer(ServiceRegistryExtension extension) {
         return SeContainerInitializer.newInstance()
             .disableDiscovery()
+            .addExtensions(extension)
             .addBeanClasses(RegistryUser.class);
     }
 

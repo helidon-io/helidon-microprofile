@@ -138,6 +138,7 @@ class HelidonContainerInitializerTest {
                 .initialize()) {
             nextInitializer = SeContainerInitializer.newInstance()
                     .disableDiscovery()
+                    .addExtensions(ServiceRegistryExtension.class)
                     .addBeanClasses(TestBean.class);
 
             assertThat("preparing another initializer must not replace the running container",
@@ -219,6 +220,11 @@ class HelidonContainerInitializerTest {
         try (container) {
             assertThat(container.isRunning(), is(true));
             assertThat(container.select(TestBean.class).get().test(), is("test"));
+            assertThrows(IllegalArgumentException.class,
+                         () -> container.getBeanManager().getExtension(ServiceRegistryExtension.class));
+            assertThat("discovery-disabled startup must not install a registry",
+                       GlobalServiceRegistry.configured(),
+                       is(false));
         }
         assertThat(container.isRunning(), is(false));
     }

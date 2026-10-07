@@ -47,7 +47,6 @@ import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -107,7 +106,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private final Context rootContext;
 
     private HelidonCdi cdi;
-    private ServiceRegistryExtension serviceRegistryExtension;
 
     HelidonContainerImpl() {
         this.bootstrap = new WeldBootstrap();
@@ -136,29 +134,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      */
     static HelidonContainerImpl create() {
         HelidonContainerImpl container = new HelidonContainerImpl();
-        container.ensureServiceRegistryExtension();
-        try {
-            container.initInContext();
-            return container;
-        } catch (RuntimeException | Error e) {
-            container.shutdownServiceRegistry();
-            throw e;
-        }
-    }
-
-    @Override // Weld
-    public HelidonContainerImpl addExtension(Extension extension) {
-        if (extension instanceof ServiceRegistryExtension
-            && this.serviceRegistryExtension != null
-            && this.serviceRegistryExtension != extension) {
-            throw new IllegalArgumentException("Only one ServiceRegistryExtension may be registered");
-        }
-        super.addExtension(extension);
-        if (extension instanceof ServiceRegistryExtension sre) {
-            // Retain this for checks before bootstrap and cleanup if initialization fails.
-            this.serviceRegistryExtension = sre;
-        }
-        return this;
+        container.initInContext();
+        return container;
     }
 
     /**
@@ -213,18 +190,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         time = System.nanoTime() - time;
         long t = TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS);
         LOGGER.fine("Container initialized in " + t + " millis");
-    }
-
-    void ensureServiceRegistryExtension() {
-        if (this.serviceRegistryExtension == null) {
-            this.addExtension(new ServiceRegistryExtension());
-        }
-    }
-
-    void shutdownServiceRegistry() {
-        if (this.serviceRegistryExtension != null) {
-            this.serviceRegistryExtension.shutdown();
-        }
     }
 
     private HelidonContainerImpl init() {

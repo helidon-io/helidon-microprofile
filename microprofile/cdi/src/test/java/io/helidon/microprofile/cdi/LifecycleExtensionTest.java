@@ -62,7 +62,7 @@ class LifecycleExtensionTest {
 
         try (SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(LifecycleExtension.class)
+                .addExtensions(LifecycleExtension.class, ServiceRegistryExtension.class)
                 .addExtensions(testExtension, configure)
                 .initialize()) {
             assertThat(container.getBeanManager().getExtension(TestExtension.class), sameInstance(testExtension));
@@ -80,7 +80,7 @@ class LifecycleExtensionTest {
     void testDisabledDiscoveryDoesNotDeliverLegacyEvents() {
         try (SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(TestExtension.class)
+                .addExtensions(TestExtension.class, ServiceRegistryExtension.class)
                 .initialize()) {
             TestExtension testExtension = container.getBeanManager().getExtension(TestExtension.class);
             assertThat(testExtension.runtimeConfig(), nullValue());
