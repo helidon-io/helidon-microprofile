@@ -33,9 +33,10 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
 
 /**
- * Server to handle lifecycle of microprofile implementation.
+ * Server to handle lifecycle of MicroProfile implementation.
  */
 public class ServerImpl implements Server {
     private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
@@ -114,7 +115,7 @@ public class ServerImpl implements Server {
             }
 
             ConfigProviderResolver.instance().registerConfig(this.config, this.classLoader);
-            SeContainer startedContainer = this.containerInitializer.initialize();
+            SeContainer startedContainer = addCdiProperties(this.containerInitializer, this.config).initialize();
             try {
                 this.port = startedContainer.getBeanManager().getExtension(ServerCdiExtension.class).port();
                 this.container = startedContainer;
@@ -157,4 +158,5 @@ public class ServerImpl implements Server {
     public int port() {
         return this.port;
     }
+
 }

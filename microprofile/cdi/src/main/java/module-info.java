@@ -41,7 +41,7 @@ module io.helidon.microprofile.cdi {
     requires jakarta.el; // weld requires jakarta.el.ELResolver on module path
     requires java.sql; // weld requires java.sql.Date and we fail if not on classpath
     requires jdk.unsupported; // needed for Unsafe used from Weld
-    requires microprofile.config.api;
+    requires transitive microprofile.config.api;
 
     requires transitive io.helidon;
     requires transitive io.helidon.service.registry;

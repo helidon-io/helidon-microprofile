@@ -18,7 +18,6 @@ package io.helidon.microprofile.cdi;
 import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -209,7 +208,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 .asMap()
                 .orElseGet(Map::of);
 
-        setProperties(new HashMap<>(properties));
+        properties.forEach(this::addProperty);
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
         // we need to configure custom proxy services to

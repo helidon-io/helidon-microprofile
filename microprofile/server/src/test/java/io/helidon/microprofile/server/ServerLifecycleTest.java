@@ -30,12 +30,15 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.weld.bean.builtin.BeanManagerProxy;
+import org.jboss.weld.config.WeldConfiguration;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.jboss.weld.config.ConfigurationKey.CONCURRENT_DEPLOYMENT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ServerLifecycleTest {
@@ -87,6 +90,29 @@ class ServerLifecycleTest {
             try (Response response = target.path("server-lifecycle/later").request().get()) {
                 assertThat(response.getStatus(), is(404));
             }
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    void testCdiPropertiesFromBuilderConfig() {
+        Server server = Server.builder()
+                .config(Config.just(ConfigSources.create(Map.of(
+                        "server.port", "0",
+                        "cdi.org.jboss.weld.bootstrap.concurrentDeployment", "false"))))
+                .build();
+
+        // Another builder changes the registered config before this server starts.
+        Server.builder().config(config("other")).build();
+
+        server.start();
+        try {
+            WeldConfiguration configuration =
+                BeanManagerProxy.unwrap(CDI.current().getBeanManager())
+                .getServices()
+                .get(WeldConfiguration.class);
+            assertThat(configuration.getBooleanProperty(CONCURRENT_DEPLOYMENT), is(false));
         } finally {
             server.stop();
         }

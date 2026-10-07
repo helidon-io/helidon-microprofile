@@ -279,6 +279,10 @@ public abstract class HelidonTestExtension implements Extension {
         sockets.put(annotation, value);
     }
 
+    void resolveTestConfig() {
+        testConfig.resolve();
+    }
+
     @SuppressWarnings("unchecked")
     private static Class<? extends Extension> serverClass() {
         try {
@@ -352,9 +356,6 @@ public abstract class HelidonTestExtension implements Extension {
     }
 
     private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager bm) {
-        // remove bootstrap config
-        testConfig.resolve();
-
         // add the test class
         event.addAnnotatedType(testInfo.testClass(), "HelidonTest")
                 .add(HelidonTestScoped.Literal.INSTANCE);
