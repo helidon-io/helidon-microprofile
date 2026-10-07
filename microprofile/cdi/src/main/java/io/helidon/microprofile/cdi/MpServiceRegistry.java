@@ -19,9 +19,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.Main;
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -30,7 +27,6 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
-import io.helidon.spi.HelidonShutdownHandler;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
@@ -93,7 +89,6 @@ final class MpServiceRegistry {
 
                 RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
                 shutdownHandler = newShutdownHandler;
-                Main.addShutdownHandler(newShutdownHandler);
                 this.createdShutdownHandler = newShutdownHandler;
                 this.registry = registry;
             } catch (RuntimeException | Error e) {
@@ -126,7 +121,6 @@ final class MpServiceRegistry {
         LOCK.lock();
         try {
             if (this.createdShutdownHandler != null) {
-                Main.removeShutdownHandler(this.createdShutdownHandler);
                 this.createdShutdownHandler.shutdown();
                 if (shutdownHandler == this.createdShutdownHandler) {
                     // Clear the static shutdownHandler only if it still "belongs" to us.
@@ -157,8 +151,7 @@ final class MpServiceRegistry {
                 .flatMap(context -> context.get(GLOBAL_REGISTRY_CLASSIFIER, ServiceRegistry.class));
     }
 
-    @Weight(Weighted.DEFAULT_WEIGHT - 10)
-    private static final class RegistryShutdownHandler implements HelidonShutdownHandler {
+    private static final class RegistryShutdownHandler {
         private final ServiceRegistryManager manager;
         private final ServiceRegistry registry;
         private final AtomicBoolean shutdown = new AtomicBoolean();
@@ -168,8 +161,7 @@ final class MpServiceRegistry {
             this.registry = registry;
         }
 
-        @Override
-        public void shutdown() {
+        private void shutdown() {
             if (shutdown.compareAndSet(false, true)) {
                 try {
                     manager.shutdown();
@@ -177,11 +169,6 @@ final class MpServiceRegistry {
                     LOGGER.log(System.Logger.Level.ERROR, "Failed to shutdown Helidon MP Service Registry", e);
                 }
             }
-        }
-
-        @Override
-        public String toString() {
-            return "Helidon MP service registry shutdown handler";
         }
     }
 }
