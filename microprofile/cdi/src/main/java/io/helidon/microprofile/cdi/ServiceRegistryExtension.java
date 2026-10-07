@@ -65,6 +65,7 @@ import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -227,6 +228,10 @@ public class ServiceRegistryExtension implements Extension {
                 .beanClass(ServiceRegistry.class)
                 .addType(ServiceRegistry.class)
                 .createWith(_ -> this.serviceRegistry);
+    }
+
+    void shutdownServiceRegistry(@Observes @Priority(PLATFORM_AFTER) BeforeShutdown event) {
+        this.shutdown();
     }
 
     private void addServiceDescriptor(ServiceDescriptor<?> descriptor) {

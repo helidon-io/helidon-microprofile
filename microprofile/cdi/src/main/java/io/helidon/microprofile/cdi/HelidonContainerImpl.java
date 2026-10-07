@@ -291,7 +291,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
         bootstrap.deployBeans();
 
-        cdi = new HelidonCdi(id, bootstrap, deployment, this.serviceRegistryExtension);
+        cdi = new HelidonCdi(id, bootstrap, deployment);
         HelidonCdiProvider.setCdi(cdi);
 
         return this;
@@ -347,16 +347,13 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         private final String id;
         private final WeldBootstrap bootstrap;
         private final Deployment deployment;
-        private final ServiceRegistryExtension serviceRegistryExtension;
 
         private HelidonCdi(String id,
                            WeldBootstrap bootstrap,
-                           Deployment deployment,
-                           ServiceRegistryExtension serviceRegistryExtension) {
+                           Deployment deployment) {
             this.id = id;
             this.bootstrap = bootstrap;
             this.deployment = deployment;
-            this.serviceRegistryExtension = serviceRegistryExtension;
         }
 
         @Override
@@ -373,11 +370,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, e, () -> "Failed to fire ApplicationScoped Destroyed event");
                 }
-                try {
-                    bootstrap.shutdown();
-                } finally {
-                    this.serviceRegistryExtension.shutdown();
-                }
+                bootstrap.shutdown();
                 WeldSELogger.LOG.weldContainerShutdown(id);
             }
             IN_RUNTIME.set(false);
