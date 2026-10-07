@@ -86,6 +86,8 @@ import static io.helidon.common.context.Contexts.globalContext;
 import static io.helidon.common.context.Contexts.runInContext;
 import static io.helidon.service.registry.Service.Named.DEFAULT_NAME;
 import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -137,16 +139,16 @@ public class ServiceRegistryExtension implements Extension {
         this.mpServiceRegistry = new MpServiceRegistry(requireNonNull(serviceRegistry, "serviceRegistry"));
     }
 
-    void start() {
-        mpServiceRegistry.start();
-    }
-
     void shutdown() {
         mpServiceRegistry.shutdown();
     }
 
-    void obtainServiceRegistryAndRegisterTypes(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
+    void obtainServiceRegistry(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery bbd) {
+        this.mpServiceRegistry.start();
         this.serviceRegistry = this.mpServiceRegistry.registry();
+    }
+
+    void registerTypes(@Observes @Priority(PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
         List<ServiceInfo> allServices = this.serviceRegistry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();

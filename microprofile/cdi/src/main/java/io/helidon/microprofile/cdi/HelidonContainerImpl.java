@@ -136,7 +136,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      */
     static HelidonContainerImpl create() {
         HelidonContainerImpl container = new HelidonContainerImpl();
-        container.startServiceRegistry();
+        container.ensureServiceRegistryExtension();
         try {
             container.initInContext();
             return container;
@@ -146,15 +146,18 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         }
     }
 
-    @Override
+    @Override // Weld
     public HelidonContainerImpl addExtension(Extension extension) {
-        if (extension instanceof ServiceRegistryExtension sre) {
-            if (this.serviceRegistryExtension != null && this.serviceRegistryExtension != sre) {
-                throw new IllegalArgumentException("Only one ServiceRegistryExtension may be registered");
-            }
-            serviceRegistryExtension = sre;
+        if (extension instanceof ServiceRegistryExtension
+            && this.serviceRegistryExtension != null
+            && this.serviceRegistryExtension != extension) {
+            throw new IllegalArgumentException("Only one ServiceRegistryExtension may be registered");
         }
         super.addExtension(extension);
+        if (extension instanceof ServiceRegistryExtension sre) {
+            // Retain this for checks before bootstrap and cleanup if initialization fails.
+            this.serviceRegistryExtension = sre;
+        }
         return this;
     }
 
@@ -163,7 +166,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
      *
      * @return container instance
      */
-    @Override
+    @Override // HelidonContainer
     public SeContainer start() {
         if (cdi == null) {
             throw new IllegalStateException("Helidon CDI container has not been initialized");
@@ -192,12 +195,12 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         return cdi;
     }
 
-    @Override
+    @Override // HelidonContainer
     public Context context() {
         return rootContext;
     }
 
-    @Override
+    @Override // HelidonContainer
     public void shutdown() {
         cdi.close();
     }
@@ -212,12 +215,10 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine("Container initialized in " + t + " millis");
     }
 
-    void startServiceRegistry() {
+    void ensureServiceRegistryExtension() {
         if (this.serviceRegistryExtension == null) {
-            addExtension(new ServiceRegistryExtension());
+            this.addExtension(new ServiceRegistryExtension());
         }
-        // Acquire before bootstrap, in the caller's context, and retain ownership in this extension.
-        this.serviceRegistryExtension.start();
     }
 
     void shutdownServiceRegistry() {
