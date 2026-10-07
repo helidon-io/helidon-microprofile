@@ -32,6 +32,8 @@ import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+
 /**
  * Server to handle lifecycle of microprofile implementation.
  */
@@ -69,7 +71,7 @@ public class ServerImpl implements Server {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         this.classLoader = contextClassLoader == null ? Server.class.getClassLoader() : contextClassLoader;
 
-        this.containerInitializer = SeContainerInitializer.newInstance()
+        this.containerInitializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance(), this.classLoader)
                 .setClassLoader(ServerImpl.this.classLoader)
                 .addExtensions(new Extension() {
                     private void configure(@Observes AfterDeploymentValidation event, BeanManager beanManager) {

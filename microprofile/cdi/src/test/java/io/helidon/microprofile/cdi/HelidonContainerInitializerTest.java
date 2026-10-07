@@ -129,6 +129,7 @@ class HelidonContainerInitializerTest {
                    is(false));
     }
 
+    @SuppressWarnings("unchecked") // generic array creation via addExtensions
     @Test
     void testContainerLookupDoesNotInitialize() {
         assertThrows(IllegalStateException.class, HelidonContainer::instance);
@@ -157,6 +158,7 @@ class HelidonContainerInitializerTest {
         assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
+    @SuppressWarnings("unchecked") // generic array creation via addExtensions
     @Test
     void testPrepareInitializerWhileContainerIsRunning() {
         SeContainerInitializer nextInitializer;

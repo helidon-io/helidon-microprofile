@@ -29,6 +29,7 @@ import io.helidon.microprofile.cdi.LifecycleExtension;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
 import static io.helidon.microprofile.testing.ReflectionHelper.requirePublic;
 
 /**
@@ -165,7 +166,7 @@ public class HelidonTestContainer {
             pinningRecorder.record(Duration.ofMillis(testInfo.pinningThreshold()));
         }
         HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
-        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        SeContainerInitializer initializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance());
         if (testInfo.disableDiscovery()) {
             initializer.disableDiscovery().addExtensions(LifecycleExtension.class);
         }

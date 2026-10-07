@@ -24,6 +24,8 @@ import io.helidon.logging.common.LogConfig;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+
 /**
  * This is the "master" main class of Helidon MP.
  * You can boot the Helidon MP instance using this class if you do not need to modify
@@ -69,7 +71,7 @@ public final class Main {
         try {
             if (inUse == null || !inUse.isRunning()) {
                 LogConfig.initClass();
-                inUse = SeContainerInitializer.newInstance().initialize();
+                inUse = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance()).initialize();
             }
         } finally {
             CONTAINER_ACCESS.unlock();
