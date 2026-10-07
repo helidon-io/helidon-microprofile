@@ -238,10 +238,12 @@ class DistributionCustomizations {
                                            Consumer<T> valueChecker) {
             super(nameExpressionAndValues);
             if (valuesExpression().isBlank()) {
-                values = (T[]) Array.newInstance(type, 0);
-                return;
+                @SuppressWarnings("unchecked")
+                T[] vs = (T[]) Array.newInstance(type, 0);
+                values = vs;
+            } else {
+                values = values(valuesExpression(), type, valueParser, valueChecker);
             }
-            values = values(valuesExpression(), type, valueParser, valueChecker);
         }
 
         static <T extends Comparable<T>> ValuesResult<T> values(String valuesString,
@@ -251,6 +253,7 @@ class DistributionCustomizations {
                                                                 Supplier<String> namePrefix,
                                                                 Supplier<Boolean> hasTrailingWildcard) {
             String[] valueStrings = valuesString.split(",");
+            @SuppressWarnings("unchecked")
             T[] result = (T[]) Array.newInstance(type, valueStrings.length);
             int next = 0;
             T prev = null;

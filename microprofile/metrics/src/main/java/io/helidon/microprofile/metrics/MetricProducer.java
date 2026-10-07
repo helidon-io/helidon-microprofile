@@ -122,18 +122,18 @@ class MetricProducer {
     }
 
     @Produces
-    private Counter produceCounter(InjectionPoint ip) {
-        return produceMetric(ip, Counted.class, MetricRegistry::counter, Counter.class);
+    private Counter produceCounter(RegistryFactory registryFactory, InjectionPoint ip) {
+        return produceMetric(registryFactory, ip, Counted.class, MetricRegistry::counter, Counter.class);
     }
 
     @Produces
-    private Timer produceTimer(InjectionPoint ip) {
-        return produceMetric(ip, Timed.class, MetricRegistry::timer, Timer.class);
+    private Timer produceTimer(RegistryFactory registryFactory, InjectionPoint ip) {
+        return produceMetric(registryFactory, ip, Timed.class, MetricRegistry::timer, Timer.class);
     }
 
     @Produces
-    private Histogram produceHistogram(InjectionPoint ip) {
-        return produceMetric(ip, null, MetricRegistry::histogram, Histogram.class);
+    private Histogram produceHistogram(RegistryFactory registryFactory, InjectionPoint ip) {
+        return produceMetric(registryFactory, ip, null, MetricRegistry::histogram, Histogram.class);
     }
 
     /**
@@ -145,14 +145,15 @@ class MetricProducer {
      * injection point exist.
      * </p>
      *
-     * @param ip  injection point being resolved
-     * @param <N> subtype of {@code Number} for the gauge
+     * @param registryFactory the {@link RegistryFactory}
+     * @param ip              injection point being resolved
+     * @param <N>             subtype of {@code Number} for the gauge
      * @return requested gauge
      */
     @Produces
-    private <N extends Number> Gauge<N> produceGauge(InjectionPoint ip) {
-        MetricLocator locator = MetricLocator.create(ip);
-        Gauge<N> result = (Gauge<N>) locator.registry.getGauge(locator.metricId);
+    private <N extends Number> Gauge<N> produceGauge(RegistryFactory registryFactory, InjectionPoint ip) {
+        MetricLocator locator = MetricLocator.create(registryFactory, ip);
+        Gauge<N> result = locator.registry.getTypedGauge(locator.metricId);
         if (result == null) {
             throw new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString());
         }
@@ -166,6 +167,7 @@ class MetricProducer {
      *
      * @param <T>             the type of the metric
      * @param <U>             the type of the annotation which marks a registration of the metric type
+     * @param registryFactory the {@link RegistryFactory}
      * @param ip              the injection point
      * @param annotationClass annotation which represents a declaration of a metric
      *                        type of metric (if there is no pre-existing one)
@@ -174,10 +176,10 @@ class MetricProducer {
      * @return the existing metric (if any), or the newly-created and registered one
      */
     private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(
-            InjectionPoint ip, Class<U> annotationClass,
+            RegistryFactory registryFactory, InjectionPoint ip, Class<U> annotationClass,
             RegisterFunction<T> registerFn, Class<T> clazz) {
 
-        MetricLocator locator = MetricLocator.create(ip);
+        MetricLocator locator = MetricLocator.create(registryFactory, ip);
 
         T result = locator.registry.getMetric(locator.metricId, clazz);
         if (result != null) {
@@ -202,11 +204,11 @@ class MetricProducer {
 
     record MetricLocator(Metric metricAnno, Registry registry, MetricID metricId) {
 
-        static MetricLocator create(InjectionPoint ip) {
+        static MetricLocator create(RegistryFactory registryFactory, InjectionPoint ip) {
             final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
             final Tag[] tags = tags(metricAnno);
             final String scope = metricAnno == null ? MetricRegistry.APPLICATION_SCOPE : metricAnno.scope();
-            Registry registry = RegistryFactory.getInstance().registry(scope);
+            Registry registry = registryFactory.registry(scope);
             final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
             return new MetricLocator(metricAnno, registry, metricID);
         }

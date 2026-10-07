@@ -59,6 +59,7 @@ class TestStereotypes {
 
     @Test
     void testMethodLevelStereotype() {
+        @SuppressWarnings("unchecked")
         Gauge<Long> gauge = (Gauge<Long>) metricRegistry.getGauge(new MetricID(StereotypeB.GAUGE_NAME));
         assertThat("Gauge registered via stereotype", gauge, notNullValue());
 

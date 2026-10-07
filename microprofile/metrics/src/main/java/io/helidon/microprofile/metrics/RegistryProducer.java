@@ -16,14 +16,22 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.annotation.Annotation;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Produces;
-import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
+
+import static org.eclipse.microprofile.metrics.MetricRegistry.APPLICATION_SCOPE;
+import static org.eclipse.microprofile.metrics.MetricRegistry.BASE_SCOPE;
+import static org.eclipse.microprofile.metrics.MetricRegistry.Type.APPLICATION;
+import static org.eclipse.microprofile.metrics.MetricRegistry.Type.BASE;
+import static org.eclipse.microprofile.metrics.MetricRegistry.Type.VENDOR;
+import static org.eclipse.microprofile.metrics.MetricRegistry.VENDOR_SCOPE;
 
 /**
  * Producer of each type of registry.
@@ -40,50 +48,41 @@ final class RegistryProducer {
     @Produces
     @Default
     @RegistryScope
-    public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
-        Annotated annotated = (injectionPoint == null) ? null : injectionPoint.getAnnotated();
-        RegistryScope scope = (annotated == null) ? null : annotated.getAnnotation(RegistryScope.class);
-        return scope == null
-                ? getApplicationRegistry()
-                : RegistryFactory.getInstance().getRegistry(scope.scope());
-    }
-
-    public static org.eclipse.microprofile.metrics.MetricRegistry getDefaultRegistry() {
-        return getApplicationRegistry();
-    }
-
-    // Remove if MP Metrics ever removes @RegistryType.
-    @Produces
-    @RegistryType(type = MetricRegistry.Type.APPLICATION)
-    public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
-        return RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
+    private static MetricRegistry getScopedRegistry(RegistryFactory registryFactory, InjectionPoint injectionPoint) {
+        if (injectionPoint != null) {
+            for (Annotation qualifier : injectionPoint.getQualifiers()) {
+                if (qualifier instanceof RegistryScope scope) {
+                    return registryFactory.getRegistry(scope.scope());
+                }
+            }
+        }
+        return registryFactory.getRegistry(APPLICATION_SCOPE);
     }
 
     // Remove if MP Metrics ever removes @RegistryType.
     @Produces
-    @RegistryType(type = MetricRegistry.Type.BASE)
-    public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
-        return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
+    @RegistryType(type = APPLICATION)
+    private static MetricRegistry getApplicationRegistry(RegistryFactory registryFactory) {
+        return registryFactory.getRegistry(APPLICATION_SCOPE);
     }
 
     // Remove if MP Metrics ever removes @RegistryType.
     @Produces
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
-    public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
-        return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
+    @RegistryType(type = BASE)
+    private static MetricRegistry getBaseRegistry(RegistryFactory registryFactory) {
+        return registryFactory.getRegistry(BASE_SCOPE);
+    }
+
+    // Remove if MP Metrics ever removes @RegistryType.
+    @Produces
+    @RegistryType(type = VENDOR)
+    private static MetricRegistry getVendorRegistry(RegistryFactory registryFactory) {
+        return registryFactory.getRegistry(VENDOR_SCOPE);
     }
 
     @Produces
-    public static RegistryFactory getRegistryFactory() {
+    private static RegistryFactory getRegistryFactory() {
         return RegistryFactory.getInstance();
     }
 
-    /**
-     * Clears Application registry. This is required for the Metric TCKs as they
-     * all run on the same VM and must not interfere with each other.
-     */
-    static void clearApplicationRegistry() {
-        MetricRegistry applicationRegistry = getApplicationRegistry();
-        applicationRegistry.getNames().forEach(applicationRegistry::remove);
-    }
 }

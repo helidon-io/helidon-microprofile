@@ -18,8 +18,6 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
@@ -32,22 +30,12 @@ public class MetricsBaseTest {
 
     private static final String METRIC_NAME_TEMPLATE = "%s.%s";
 
-    @Inject
-    private MetricRegistry metricRegistry;
-
-    MetricRegistry getMetricRegistry() {
-        return metricRegistry;
-    }
-
     @SuppressWarnings("unchecked")
-    <T extends Metric> T getMetric(Object bean, String name) {
+    <T extends Metric> T getMetric(MetricRegistry mr, Object bean, String name) {
         MetricID metricName = new MetricID(String.format(METRIC_NAME_TEMPLATE,
                                                          MetricsCdiExtension.getRealClass(bean).getName(),        // CDI proxies
                                                          name));
-        return (T) getMetricRegistry().getMetrics().get(metricName);
+        return (T) mr.getMetrics().get(metricName);
     }
 
-    <T> T newBean(Class<T> beanClass) {
-        return CDI.current().select(beanClass).get();
-    }
 }

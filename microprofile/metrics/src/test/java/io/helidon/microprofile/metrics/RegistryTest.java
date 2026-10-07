@@ -373,23 +373,8 @@ class RegistryTest {
         }
 
         @Override
-        public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
-            return delegate.meters(scopeSelection);
-        }
-
-        @Override
-        public Iterable<String> scopes() {
-            return delegate.scopes();
-        }
-
-        @Override
         public void close() {
             delegate.close();
-        }
-
-        @Override
-        public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
-            return delegate.isMeterEnabled(name, tags, scope);
         }
 
         @Override
@@ -422,21 +407,9 @@ class RegistryTest {
         }
 
         @Override
-        public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id, String scope) {
-            return delegate.remove(id, scope);
-        }
-
-        @Override
         public Optional<io.helidon.metrics.api.Meter> remove(String name,
                                                              Iterable<io.helidon.metrics.api.Tag> tags) {
             return delegate.remove(name, tags);
-        }
-
-        @Override
-        public Optional<io.helidon.metrics.api.Meter> remove(String name,
-                                                             Iterable<io.helidon.metrics.api.Tag> tags,
-                                                             String scope) {
-            return delegate.remove(name, tags, scope);
         }
 
         @Override

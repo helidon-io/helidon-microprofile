@@ -112,6 +112,7 @@ class MpMetricsMetadataEndpointTest {
         registryFactory.getRegistry(EXCLUDED_SCOPE).counter(EXCLUDED_METER);
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     @Test
     void retainsDifferentTypesAcrossScopesInScopeOrder() {
         JsonObject metadata = webTarget.path("metrics")
@@ -129,6 +130,7 @@ class MpMetricsMetadataEndpointTest {
         assertThat("Vendor record is second", tagGroups(vendor), containsInAnyOrder(Set.of("mp_scope=vendor")));
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     @Test
     void retainsSameTypeDescriptionsAcrossScopes() {
         JsonObject metadata = webTarget.path("metrics")
@@ -146,6 +148,7 @@ class MpMetricsMetadataEndpointTest {
                    containsInAnyOrder(Set.of("mp_scope=vendor")));
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     @Test
     void retainsEveryTagGroupWithinEachScope() {
         JsonObject metadata = webTarget.path("metrics")
@@ -169,6 +172,7 @@ class MpMetricsMetadataEndpointTest {
                    metadataObject(applicationOnly.get(TAGGED_METER), "Single-scope metadata"), is(application));
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     @Test
     void preservesObjectShapeForSingleScopeSelections() {
         List<WebTarget> targets = List.of(webTarget.path("metrics/application/" + DIFFERENT_TYPES_METER),
@@ -193,6 +197,7 @@ class MpMetricsMetadataEndpointTest {
         assertMetadata(aggregate.get(SINGLE_SCOPE_METER), "counter", MetricUnits.BYTES, "Application only");
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     @Test
     void preservesLegacyTagEscaping() {
         String name = "metadata.escaped";

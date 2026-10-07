@@ -22,9 +22,12 @@ import io.helidon.microprofile.testing.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.eclipse.microprofile.metrics.MetricRegistry.Type.BASE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -58,7 +61,8 @@ public class TestVetoedResource extends MetricsMpServiceTest {
     }
 
     @Test
-    void testNoSyntheticTimedMetricForVetoedResourceWithJaxRsEndpointButOtherwiseUnmeasured() throws NoSuchMethodException {
+    void testNoSyntheticTimedMetricForVetoedResourceWithJaxRsEndpointButOtherwiseUnmeasured(@RegistryType(type = BASE) MetricRegistry baseRegistry)
+        throws NoSuchMethodException {
         // Makes sure that a vetoed JAX-RS resource with no explicit metric annotation was not registered with a synthetic
         // Timed metric.
         Method method = VetoedJaxRsButOtherwiseUnmeasuredResource.class.getMethod("get");
@@ -66,7 +70,7 @@ public class TestVetoedResource extends MetricsMpServiceTest {
                 "Metrics CDI extension incorrectly registered a synthetic timer on JAX-RS endpoint method with no "
                         + "explicit metrics annotation: "
                         + VetoedJaxRsButOtherwiseUnmeasuredResource.class.getName() + "#" + method.getName(),
-                MetricsCdiExtension.getRegistryForSyntheticRestRequestMetrics()
+                baseRegistry
                         .getTimers()
                         .containsKey(MetricsCdiExtension.restEndpointTimerMetricID(VetoedJaxRsButOtherwiseUnmeasuredResource.class,
                                                                                    method)),

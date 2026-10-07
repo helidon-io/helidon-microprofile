@@ -20,8 +20,11 @@ import java.util.Map;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import jakarta.enterprise.inject.Default;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,14 +37,14 @@ import static org.hamcrest.Matchers.notNullValue;
 public class CountedConstructorTest extends MetricsBaseTest {
 
     @Test
-    public void checkConstructorMetric() {
+    public void checkConstructorMetric(@Default CountedConstructorTestBean bean,
+                                       @Default MetricRegistry metricRegistry) {
         String expectedName = CountedConstructorTestBean.class.getName() + "." + CountedConstructorTestBean.CONSTRUCTOR_COUNTER;
 
-        CountedConstructorTestBean bean = newBean(CountedConstructorTestBean.class);
         bean.inc();
 
         MetricID metricID = new MetricID(expectedName);
-        Map<MetricID, Counter> counters = getMetricRegistry().getCounters();
+        Map<MetricID, Counter> counters = metricRegistry.getCounters();
 
         assertThat("Counters in registry", counters, hasKey(metricID));
         Counter counter = counters.get(metricID);

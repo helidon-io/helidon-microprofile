@@ -133,6 +133,7 @@ public class BadGaugeTest {
         }
     }
 
+    @SuppressWarnings("unchecked") // generic array creation
     private SeContainer startContainer(Annotation scope) {
         MetricsCdiExtension.shutdown();
         return SeContainerInitializer.newInstance()
@@ -144,7 +145,7 @@ public class BadGaugeTest {
 
     private void goodTest(Annotation scope) {
         try (SeContainer container = startContainer(scope)) {
-            MetricRegistry metricRegistry = MetricsCdiExtension.getMetricRegistry();
+            MetricRegistry metricRegistry = container.select(MetricRegistry.class).get();
             SortedMap<MetricID, org.eclipse.microprofile.metrics.Gauge> gauges = metricRegistry.getGauges();
 
             org.eclipse.microprofile.metrics.Gauge gauge = null;
