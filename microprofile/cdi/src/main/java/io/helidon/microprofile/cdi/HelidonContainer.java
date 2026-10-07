@@ -20,16 +20,17 @@ import io.helidon.common.context.Context;
 import jakarta.enterprise.inject.se.SeContainer;
 
 /**
- * Helidon CDI Container, separates initialization and runtime phases of the bootstrapping.
- * Initialization is static to support GraalVM native image, start is controlled by application.
+ * Helidon CDI container with separate initialization and startup operations.
  *
  * @see io.helidon.microprofile.cdi.Main
  */
 public interface HelidonContainer {
     /**
-     * Get the (initialized or started) container.
+     * Returns the registered container without creating or initializing one.
      *
-     * @return the singleton instance of container
+     * @return the registered container
+     * @throws IllegalStateException if no container is registered
+     * @see jakarta.enterprise.inject.se.SeContainerInitializer
      */
     static HelidonContainer instance() {
         return ContainerInstanceHolder.get();

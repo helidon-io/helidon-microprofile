@@ -130,6 +130,34 @@ class HelidonContainerInitializerTest {
     }
 
     @Test
+    void testContainerLookupDoesNotInitialize() {
+        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        assertThrows(IllegalStateException.class, CDI::current);
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addExtensions(ServiceRegistryExtension.class)
+                .addBeanClasses(TestBean.class);
+
+        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        assertThrows(IllegalStateException.class, CDI::current);
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+
+        try (SeContainer container = initializer.initialize()) {
+            HelidonContainer helidonContainer = HelidonContainer.instance();
+            assertThat(HelidonContainer.instance(), sameInstance(helidonContainer));
+            assertThat(helidonContainer.start(), sameInstance(container));
+            assertThat(CDI.current(), sameInstance(container));
+            assertThat(GlobalServiceRegistry.configured(), is(true));
+        }
+
+        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        assertThrows(IllegalStateException.class, CDI::current);
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+    }
+
+    @Test
     void testPrepareInitializerWhileContainerIsRunning() {
         SeContainerInitializer nextInitializer;
         try (SeContainer container = SeContainerInitializer.newInstance()

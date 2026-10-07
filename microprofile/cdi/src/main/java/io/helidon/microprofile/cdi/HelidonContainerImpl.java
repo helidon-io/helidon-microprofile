@@ -128,17 +128,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     }
 
     /**
-     * Creates and initializes the CDI container.
-     *
-     * @return a new initialized CDI container
-     */
-    static HelidonContainerImpl create() {
-        HelidonContainerImpl container = new HelidonContainerImpl();
-        container.initInContext();
-        return container;
-    }
-
-    /**
      * Start this container.
      *
      * @return container instance
