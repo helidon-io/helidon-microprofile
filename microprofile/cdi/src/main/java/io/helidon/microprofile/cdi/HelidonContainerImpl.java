@@ -26,15 +26,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.Main;
-import io.helidon.common.SerializationConfig;
-import io.helidon.common.Version;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.features.HelidonFeatures;
-import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.microprofile.config.core.MpConfig;
 import io.helidon.spi.HelidonShutdownHandler;
 
@@ -96,10 +91,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private static final String STATIC_INSTANCE = "STATIC_INSTANCE";
     private static volatile HelidonShutdownHandler shutdownHandler;
 
-    static {
-        HelidonFeatures.flavor(HelidonFlavor.MP);
-    }
-
     private final WeldBootstrap bootstrap;
     private final String id;
     private final Context rootContext;
@@ -141,8 +132,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
             // already started
             return cdi;
         }
-        SerializationConfig.configureRuntime();
-        LogConfig.configureRuntime();
         try {
             Contexts.runInContext(rootContext, this::doStart);
         } catch (Exception e) {
@@ -268,8 +257,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         IN_RUNTIME.set(true);
 
-        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-
         bootstrap.validateBeans();
         bootstrap.endInitialization();
 
@@ -281,10 +268,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         now = System.currentTimeMillis() - now;
         LOGGER.fine("Container started in " + now + " millis (this excludes the initialization time)");
-
-        HelidonFeatures.print(HelidonFlavor.MP,
-                              Version.VERSION,
-                              config.getOptionalValue("features.print-details", Boolean.class).orElse(false));
 
         Main.addShutdownHandler(shutdownHandler);
         return this;

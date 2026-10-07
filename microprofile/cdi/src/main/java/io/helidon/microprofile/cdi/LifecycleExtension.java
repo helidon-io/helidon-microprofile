@@ -15,22 +15,33 @@
  */
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.SerializationConfig;
+import io.helidon.common.Version;
+import io.helidon.common.features.HelidonFeatures;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.logging.common.LogConfig;
+
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
- * Delivers legacy Helidon lifecycle events during ordinary CDI initialization.
- * The events are fired in order during {@link AfterDeploymentValidation}, at priority
+ * Initializes Helidon MP support and delivers legacy Helidon lifecycle events during ordinary CDI initialization.
+ * Logging, deserialization filtering, and the MP feature-reporting flavor are configured before service registry acquisition.
+ * Features are reported late in {@link Startup}, using the {@code features.print-details} configuration property.
+ * The legacy events are fired in order during {@link AfterDeploymentValidation}, at priority
  * {@link jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE}, before ordinary-priority observers.
- * Applications that disable extension discovery must explicitly register this extension if they use features
- * that observe these events. The Helidon testing framework supplies it automatically for its test containers.
+ * Applications that disable extension discovery must explicitly register this extension if they need this setup or
+ * features that observe the legacy events. The Helidon testing framework supplies it automatically for its test containers.
  */
 public final class LifecycleExtension implements Extension {
     /**
@@ -40,10 +51,23 @@ public final class LifecycleExtension implements Extension {
         super();
     }
 
+    private void onDiscovery(@Observes @Priority(PLATFORM_BEFORE - 1) BeforeBeanDiscovery event) {
+        // Run before service registry acquisition, which can initialize Helidon services.
+        LogConfig.configureRuntime();
+        SerializationConfig.configureRuntime();
+        HelidonFeatures.flavor(HelidonFlavor.MP);
+    }
+
     private void onValidation(@Observes @Priority(PLATFORM_BEFORE) AfterDeploymentValidation event, BeanManager beanManager) {
         Event<Object> events = beanManager.getEvent();
         events.select(BuildTimeStart.Literal.INSTANCE).fire("STATIC_INSTANCE");
         events.select(BuildTimeEnd.Literal.INSTANCE).fire("STATIC_INSTANCE");
         events.select(RuntimeStart.Literal.INSTANCE).fire(ConfigProvider.getConfig());
+    }
+
+    private void onStartup(@Observes @Priority(PLATFORM_AFTER) Startup event) {
+        HelidonFeatures.print(HelidonFlavor.MP,
+                              Version.VERSION,
+                              ConfigProvider.getConfig().getOptionalValue("features.print-details", Boolean.class).orElse(false));
     }
 }
