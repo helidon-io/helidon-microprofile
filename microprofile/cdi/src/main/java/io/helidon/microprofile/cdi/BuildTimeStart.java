@@ -17,8 +17,9 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import io.helidon.common.Api;
 
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
@@ -27,20 +28,32 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Build time of the application (as opposed to runtime).
+ * A qualifier qualifying an event that was fired by earlier versions of Helidon MicroProfile.
  *
- * The initialization happens as soon as possible within CDI bootstrap.
+ * <p>{@link LifecycleExtension} fires this event with the string payload {@code "STATIC_INSTANCE"} during {@link
+ * jakarta.enterprise.inject.spi.AfterDeploymentValidation}, at priority {@link
+ * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE}, followed by {@link BuildTimeEnd} and {@link RuntimeStart}.
+ * All three events now occur within ordinary CDI initialization and no longer represent separate build and runtime
+ * phases.</p>
+ *
+ * @deprecated Observe standard CDI lifecycle events appropriate to the work being performed.
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Api.Stable
+@Deprecated(since = "28.0.0")
 @Documented
 @Qualifier
+@Retention(RUNTIME)
 @Target({TYPE, METHOD, PARAMETER, FIELD})
 public @interface BuildTimeStart {
     /**
      * Annotation literal to use when an annotation instance is needed.
+     *
+     * @deprecated This literal supports the {@link BuildTimeStart} event.
      */
+    @Deprecated(since = "28.0.0")
     final class Literal extends AnnotationLiteral<BuildTimeStart> implements BuildTimeStart {
         /**
          * Singleton instance of a literal of this annotation.
