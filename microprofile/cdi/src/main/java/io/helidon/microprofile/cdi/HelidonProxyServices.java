@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.Api;
@@ -45,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  */
 @Api.Internal
 public final class HelidonProxyServices implements ProxyServices {
-    private final ReentrantLock lock;
+    private final Lock lock;
     private final ProxyServices delegate;
     private final Map<ClassLoader, ProxyClassLoader> classLoaders;
 
@@ -109,7 +110,7 @@ public final class HelidonProxyServices implements ProxyServices {
         return this.delegate.loadClass(originalClass, className);
     }
 
-    @Override
+    @Override // ProxyServices
     public void cleanup() {
         this.lock.lock();
         try {
@@ -228,10 +229,11 @@ public final class HelidonProxyServices implements ProxyServices {
     }
 
     private static final class ProxyClassLoader extends ClassLoader {
-        private final ReentrantLock lock = new ReentrantLock();
+        private final Lock lock;
 
         private ProxyClassLoader(ClassLoader parent) {
             super(parent);
+            this.lock = new ReentrantLock();
         }
 
         private Class<?> loadedClass(String className) {

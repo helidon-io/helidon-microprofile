@@ -18,9 +18,14 @@ package io.helidon.microprofile.telemetry;
 import java.util.List;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.tracing.Tracing;
+
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.data.SpanData;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -28,7 +33,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@AddBean(WithSpanTest.SeTracedBean.class)
 class WithSpanTest extends WithSpanTestBase {
+
+    @Inject
+    SeTracedBean seTracedBean;
 
     static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPath() {
         return Stream.of(new SpanPathTestInfo("traced", "/traced"),
@@ -61,9 +70,25 @@ class WithSpanTest extends WithSpanTestBase {
         assertThat("Long attribute", attrs.get(longKey), is(5L));
     }
 
+    @Test
+    void testSeTracingWithoutWithSpan() {
+        seTracedBean.run("se-only");
+
+        SpanData span = testSpanExporter.spanData(1).getFirst();
+        assertThat(span.getName(), is("seTraced"));
+        assertThat(span.getAttributes().get(AttributeKey.stringKey("value")), is("se-only"));
+    }
+
     @ParameterizedTest()
     @MethodSource()
     void testDefaultAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
         testSpanNameFromPath(spanPathTestInfo);
+    }
+
+    @ApplicationScoped
+    static class SeTracedBean {
+        @Tracing.Traced("seTraced")
+        void run(@Tracing.ParamTag("value") String value) {
+        }
     }
 }

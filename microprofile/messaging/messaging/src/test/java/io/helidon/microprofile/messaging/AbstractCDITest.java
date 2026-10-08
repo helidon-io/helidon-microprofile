@@ -28,12 +28,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.config.core.MpConfigSources;
-import io.helidon.microprofile.server.ServerCdiExtension;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
-import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterEach;
@@ -49,21 +48,6 @@ public abstract class AbstractCDITest {
         return startCdiContainer(p, new HashSet<>(Arrays.asList(beanClasses)));
     }
 
-    protected static void stopCdiContainer() {
-        try {
-            ServerCdiExtension server = CDI.current()
-                    .getBeanManager()
-                    .getExtension(ServerCdiExtension.class);
-
-            if (server.started()) {
-                SeContainer container = (SeContainer) CDI.current();
-                container.close();
-            }
-        } catch (IllegalStateException e) {
-            //noop container is not running
-        }
-    }
-
     @BeforeEach
     public void setUp() {
         Set<Class<?>> classes = new HashSet<>();
@@ -74,11 +58,8 @@ public abstract class AbstractCDITest {
 
     @AfterEach
     public void tearDown() {
-        try {
+        if (cdiContainer != null) {
             cdiContainer.close();
-        } catch (Throwable t) {
-            //emergency cleanup see #1446
-            stopCdiContainer();
         }
     }
 
@@ -106,14 +87,16 @@ public abstract class AbstractCDITest {
 
     private static SeContainer startCdiContainer(Map<String, String> p, Set<Class<?>> beanClasses) {
         Config config = ConfigProviderResolver.instance().getBuilder()
-                .withSources(MpConfigSources.create(p),
-                             MpConfigSources.create(Map.of("mp.initializer.allow", "true")))
+                .withSources(MpConfigSources.create(p))
                 .build();
 
         ConfigProviderResolver.instance()
                 .registerConfig(config, Thread.currentThread().getContextClassLoader());
 
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        // Some tests deliberately fail initialization. Avoid starting unrelated services that cannot be closed afterward.
+        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addExtensions(ConfigCdiExtension.class, MessagingCdiExtension.class);
         initializer.addBeanClasses(beanClasses.toArray(new Class<?>[0]));
         return initializer.initialize();
     }

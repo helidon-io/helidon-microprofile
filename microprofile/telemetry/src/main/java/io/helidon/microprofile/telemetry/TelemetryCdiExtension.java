@@ -128,6 +128,9 @@ public class TelemetryCdiExtension implements Extension {
                 }
             });
 
+            // The WithSpan observer may have already run or may not be selected for a type with only SE annotations.
+            method.add(HelidonWithSpan.Literal.INSTANCE);
+
             for (AnnotatedParameterConfigurator<?> param : method.params()) {
                 var tagParam = param.getAnnotated().getAnnotation(Tracing.ParamTag.class);
                 if (tagParam == null) {
