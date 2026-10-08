@@ -94,6 +94,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * CDI extension that exposes service registry types as CDI beans and registers eligible CDI beans in the service registry.
  */
+@Api.Stable
 public class ServiceRegistryExtension implements Extension {
     // this is needed for a workaround; we cannot depend on security to avoid cyclic dependency
     private static final ResolvedType SECURITY = ResolvedType.create("io.helidon.security.Security");
@@ -134,7 +135,6 @@ public class ServiceRegistryExtension implements Extension {
      * @param serviceRegistry registry to use
      * @throws NullPointerException if {@code serviceRegistry} is {@code null}
      */
-    @Api.Internal
     public ServiceRegistryExtension(ServiceRegistry serviceRegistry) {
         super();
         this.mpServiceRegistry = new MpServiceRegistry(requireNonNull(serviceRegistry, "serviceRegistry"));

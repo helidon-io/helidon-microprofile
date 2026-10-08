@@ -19,6 +19,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.LogConfig;
 
 import jakarta.enterprise.inject.se.SeContainer;
@@ -50,6 +51,7 @@ import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
  *     <li>Placing file {@code logging.properties} on the classpath</li>
  * </ul>
  */
+@Api.Stable
 public final class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
     private static final Lock CONTAINER_ACCESS = new ReentrantLock();

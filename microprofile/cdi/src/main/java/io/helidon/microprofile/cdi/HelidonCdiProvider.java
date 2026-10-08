@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.inject.spi.CDI;
 import org.jboss.weld.environment.se.WeldSEProvider;
 
@@ -24,6 +26,7 @@ import org.jboss.weld.environment.se.WeldSEProvider;
  *
  * @deprecated Use Weld's automatically discovered CDI provider.
  */
+@Api.Stable
 @Deprecated(since = "28.0.0")
 public class HelidonCdiProvider extends WeldSEProvider {
     /**

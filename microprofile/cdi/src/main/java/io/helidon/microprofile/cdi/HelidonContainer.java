@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 
 import jakarta.enterprise.inject.se.SeContainer;
@@ -25,6 +26,7 @@ import jakarta.enterprise.inject.se.SeContainer;
  * @see io.helidon.microprofile.cdi.Main
  * @deprecated Retain the {@link jakarta.enterprise.inject.se.SeContainer} returned by initialization and close it directly.
  */
+@Api.Stable
 @Deprecated(since = "28.0.0")
 public interface HelidonContainer {
     /**

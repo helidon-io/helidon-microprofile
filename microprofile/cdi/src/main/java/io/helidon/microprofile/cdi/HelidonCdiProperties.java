@@ -18,6 +18,7 @@ package io.helidon.microprofile.cdi;
 
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.microprofile.config.core.MpConfig;
 
 import jakarta.enterprise.inject.se.SeContainerInitializer;
@@ -31,6 +32,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @see #addCdiProperties(SeContainerInitializer, Config)
  */
+@Api.Stable
 public final class HelidonCdiProperties {
 
     private HelidonCdiProperties() {

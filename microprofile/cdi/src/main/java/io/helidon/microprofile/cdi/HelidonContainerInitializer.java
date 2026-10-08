@@ -18,6 +18,8 @@ package io.helidon.microprofile.cdi;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.Extension;
@@ -33,6 +35,7 @@ import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
  *             {@link io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations} and
  *             {@link io.helidon.microprofile.cdi.HelidonCdiProperties} as needed.
  */
+@Api.Stable
 @Deprecated(since = "28.0.0")
 public class HelidonContainerInitializer extends SeContainerInitializer {
     private final SeContainerInitializer delegate = new Weld();

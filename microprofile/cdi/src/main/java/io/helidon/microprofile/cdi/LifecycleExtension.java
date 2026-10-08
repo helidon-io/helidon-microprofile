@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.cdi;
 
+import io.helidon.common.Api;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.features.HelidonFeatures;
@@ -43,6 +44,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * Applications that disable extension discovery must explicitly register this extension if they need this setup or
  * features that observe the legacy events. The Helidon testing framework supplies it automatically for its test containers.
  */
+@Api.Stable
 public final class LifecycleExtension implements Extension {
     /**
      * Creates the compatibility extension for CDI discovery or explicit registration.

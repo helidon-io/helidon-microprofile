@@ -23,6 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.util.Nonbinding;
 import jakarta.interceptor.InterceptorBinding;
 
@@ -31,6 +33,7 @@ import jakarta.interceptor.InterceptorBinding;
  * {@link java.util.concurrent.CompletableFuture} or {@link java.util.concurrent.CompletionStage},
  * it is assumed to be asynchronous.
  */
+@Api.Stable
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})

@@ -19,6 +19,8 @@ package io.helidon.microprofile.cdi;
 import java.lang.System.Logger;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
 import static java.lang.System.Logger.Level.TRACE;
@@ -31,6 +33,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @see #addHelidonBeanDefiningAnnotations(SeContainerInitializer, ClassLoader)
  */
+@Api.Stable
 public final class HelidonBeanDefiningAnnotations {
     private static final Logger LOGGER = getLogger(HelidonBeanDefiningAnnotations.class.getName());
     private static final Set<String> HELIDON_BEAN_DEFINING_ANNOTATION_CLASSNAMES =
