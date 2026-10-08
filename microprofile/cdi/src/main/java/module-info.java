@@ -49,7 +49,6 @@ module io.helidon.microprofile.cdi {
     requires transitive jakarta.inject;
     requires transitive weld.spi;
 
-    requires weld.api;
     requires weld.core.impl;
     requires weld.environment.common;
     requires transitive weld.se.core;
