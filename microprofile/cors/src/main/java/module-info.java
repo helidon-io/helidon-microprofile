@@ -28,6 +28,7 @@ module io.helidon.microprofile.cors {
 
     requires io.helidon.config;
     requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.config.core;
     requires io.helidon.webserver;
     requires io.helidon.webserver.cors;
 
@@ -35,7 +36,6 @@ module io.helidon.microprofile.cors {
 
     requires transitive jakarta.cdi;
     requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.cdi;
 
     exports io.helidon.microprofile.cors;
 
