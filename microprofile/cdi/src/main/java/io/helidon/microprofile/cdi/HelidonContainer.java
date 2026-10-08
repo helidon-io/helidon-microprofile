@@ -23,17 +23,21 @@ import jakarta.enterprise.inject.se.SeContainer;
  * Helidon CDI container with separate initialization and startup operations.
  *
  * @see io.helidon.microprofile.cdi.Main
+ * @deprecated Retain the {@link jakarta.enterprise.inject.se.SeContainer} returned by initialization and close it directly.
  */
+@Deprecated(since = "28.0.0")
 public interface HelidonContainer {
     /**
-     * Returns the registered container without creating or initializing one.
+     * Reports that a global Helidon container is no longer available.
      *
-     * @return the registered container
-     * @throws IllegalStateException if no container is registered
+     * @return never returns normally
+     * @throws IllegalStateException always
+     * @deprecated Retain the {@link jakarta.enterprise.inject.se.SeContainer} returned by initialization.
      * @see jakarta.enterprise.inject.se.SeContainerInitializer
      */
+    @Deprecated(since = "28.0.0")
     static HelidonContainer instance() {
-        return ContainerInstanceHolder.get();
+        throw new IllegalStateException("Retain the SeContainer returned by initialization; no global Helidon container exists");
     }
 
     /**

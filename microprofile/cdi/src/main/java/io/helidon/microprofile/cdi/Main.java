@@ -68,14 +68,21 @@ public final class Main {
      * @param args command line arguments, currently ignored
      */
     public static void main(String[] args) {
+        boolean started = false;
         CONTAINER_ACCESS.lock();
         try {
             if (inUse == null || !inUse.isRunning()) {
                 LogConfig.initClass();
                 inUse = addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())).initialize();
+                started = true;
             }
         } finally {
             CONTAINER_ACCESS.unlock();
+        }
+        // Honor this launcher's exit request after CDI initialization completes.
+        if (started && "!".equals(System.getProperty("exit.on.started"))) {
+            LOGGER.info("Exiting, -Dexit.on.started set.");
+            System.exit(0);
         }
     }
 

@@ -129,10 +129,15 @@ public class ServerImpl implements Server {
             }
 
             STARTUP_LOGGER.log(Level.TRACE, "Started up");
-            return this;
         } finally {
             this.containerAccess.unlock();
         }
+        // Honor this launcher's exit request after CDI initialization completes.
+        if ("!".equals(System.getProperty("exit.on.started"))) {
+            STARTUP_LOGGER.log(Level.INFO, "Exiting, -Dexit.on.started set.");
+            System.exit(0);
+        }
+        return this;
     }
 
     @Override

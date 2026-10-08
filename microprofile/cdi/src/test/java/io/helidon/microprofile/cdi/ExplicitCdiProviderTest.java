@@ -17,6 +17,7 @@ package io.helidon.microprofile.cdi;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
@@ -28,6 +29,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ExplicitCdiProviderTest {
+    @Test
+    void testCompatibilityProviderPreservesCallingContainer() {
+        CDI.setCDIProvider(new HelidonCdiProvider());
+        try (SeContainer first = SeContainerInitializer.newInstance()
+                .disableDiscovery().addBeanClasses(TestBean2.class).initialize();
+             SeContainer second = SeContainerInitializer.newInstance()
+                .disableDiscovery().addBeanClasses(ProviderCaller.class).initialize()) {
+            assertThat(ProviderCaller.direct(), sameInstance(second));
+            assertThat(ProviderCaller.current(), sameInstance(second));
+        }
+    }
+
     @Test
     void testBootstrapDoesNotRequireCurrentCdi() {
         CDI.setCDIProvider(() -> {
@@ -63,6 +76,17 @@ class ExplicitCdiProviderTest {
             providerCalled.set(false);
             assertThrows(IllegalStateException.class, CDI::current);
             assertThat(providerCalled.get(), is(true));
+        }
+    }
+
+    @Dependent
+    public static class ProviderCaller {
+        static CDI<Object> direct() {
+            return new HelidonCdiProvider().getCDI();
+        }
+
+        static CDI<Object> current() {
+            return CDI.current();
         }
     }
 }

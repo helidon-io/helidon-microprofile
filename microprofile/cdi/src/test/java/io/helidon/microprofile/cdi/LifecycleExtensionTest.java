@@ -15,11 +15,15 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.microprofile.config.core.MpConfigSources;
 
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Shutdown;
+import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
@@ -36,6 +40,28 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
 class LifecycleExtensionTest {
+    @Test
+    void testStandardStartupAndShutdown() {
+        List<String> events = new ArrayList<>();
+        Extension observer = new Extension() {
+            void start(@Observes Startup event) {
+                events.add("startup");
+            }
+
+            void stop(@Observes Shutdown event) {
+                events.add("shutdown");
+            }
+        };
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .disableDiscovery()
+                .addExtensions(observer)
+                .addBeanClasses(TestBean2.class)
+                .initialize()) {
+            assertThat(events, contains("startup"));
+        }
+        assertThat(events, contains("startup", "shutdown"));
+    }
+
     @SuppressWarnings("unchecked") // heap pollution
     @Test
     void testExplicitExtensionUsesConfigurationFromBeanDiscovery() {

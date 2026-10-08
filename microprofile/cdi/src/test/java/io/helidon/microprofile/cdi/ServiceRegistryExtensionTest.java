@@ -90,11 +90,11 @@ class ServiceRegistryExtensionTest {
             ServiceRegistry registry = manager.registry();
             RegistryService service = registry.get(RegistryService.class);
             Config config = Config.empty();
+            // Construction occurs outside the context that supplies the registry during initialization.
+            SeContainerInitializer initializer = SeContainerInitializer.newInstance().addBeanClasses(RegistryUser.class);
             runInContext(context(registry), () -> {
                 Services.set(Config.class, config);
-                try (SeContainer container = SeContainerInitializer.newInstance()
-                        .addBeanClasses(RegistryUser.class)
-                        .initialize()) {
+                try (SeContainer container = initializer.initialize()) {
                     // (RegistryUser is a nested class below.)
                     assertThat(container.select(RegistryUser.class).get().config(), sameInstance(config));
                 }
@@ -189,7 +189,8 @@ class ServiceRegistryExtensionTest {
             assertThrows(RuntimeException.class,
                          () -> initializer(extension).addExtensions(capture, failure).initialize());
             assertThat(failure.observed, is(true));
-            // Helidon's remaining bootstrap emits BeforeShutdown on this failure; stock Weld does not.
+            // Stock Weld does not promise BeforeShutdown after failed initialization.
+            assertThat(shutdowns.get(), is(0));
             assertThat(service.get().destructions, is(shutdowns.get()));
             assertThat(GlobalServiceRegistry.configured(), is(shutdowns.get() == 0));
         } finally {

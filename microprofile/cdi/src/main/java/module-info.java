@@ -49,9 +49,10 @@ module io.helidon.microprofile.cdi {
     requires transitive jakarta.inject;
     requires transitive weld.spi;
 
+    requires weld.api;
     requires weld.core.impl;
     requires weld.environment.common;
-    requires weld.se.core;
+    requires transitive weld.se.core;
 
     // Need by weld
     requires org.jboss.logging;
@@ -62,16 +63,13 @@ module io.helidon.microprofile.cdi {
 
     provides io.helidon.spi.HelidonStartupProvider
             with io.helidon.microprofile.cdi.CdiStartupProvider;
-    provides jakarta.enterprise.inject.se.SeContainerInitializer
-            with io.helidon.microprofile.cdi.HelidonContainerInitializer;
-    provides jakarta.enterprise.inject.spi.CDIProvider
-            with io.helidon.microprofile.cdi.HelidonCdiProvider;
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.cdi.LifecycleExtension,
                  io.helidon.microprofile.cdi.ExecuteOnExtension,
                  io.helidon.microprofile.cdi.ServiceRegistryExtension;
     provides org.jboss.weld.bootstrap.api.Service
-            with io.helidon.microprofile.cdi.ExecutorServices;
+            with io.helidon.microprofile.cdi.ExecutorServices,
+                 io.helidon.microprofile.cdi.HelidonProxyServices;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
 

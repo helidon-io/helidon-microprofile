@@ -33,6 +33,7 @@
     <description>Server of the microprofile implementation</description>
 
     <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
         <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 -Dorg.jboss.weld.construction.relaxed=false</surefire.argLine>
         <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8 -Dorg.jboss.weld.construction.relaxed=false</failsafe.argLine>
     </properties>

@@ -16,6 +16,10 @@
 
 package io.helidon.microprofile.cdi;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Map;
 
 import io.helidon.logging.common.LogConfig;
@@ -28,6 +32,9 @@ import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.jboss.weld.bean.builtin.BeanManagerProxy;
+import org.jboss.weld.config.WeldConfiguration;
+import org.jboss.weld.environment.se.Weld;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +44,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.jboss.weld.config.ConfigurationKey.CONCURRENT_DEPLOYMENT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -86,7 +94,7 @@ class HelidonContainerInitializerTest {
     void testRestart2() {
         // this is a reproducer for bug 1554
         SeContainerInitializer seContainerInitializer = SeContainerInitializer.newInstance();
-        assertThat(seContainerInitializer, instanceOf(HelidonContainerInitializer.class));
+        assertThat(seContainerInitializer, instanceOf(Weld.class));
         seContainerInitializer
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
@@ -129,6 +137,48 @@ class HelidonContainerInitializerTest {
                    is(false));
     }
 
+    @Test
+    void testAdapterReadsConfigurationAtInitialization() {
+        SeContainerInitializer initializer = new HelidonContainerInitializer()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .addProperty(CONCURRENT_DEPLOYMENT.get(), true);
+        Config config = configResolver.getBuilder()
+                .withSources(MpConfigSources.create(Map.of("cdi." + CONCURRENT_DEPLOYMENT.get(), "false")))
+                .build();
+        configResolver.registerConfig(config, cl);
+
+        try (SeContainer container = initializer.initialize()) {
+            WeldConfiguration configuration = BeanManagerProxy.unwrap(container.getBeanManager())
+                    .getServices().get(WeldConfiguration.class);
+            assertThat(configuration.getBooleanProperty(CONCURRENT_DEPLOYMENT), is(false));
+        }
+    }
+
+    @Test
+    void testAdapterUsesSuppliedClassLoaderForDiscovery() {
+        try (SeContainer container = new HelidonContainerInitializer().initialize()) {
+            assertThat(container.select(TestBean2.class).isResolvable(), is(true));
+        }
+        ClassLoader loader = new ClassLoader(cl) {
+            @Override
+            public Enumeration<URL> getResources(String name) throws IOException {
+                return "META-INF/services/jakarta.enterprise.inject.spi.Extension".equals(name)
+                        ? Collections.emptyEnumeration()
+                        : super.getResources(name);
+            }
+        };
+        try (SeContainer container = new HelidonContainerInitializer()
+                .setClassLoader(loader)
+                .addBeanClasses(TestBean.class)
+                .initialize()) {
+            assertThat(container.select(TestBean.class).get().test(), is("test"));
+            assertThat("the supplied loader hides TestExtension, which registers TestBean2",
+                       container.select(TestBean2.class).isUnsatisfied(),
+                       is(true));
+        }
+    }
+
     @SuppressWarnings("unchecked") // generic array creation via addExtensions
     @Test
     void testContainerLookupDoesNotInitialize() {
@@ -146,9 +196,7 @@ class HelidonContainerInitializerTest {
         assertThat(GlobalServiceRegistry.configured(), is(false));
 
         try (SeContainer container = initializer.initialize()) {
-            HelidonContainer helidonContainer = HelidonContainer.instance();
-            assertThat(HelidonContainer.instance(), sameInstance(helidonContainer));
-            assertThat(helidonContainer.start(), sameInstance(container));
+            assertThrows(IllegalStateException.class, HelidonContainer::instance);
             assertThat(CDI.current(), sameInstance(container));
             assertThat(GlobalServiceRegistry.configured(), is(true));
         }
@@ -172,7 +220,7 @@ class HelidonContainerInitializerTest {
                     .addBeanClasses(TestBean.class);
 
             assertThat("preparing another initializer must not replace the running container",
-                       HelidonContainer.instance().start(),
+                       CDI.current(),
                        sameInstance(container));
         }
         assertThat(GlobalServiceRegistry.configured(), is(false));
@@ -185,35 +233,18 @@ class HelidonContainerInitializerTest {
     }
 
     @Test
-    void testStartUninitializedContainer() {
-        HelidonContainer container = new HelidonContainerImpl();
-
-        assertThrows(IllegalStateException.class, container::start);
-
-        assertContainerLifecycle();
-    }
-
-    @Test
-    void testStartClosedContainer() {
-        HelidonContainer closedContainer;
-        try (SeContainer container = SeContainerInitializer.newInstance()
+    void testIndependentContainers() {
+        try (SeContainer first = new HelidonContainerInitializer()
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
-                .initialize()) {
-            closedContainer = HelidonContainer.instance();
-            assertThat(closedContainer.start(), sameInstance(container));
-        }
-
-        assertThrows(IllegalStateException.class, closedContainer::start);
-
-        try (SeContainer container = SeContainerInitializer.newInstance()
+                .initialize();
+             SeContainer second = new HelidonContainerInitializer()
                 .disableDiscovery()
-                .addBeanClasses(TestBean.class)
+                .addBeanClasses(TestBean2.class)
                 .initialize()) {
-            assertThrows(IllegalStateException.class, closedContainer::start);
-            assertThat(container.isRunning(), is(true));
-            assertThat(container.select(TestBean.class).get().test(), is("test"));
-            assertThat(CDI.current(), sameInstance(container));
+            assertThat(first.select(TestBean.class).get().test(), is("test"));
+            assertThat(second.select(TestBean2.class).get().message(), is("Hello"));
+            assertThrows(IllegalStateException.class, HelidonContainer::instance);
         }
     }
 
@@ -229,13 +260,10 @@ class HelidonContainerInitializerTest {
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
                 .initialize()) {
-            HelidonContainer helidonContainer = HelidonContainer.instance();
-
             assertThrows(IllegalStateException.class, closedContainer::close);
 
             assertThat(CDI.current(), sameInstance(container));
-            assertThat(HelidonContainer.instance(), sameInstance(helidonContainer));
-            assertThat(helidonContainer.start(), sameInstance(container));
+            assertThrows(IllegalStateException.class, HelidonContainer::instance);
             assertThat(container.isRunning(), is(true));
             assertThat(container.select(TestBean.class).get().test(), is("test"));
         }
@@ -265,4 +293,5 @@ class HelidonContainerInitializerTest {
             return "test";
         }
     }
+
 }

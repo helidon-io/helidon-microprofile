@@ -21,118 +21,127 @@ import java.util.Map;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.Extension;
+import org.jboss.weld.environment.se.Weld;
+
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
 
 /**
- * Initializes the Helidon CDI container through the CDI SE bootstrap API.
+ * Initializes a Weld container with Helidon's additional bean-defining annotations and CDI properties.
+ *
+ * @deprecated Use {@link jakarta.enterprise.inject.se.SeContainerInitializer#newInstance()} and apply
+ *             {@link io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations} and
+ *             {@link io.helidon.microprofile.cdi.HelidonCdiProperties} as needed.
  */
+@Deprecated(since = "28.0.0")
 public class HelidonContainerInitializer extends SeContainerInitializer {
-    private final HelidonContainerImpl container = new HelidonContainerImpl();
+    private final SeContainerInitializer delegate = new Weld();
+    private ClassLoader classLoader;
 
     /**
      * Creates a Helidon CDI container initializer.
      */
     public HelidonContainerInitializer() {
+        super();
     }
 
     @Override
     public SeContainerInitializer addBeanClasses(Class<?>... classes) {
-        this.container.addBeanClasses(classes);
+        this.delegate.addBeanClasses(classes);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Class<?>... packageClasses) {
-        this.container.addPackages(packageClasses);
+        this.delegate.addPackages(packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Class<?>... packageClasses) {
-        this.container.addPackages(scanRecursively, packageClasses);
+        this.delegate.addPackages(scanRecursively, packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Package... packages) {
-        this.container.addPackages(packages);
+        this.delegate.addPackages(packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Package... packages) {
-        this.container.addPackages(scanRecursively, packages);
+        this.delegate.addPackages(scanRecursively, packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addExtensions(Extension... extensions) {
-        this.container.addExtensions(extensions);
+        this.delegate.addExtensions(extensions);
         return this;
     }
 
     @Override
     @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
-        this.container.addExtensions(extensions);
+        this.delegate.addExtensions(extensions);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
-        this.container.enableInterceptors(interceptorClasses);
+        this.delegate.enableInterceptors(interceptorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableDecorators(Class<?>... decoratorClasses) {
-        this.container.enableDecorators(decoratorClasses);
+        this.delegate.enableDecorators(decoratorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer selectAlternatives(Class<?>... alternativeClasses) {
-        this.container.selectAlternatives(alternativeClasses);
+        this.delegate.selectAlternatives(alternativeClasses);
         return this;
     }
 
     @Override
     @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer selectAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
-        this.container.selectAlternativeStereotypes(alternativeStereotypeClasses);
+        this.delegate.selectAlternativeStereotypes(alternativeStereotypeClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addProperty(String key, Object value) {
-        this.container.addProperty(key, value);
+        this.delegate.addProperty(key, value);
         return this;
     }
 
     @Override
     public SeContainerInitializer setProperties(Map<String, Object> properties) {
-        this.container.setProperties(properties);
+        this.delegate.setProperties(properties);
         return this;
     }
 
     @Override
     public SeContainerInitializer disableDiscovery() {
-        this.container.disableDiscovery();
+        this.delegate.disableDiscovery();
         return this;
     }
 
     @Override
     public SeContainerInitializer setClassLoader(ClassLoader classLoader) {
-        this.container.setClassLoader(classLoader);
+        this.delegate.setClassLoader(classLoader);
+        this.classLoader = classLoader;
         return this;
     }
 
     @Override
     public SeContainer initialize() {
-        if (HelidonContainerImpl.isRuntime()) {
-            throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
-        }
-        ContainerInstanceHolder.set(container);
-        this.container.initInContext();
-        return this.container.start();
+        addHelidonBeanDefiningAnnotations(this.delegate, this.classLoader);
+        addCdiProperties(this.delegate);
+        return this.delegate.initialize();
     }
 }

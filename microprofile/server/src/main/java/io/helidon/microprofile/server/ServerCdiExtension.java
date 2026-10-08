@@ -106,7 +106,7 @@ public class ServerCdiExtension implements Extension {
     private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
     // build time
     private WebServerConfig.Builder serverBuilder = WebServer.builder()
-            .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
+            .shutdownHook(false) // CDI shuts down the server before closing its service registry
             .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
             .port(7001);
     private ObserveFeatureConfig.Builder observeBuilder = ObserveFeature.builder();
