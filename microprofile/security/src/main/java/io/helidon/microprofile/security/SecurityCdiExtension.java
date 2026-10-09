@@ -38,12 +38,15 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Extension to register bean {@link SecurityProducer}.
@@ -93,6 +96,20 @@ public class SecurityCdiExtension implements Extension {
     // priority is high, so we update builder from config as soon as possible
     // all additions by other extension will override configuration options
     private void configure(@Observes @RuntimeStart @Priority(PLATFORM_BEFORE + 2) Config config) {
+        if (this.config == null) {
+            this.configureBuilders(config);
+        }
+    }
+
+    private void afterDeploymentValidation(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        // Preserve customizations made after our RuntimeStart observer by configuring here only if that observer has
+        // not run.
+        if (this.config == null) {
+            this.configureBuilders(toHelidonConfig(getConfig()));
+        }
+    }
+
+    private void configureBuilders(Config config) {
         this.config = config;
         this.securityBuilder.config(config.get("security"));
         this.securityFeatureBuilder.config(config.get("server.features.security"));
