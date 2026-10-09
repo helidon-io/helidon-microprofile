@@ -77,7 +77,7 @@ public class TestFullUrlName {
                 .collect(Collectors.toList());
 
         assertThat(names.size(), is(2));
-        assertThat(names, hasItem("http://localhost:" + webTarget.getUri().getPort() + "/named"));
+        assertThat(names, hasItem("GET http://localhost:" + webTarget.getUri().getPort() + "/named"));
         assertThat(names, hasItem("HTTP GET"));
     }
 
