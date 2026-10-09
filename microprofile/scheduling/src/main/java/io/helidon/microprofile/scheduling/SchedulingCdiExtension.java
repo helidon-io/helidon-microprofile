@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigBuilderSupport;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.scheduling.Cron;
 import io.helidon.scheduling.Invocation;
 import io.helidon.scheduling.Scheduling;
@@ -42,6 +41,7 @@ import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
@@ -51,7 +51,10 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Scheduling CDI Extension.
@@ -198,8 +201,8 @@ public class SchedulingCdiExtension implements Extension {
         executors.forEach(ExecutorService::shutdownNow);
     }
 
-    private void prepareRuntime(@Observes @RuntimeStart Config config) {
-        this.config = config;
+    private void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        this.config = toHelidonConfig(getConfig());
         this.schedulingConfig = config.get("schedule");
     }
 
