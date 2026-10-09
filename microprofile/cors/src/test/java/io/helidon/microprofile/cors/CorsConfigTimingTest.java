@@ -48,7 +48,7 @@ class CorsConfigTimingTest {
     void testConfigurationFromBeanDiscovery() {
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        Config originalConfig = resolver.getConfig(classLoader);
+        Config originalConfig = resolver.getConfig(classLoader).unwrap(Config.class);
         Config config = resolver.getBuilder()
                 .withSources(MpConfigSources.create(Map.of(
                         "server.port", "0",
