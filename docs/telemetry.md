@@ -313,7 +313,7 @@ settings for automatic incoming REST request spans:
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `telemetry.span.name-includes-method` | `Boolean` | `true` | **Deprecated.** Whether the span name includes the HTTP request method. |
-| `telemetry.span.full.url` | `Boolean` | `true` | **Deprecated.** Whether the span name includes the absolute request URL instead of the matched route. |
+| `telemetry.span.full.url` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the absolute request URL instead of the matched route. |
 | `telemetry.span.includes-response-write` | `Boolean` | `true` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
 
 Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
@@ -324,8 +324,8 @@ uses the current convention, which includes the method. The setting is
 deprecated because a future major release will use the current span naming
 convention unconditionally.
 
-By default, automatic incoming REST span names use the absolute request URL.
-Setting `telemetry.span.full.url` to `false` uses the matched route instead.
+By default, automatic incoming REST span names use the matched route.
+Setting `telemetry.span.full.url` to `true` uses the absolute request URL instead.
 This setting is deprecated for removal in a future major release, and Helidon
 logs a warning if it is present in the configuration.
 

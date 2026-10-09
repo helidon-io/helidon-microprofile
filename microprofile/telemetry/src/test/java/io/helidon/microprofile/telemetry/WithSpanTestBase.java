@@ -73,7 +73,7 @@ class WithSpanTestBase {
 
         List<SpanData> spanData = testSpanExporter.spanData(2); // Automatic GET span and then the resource method span
         String expectedSpanName = useCurrentDefaults
-                ? "GET " + requestTarget.getUri()
+                ? "GET " + spanPathTestInfo.expectedSpanName
                 : spanPathTestInfo.expectedSpanName;
         assertThat("Span name", spanData.get(0).getName(), is(expectedSpanName));
     }

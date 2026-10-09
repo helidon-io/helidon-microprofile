@@ -112,7 +112,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         // @Deprecated(forRemoval = true) In 5.x remove the following.
         spanNameFullUrl = DeprecatedConfig.get(helidonConfig, SPAN_NAME_FULL_URL)
                 .asBoolean()
-                .orElse(true);
+                .orElse(false);
         restSpanNameIncludesMethod = DeprecatedConfig.get(helidonConfig, SPAN_NAME_INCLUDES_METHOD)
                 .asBoolean()
                 .orElse(true);
