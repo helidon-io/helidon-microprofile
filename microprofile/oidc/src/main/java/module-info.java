@@ -19,6 +19,7 @@
  */
 module io.helidon.microprofile.oidc {
 
+    requires io.helidon.microprofile.config.core;
     requires io.helidon.microprofile.security;
     requires io.helidon.microprofile.server;
     requires io.helidon.security.providers.oidc;

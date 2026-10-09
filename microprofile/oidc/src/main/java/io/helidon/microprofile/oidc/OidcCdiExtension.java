@@ -17,15 +17,20 @@
 package io.helidon.microprofile.oidc;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.providers.oidc.OidcFeature;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
+
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * MicroProfile extension that brings support for Open ID Connect.
@@ -34,8 +39,8 @@ public final class OidcCdiExtension implements Extension {
 
     private Config config;
 
-    private void configure(@Observes @RuntimeStart Config config) {
-        this.config = config;
+    private void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        this.config = toHelidonConfig(getConfig());
     }
 
     private void registerOidcSupport(@Observes @Initialized(ApplicationScoped.class) Object adv, BeanManager bm) {
