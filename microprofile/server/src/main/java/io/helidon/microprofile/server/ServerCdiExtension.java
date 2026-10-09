@@ -75,6 +75,7 @@ import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
@@ -90,10 +91,12 @@ import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Extension to handle web server configuration and lifecycle.
@@ -362,6 +365,20 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void prepareRuntime(@Observes @RuntimeStart Config config) {
+        if (this.config == null) {
+            configure(config);
+        }
+    }
+
+    private void afterDeploymentValidation(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        // Preserve customizations made after our RuntimeStart observer by configuring here only if it has not run.
+        // This still precedes ServerImpl's programmatic overrides at the default observer priority.
+        if (this.config == null) {
+            configure(toHelidonConfig(getConfig()));
+        }
+    }
+
+    private void configure(Config config) {
         this.serverBuilder.config(config.get("server"));
         this.observeBuilder.config(config.get("server.features.observe"));
         this.config = config;
