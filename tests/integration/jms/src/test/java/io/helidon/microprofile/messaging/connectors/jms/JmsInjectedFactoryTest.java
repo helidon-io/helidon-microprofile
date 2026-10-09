@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.stream.IntStream;
 
 import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.messaging.connectors.jms.shim.JakartaJms;
@@ -50,6 +51,7 @@ import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.O
 @DisableDiscovery
 @AddBean(JmsConnector.class)
 @AddBean(MockConnector.class)
+@AddExtension(ServiceRegistryExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(MessagingCdiExtension.class)
 @AddConfig(key = CONNECTOR_PREFIX + CONNECTOR_NAME + ".period-executions", value = "5")

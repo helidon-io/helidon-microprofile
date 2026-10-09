@@ -154,13 +154,12 @@ public class SecurityCdiExtension implements Extension {
 
         // security is available in global
         Contexts.globalContext().register(security);
+        Contexts.context().ifPresent(ctx -> ctx.register(security));
 
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);
         ServerCdiExtension server = bm.getExtension(ServerCdiExtension.class);
         server.addFeature(securityFeatureBuilder.build());
         securityFeatureBuilder = null;
-
-        Contexts.context().ifPresent(ctx -> ctx.register(security));
 
         Config jerseyConfig = config.get("security.jersey");
         if (jerseyConfig.get("enabled").asBoolean().orElse(true)) {
