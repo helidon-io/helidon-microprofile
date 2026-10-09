@@ -42,6 +42,10 @@
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
