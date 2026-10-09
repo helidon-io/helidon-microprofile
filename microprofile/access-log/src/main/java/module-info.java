@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"Server", "AccessLog"})
 module io.helidon.microprofile.accesslog {
 
+    requires io.helidon.microprofile.config.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
     requires jakarta.annotation;
