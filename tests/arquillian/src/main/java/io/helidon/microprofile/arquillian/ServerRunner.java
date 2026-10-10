@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.microprofile.server.Server;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.webserver.WebServer;
 
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
@@ -37,6 +38,7 @@ public class ServerRunner {
     private static final System.Logger LOGGER = System.getLogger(ServerRunner.class.getName());
 
     private Server server;
+    private WebServer webServer;
 
     /**
      * Needed for reflection.
@@ -65,10 +67,8 @@ public class ServerRunner {
                 .port(port)
                 .config(config);
         explicitRsApplication.ifPresent(c -> builder.addApplication(c));
-        server = builder.build()
-                // this is a blocking operation, we will be released once the server is started
-                // or it fails to start
-                .start();
+        // Retain the HTTP server even if a later CDI startup observer fails.
+        this.server = ServerCleanupExtension.start(builder.build(), webServer -> this.webServer = webServer);
 
         LOGGER.log(Level.TRACE, () -> "Started server");
     }
@@ -77,9 +77,19 @@ public class ServerRunner {
      * Stop the server. Needed for reflection.
      */
     public void stop() {
-        if (null != server) {
-            LOGGER.log(Level.TRACE, () -> "Stopping server");
-            server.stop();
+        try {
+            if (this.server != null) {
+                LOGGER.log(Level.TRACE, () -> "Stopping server");
+                this.server.stop();
+                this.server = null;
+            }
+        } finally {
+            if (this.webServer != null) {
+                if (this.webServer.isRunning()) {
+                    this.webServer.stop();
+                }
+                this.webServer = null;
+            }
         }
     }
 
