@@ -257,7 +257,7 @@
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
                         <proc>full</proc>
                         <compilerArgs>
-                            <arg>-Xlint:unchecked</arg>
+                            <arg>-Xlint:all</arg>
                             <!--
                             https://issues.apache.org/jira/browse/MCOMPILER-368
                              -->
