@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.containsString;
 
 @AddConfig(key = WithSpanUsingLegacySpanNameTest.LEGACY_SPAN_NAME_INCLUDES_METHOD,
            value = "false")
+@AddConfig(key = "telemetry.span.full.url", value = "false")
 class WithSpanUsingLegacySpanNameTest extends WithSpanTestBase {
     static final String LEGACY_SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
@@ -55,12 +56,12 @@ class WithSpanUsingLegacySpanNameTest extends WithSpanTestBase {
     @MethodSource()
     void testDefaultAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) throws UnsupportedEncodingException {
 
-        testSpanNameFromPath(spanPathTestInfo);
+        testLegacySpanNameFromPath(spanPathTestInfo);
 
         // @Deprecated(forRemoval = true) in 5.1 remove the following:
         assertThat("Log output",
                    memoryLogHandler.logAsString(),
-                   containsString("does not set " + LEGACY_SPAN_NAME_INCLUDES_METHOD));
+                   containsString("sets " + LEGACY_SPAN_NAME_INCLUDES_METHOD + " to false"));
         // end of removal
 
     }

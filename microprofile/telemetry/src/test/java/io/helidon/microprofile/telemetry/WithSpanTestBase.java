@@ -22,6 +22,7 @@ import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
@@ -56,14 +57,30 @@ class WithSpanTestBase {
     }
 
     void testSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+        testSpanNameFromPath(spanPathTestInfo, true);
+    }
+
+    void testLegacySpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+        testSpanNameFromPath(spanPathTestInfo, false);
+    }
+
+    private void testSpanNameFromPath(SpanPathTestInfo spanPathTestInfo, boolean useCurrentDefaults) {
         JaxRsCdiExtension jaxRsCdiExtension = CDI.current().getBeanManager().getExtension(JaxRsCdiExtension.class);
-        Response response = webTarget.path(spanPathTestInfo.requestPath)
+        WebTarget requestTarget = webTarget.path(spanPathTestInfo.requestPath);
+        Response response = requestTarget
                 .request(MediaType.TEXT_PLAIN)
                 .get();
         assertThat("Status accessing " + spanPathTestInfo.requestPath, response.getStatus(), is(200));
 
-        List<SpanData> spanData = testSpanExporter.spanData(2); // Automatic GET span and then the resource method span
-        assertThat("Span name", spanData.get(0).getName(), is(spanPathTestInfo.expectedSpanName));
+        List<SpanData> spanData = testSpanExporter.spanData(2); // Client and server spans
+        SpanData serverSpan = spanData.stream()
+                .filter(span -> span.getKind() == SpanKind.SERVER)
+                .findFirst()
+                .orElseThrow();
+        String expectedSpanName = useCurrentDefaults
+                ? "GET " + spanPathTestInfo.expectedSpanName
+                : spanPathTestInfo.expectedSpanName;
+        assertThat("Span name", serverSpan.getName(), is(expectedSpanName));
     }
 
     record SpanPathTestInfo(String requestPath, String expectedSpanName) { }
