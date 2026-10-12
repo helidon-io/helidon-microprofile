@@ -23,11 +23,15 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.context.Context;
 import io.helidon.microprofile.config.core.MpConfigSources;
+import io.helidon.microprofile.security.SecurityCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.security.Security;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
@@ -52,6 +56,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.context.Contexts.globalContext;
+import static io.helidon.common.context.Contexts.runInContext;
 import static io.helidon.security.jwt.jwk.JwkRSA.ALG_RS256;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,28 +68,48 @@ class JwtAuthLifecycleTest {
     private ClassLoader classLoader;
     private Config originalConfig;
     private Config config;
+    private ServiceRegistryManager registryManager;
+    private Context context;
     private SeContainer container;
+    private Security security;
     private String uri;
 
     @BeforeEach
     void saveConfiguration() {
-        resolver = ConfigProviderResolver.instance();
-        classLoader = Thread.currentThread().getContextClassLoader();
-        originalConfig = resolver.getConfig(classLoader).unwrap(Config.class);
+        this.resolver = ConfigProviderResolver.instance();
+        this.classLoader = Thread.currentThread().getContextClassLoader();
+        this.originalConfig = this.resolver.getConfig(this.classLoader).unwrap(Config.class);
+
+        // Other tests can initialize the global service registry before us, so make our own "global" registry to avoid
+        // interference.
+        this.registryManager = ServiceRegistryManager.create();
+        this.context = Context.create();
+        this.context.register("helidon-registry-static-context", this.context);
+        this.context.register("helidon-registry", this.registryManager.registry());
     }
 
     @AfterEach
     void stopContainer() {
         try {
-            if (container != null) {
-                container.close();
+            if (this.container != null) {
+                runInContext(this.context, this.container::close);
             }
         } finally {
-            if (config != null) {
-                resolver.releaseConfig(config);
-            }
-            if (originalConfig != null) {
-                resolver.registerConfig(originalConfig, classLoader);
+            try {
+                if (this.registryManager != null) {
+                    runInContext(this.context, this.registryManager::shutdown);
+                }
+            } finally {
+                // SecurityCdiExtension publishes this instance in the global context.
+                if (this.security != null) {
+                    globalContext().unregister(this.security);
+                }
+                if (this.config != null) {
+                    this.resolver.releaseConfig(this.config);
+                }
+                if (this.originalConfig != null) {
+                    this.resolver.registerConfig(this.originalConfig, this.classLoader);
+                }
             }
         }
     }
@@ -113,7 +139,7 @@ class JwtAuthLifecycleTest {
                 "mp.jwt.verify.publickey.location", "verify-jwk.json",
                 "mp.jwt.verify.issuer", "lifecycle.example"));
         properties.putAll(providerConfig);
-        config = resolver.getBuilder()
+        this.config = this.resolver.getBuilder()
                 .withSources(MpConfigSources.create(properties))
                 .build();
         Extension configure = new Extension() {
@@ -122,12 +148,13 @@ class JwtAuthLifecycleTest {
             }
         };
 
-        container = SeContainerInitializer.newInstance()
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance()
                 .addExtensions(configure)
-                .addBeanClasses(JwtApplication.class, JwtResource.class)
-                .initialize();
-        int port = container.getBeanManager().getExtension(ServerCdiExtension.class).port();
-        uri = "http://localhost:" + port + "/jwt-lifecycle";
+                .addBeanClasses(JwtApplication.class, JwtResource.class);
+        this.container = runInContext(this.context, initializer::initialize);
+        this.security = this.container.getBeanManager().getExtension(SecurityCdiExtension.class).security().orElseThrow();
+        int port = this.container.getBeanManager().getExtension(ServerCdiExtension.class).port();
+        this.uri = "http://localhost:" + port + "/jwt-lifecycle";
     }
 
     @ApplicationScoped
