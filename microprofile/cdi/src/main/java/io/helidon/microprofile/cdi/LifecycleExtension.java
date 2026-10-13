@@ -60,6 +60,7 @@ public final class LifecycleExtension implements Extension {
         HelidonFeatures.flavor(HelidonFlavor.MP);
     }
 
+    @SuppressWarnings("deprecation")
     private void onValidation(@Observes @Priority(PLATFORM_BEFORE) AfterDeploymentValidation event, BeanManager beanManager) {
         Event<Object> events = beanManager.getEvent();
         events.select(BuildTimeStart.Literal.INSTANCE).fire("STATIC_INSTANCE");

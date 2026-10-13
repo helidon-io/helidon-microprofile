@@ -48,45 +48,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ServiceRegistryExtensionTest {
     @Test
-    void suppliedRegistryTakesPrecedenceAndSurvivesClose() {
-        ServiceRegistryManager suppliedManager = ServiceRegistryManager.create();
-        ServiceRegistryManager contextualManager = ServiceRegistryManager.create();
-        try {
-            ServiceRegistry supplied = suppliedManager.registry();
-            ServiceRegistry contextual = contextualManager.registry();
-            Config config = Config.empty();
-            runInContext(context(supplied), () -> Services.set(Config.class, config));
-            // (RegistryService is a nested class below.)
-            RegistryService service = supplied.get(RegistryService.class);
-            ServiceRegistryExtension extension = new ServiceRegistryExtension(supplied);
-
-            runInContext(context(contextual), () -> {
-                try (SeContainer container = initializer(extension).initialize()) {
-                    assertThat(container.getBeanManager().getExtension(ServiceRegistryExtension.class), sameInstance(extension));
-                    // (RegistryUser is a nested class below.)
-                    assertThat(container.select(RegistryUser.class).get().config(), sameInstance(config));
-                    assertThat(GlobalServiceRegistry.registry(), sameInstance(contextual));
-                }
-                assertThat(GlobalServiceRegistry.registry(), sameInstance(contextual));
-            });
-
-            assertThat(service.destructions, is(0));
-            assertThat(service.cdiDestructions, is(1));
-            assertThat(supplied.get(Config.class), sameInstance(config));
-            suppliedManager.shutdown();
-            assertThat(service.destructions, is(1));
-        } finally {
-            suppliedManager.shutdown();
-            contextualManager.shutdown();
-        }
-    }
-
-    @Test
     void contextualRegistrySurvivesClose() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
-        MpServiceRegistry unrelatedOwner = new MpServiceRegistry();
-        try {
-            unrelatedOwner.start();
+        ServiceRegistryExtension unrelatedOwner = new ServiceRegistryExtension();
+        try (SeContainer _ = initializer(unrelatedOwner).initialize()) {
+            ServiceRegistry unrelated = GlobalServiceRegistry.registry();
             ServiceRegistry registry = manager.registry();
             RegistryService service = registry.get(RegistryService.class);
             Config config = Config.empty();
@@ -103,7 +69,7 @@ class ServiceRegistryExtensionTest {
             assertThat(registry.get(Config.class), sameInstance(config));
             assertThat(service.destructions, is(0));
             assertThat(service.cdiDestructions, is(1));
-            assertThat(GlobalServiceRegistry.registry(), sameInstance(unrelatedOwner.registry()));
+            assertThat(GlobalServiceRegistry.registry(), sameInstance(unrelated));
         } finally {
             manager.shutdown();
             unrelatedOwner.shutdown();
@@ -111,22 +77,24 @@ class ServiceRegistryExtensionTest {
     }
 
     @Test
-    void suppliedRegistrySurvivesFailedInitialization() {
+    void contextualRegistrySurvivesFailedInitialization() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
-        MpServiceRegistry unrelatedOwner = new MpServiceRegistry();
-        try {
-            unrelatedOwner.start();
-            ServiceRegistry unrelated = unrelatedOwner.registry();
-            ServiceRegistry supplied = manager.registry();
-            RegistryService service = supplied.get(RegistryService.class);
-            ServiceRegistryExtension extension = new ServiceRegistryExtension(supplied);
+        ServiceRegistryExtension unrelatedOwner = new ServiceRegistryExtension();
+        try (SeContainer _ = initializer(unrelatedOwner).initialize()) {
+            ServiceRegistry unrelated = GlobalServiceRegistry.registry();
+            ServiceRegistry registry = manager.registry();
+            RegistryService service = registry.get(RegistryService.class);
+            ServiceRegistryExtension extension = new ServiceRegistryExtension();
             // (ValidationFailure is a nested class below.)
             ValidationFailure failure = new ValidationFailure();
-            assertThrows(RuntimeException.class,
-                         () -> initializer(extension).addExtensions(failure).initialize());
+            runInContext(context(registry), () -> {
+                assertThrows(RuntimeException.class,
+                             () -> initializer(extension).addExtensions(failure).initialize());
+                assertThat(GlobalServiceRegistry.registry(), sameInstance(registry));
+            });
             assertThat(failure.observed, is(true));
             assertThat(service.destructions, is(0));
-            assertThat(supplied.get(RegistryService.class), sameInstance(service));
+            assertThat(registry.get(RegistryService.class), sameInstance(service));
             assertThat(GlobalServiceRegistry.registry(), sameInstance(unrelated));
         } finally {
             manager.shutdown();
@@ -201,29 +169,37 @@ class ServiceRegistryExtensionTest {
 
     @Test
     void borrowedAndRepeatedCleanupLeaveOwnersAlone() {
-        MpServiceRegistry first = new MpServiceRegistry();
-        MpServiceRegistry borrower = new MpServiceRegistry();
-        MpServiceRegistry second = new MpServiceRegistry();
-        MpServiceRegistry secondBorrower = new MpServiceRegistry();
+        ServiceRegistryExtension first = new ServiceRegistryExtension();
+        ServiceRegistryExtension borrower = new ServiceRegistryExtension();
+        ServiceRegistryExtension second = new ServiceRegistryExtension();
+        ServiceRegistryExtension secondBorrower = new ServiceRegistryExtension();
         try {
-            first.start();
-            RegistryService firstService = first.registry().get(RegistryService.class);
-            borrower.start();
-            assertThat(borrower.registry(), sameInstance(first.registry()));
-            borrower.shutdown();
-            assertThat(firstService.destructions, is(0));
-            assertThat(GlobalServiceRegistry.registry(), sameInstance(first.registry()));
+            RegistryService firstService;
+            try (SeContainer _ = initializer(first).initialize()) {
+                ServiceRegistry firstRegistry = GlobalServiceRegistry.registry();
+                firstService = firstRegistry.get(RegistryService.class);
+                try (SeContainer _ = initializer(borrower).initialize()) {
+                    assertThat(GlobalServiceRegistry.registry(), sameInstance(firstRegistry));
+                }
+                assertThat(firstService.destructions, is(0));
+                assertThat(GlobalServiceRegistry.registry(), sameInstance(firstRegistry));
+            }
 
-            first.shutdown();
             assertThat(firstService.destructions, is(1));
-            second.start();
-            RegistryService secondService = second.registry().get(RegistryService.class);
-            first.shutdown();
-            borrower.shutdown();
-            assertThat(secondService.destructions, is(0));
-            assertThat(GlobalServiceRegistry.registry(), sameInstance(second.registry()));
-            secondBorrower.start();
-            assertThat(secondBorrower.registry(), sameInstance(second.registry()));
+            RegistryService secondService;
+            try (SeContainer _ = initializer(second).initialize()) {
+                ServiceRegistry secondRegistry = GlobalServiceRegistry.registry();
+                secondService = secondRegistry.get(RegistryService.class);
+                first.shutdown();
+                borrower.shutdown();
+                assertThat(secondService.destructions, is(0));
+                assertThat(GlobalServiceRegistry.registry(), sameInstance(secondRegistry));
+                try (SeContainer _ = initializer(secondBorrower).initialize()) {
+                    assertThat(GlobalServiceRegistry.registry(), sameInstance(secondRegistry));
+                }
+                assertThat(secondService.destructions, is(0));
+            }
+            assertThat(secondService.destructions, is(1));
         } finally {
             first.shutdown();
             borrower.shutdown();

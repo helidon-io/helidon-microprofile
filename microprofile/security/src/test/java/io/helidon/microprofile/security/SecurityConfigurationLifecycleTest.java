@@ -51,6 +51,12 @@ import static io.helidon.security.SecurityResponse.SecurityStatus.SUCCESS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+/**
+ * Verifies security configuration and builder customization ordering during CDI startup, with and without
+ * LifecycleExtension. Configuration registered during AfterBeanDiscovery must be applied before application
+ * customization observers run, and their changes must survive until Security is built. Authentication checks
+ * verify that providers added by those observers are used.
+ */
 class SecurityConfigurationLifecycleTest {
 
     private ConfigProviderResolver resolver;

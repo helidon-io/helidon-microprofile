@@ -26,10 +26,8 @@
  * must not configure {@link io.helidon.service.registry.GlobalServiceRegistry} or initialize it through
  * {@link io.helidon.service.registry.Services} before starting Helidon MP.
  * <p>
- * If a service registry is supplied to {@link io.helidon.microprofile.cdi.ServiceRegistryExtension}, or the current context
- * supplies one, Helidon MP uses that registry without replacing its Config service or shutting it down. The registry owner
- * remains responsible for its configuration and lifetime. An explicitly supplied registry takes precedence over a contextual
- * registry and does not change the registry selected by unrelated {@link io.helidon.service.registry.Services} calls.
+ * If the current context supplies a service registry, Helidon MP uses that registry without replacing its Config service or
+ * shutting it down. The registry owner remains responsible for its configuration and lifetime.
  *
  * @see jakarta.enterprise.context
  */

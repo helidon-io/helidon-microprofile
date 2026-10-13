@@ -30,38 +30,70 @@ import jakarta.enterprise.inject.se.SeContainer;
 @Deprecated(since = "28.0.0")
 public interface HelidonContainer {
     /**
-     * Reports that a global Helidon container is no longer available.
+     * Returns a non-{@code null} {@link HelidonContainer}.
      *
-     * @return never returns normally
-     * @throws IllegalStateException always
-     * @deprecated Retain the {@link jakarta.enterprise.inject.se.SeContainer} returned by initialization.
-     * @see jakarta.enterprise.inject.se.SeContainerInitializer
+     * <p>This method is deprecated. Existing and potential callers should use standard CDI SE features instead.</p>
+     *
+     * <p>This method returns a {@link HelidonContainer} that is implemented in terms of the {@link
+     * jakarta.enterprise.inject.spi.CDI#current()} method. If no current CDI container is available, the returned
+     * {@link HelidonContainer} {@linkplain jakarta.enterprise.inject.se.SeContainerInitializer#initialize() creates one}
+     * when {@link #start()} is called.</p>
+     *
+     * <p>Merely calling this method does <em>not</em> initialize CDI.</p>
+     *
+     * <p>The {@link HelidonContainer} that is returned uses the {@linkplain
+     * io.helidon.common.context.Contexts#context() current Helidon context}, or the {@linkplain
+     * io.helidon.common.context.Contexts#globalContext() global context} if there is no current context, and returns it
+     * from its {@link #context()} method.</p>
+     *
+     * @return a non-{@code null} {@link HelidonContainer}
+     * @throws IllegalStateException if the current CDI instance is not an {@linkplain SeContainer SeContainer}
+     * @deprecated Use facilities like {@link jakarta.enterprise.inject.se.SeContainerInitializer#initialize()} instead.
+     * @see jakarta.enterprise.inject.se.SeContainerInitializer#initialize()
      */
     @Deprecated(since = "28.0.0")
     static HelidonContainer instance() {
-        throw new IllegalStateException("Retain the SeContainer returned by initialization; no global Helidon container exists");
+        return HelidonContainerAdapter.create();
     }
 
     /**
-     * Start the container. This will finish the lifecycle of CDI implementation.
-     * If already started, this method is a noop.
+     * Initializes and starts an {@link SeContainer}, or returns an existing {@link SeContainer}.
      *
-     * @return the started container
-     * @throws IllegalStateException if this container has not been initialized or has been closed
+     * <p>Before initializing a new container, this {@link HelidonContainer} checks again for a current CDI SE
+     * container. Initialization runs in the current Helidon context, as described above, with Helidon's additional
+     * bean-defining annotations and CDI properties. Once associated with an {@link SeContainer}, this {@link
+     * HelidonContainer} remains notionally bound to it, including after it is closed.</p>
+     *
+     * @return a non-{@code null} {@link SeContainer}
+     * @throws IllegalStateException if the associated container has been closed, the current CDI instance is not an
+     *                               {@link SeContainer SeContainer}, or initialization is called recursively
+     * @deprecated Use facilities like {@link jakarta.enterprise.inject.se.SeContainerInitializer#initialize()} instead.
      */
+    @Deprecated(since = "28.0.0")
     SeContainer start();
 
     /**
-     * The root context of MP.
+     * Returns the Helidon {@link Context} captured when this {@link HelidonContainer} was {@linkplain #instance()
+     * acquired}, falling back to the {@linkplain io.helidon.common.context.Contexts#globalContext() global context} if
+     * necessary.
      *
-     * @return context
+     * <p>Note that the returned {@link Context} is not necessarily the one in which an already-running CDI {@link
+     * SeContainer} was initialized.
+     *
+     * @return a non-{@code null} {@link Context}
+     * @deprecated Use facilities like {@link jakarta.enterprise.inject.se.SeContainerInitializer#initialize()} instead.
      */
+    @Deprecated(since = "28.0.0")
     Context context();
 
     /**
-     * Shutdown the container (and CDI).
+     * Shut down the associated {@link SeContainer}.
+     *
+     * <p>If this {@link HelidonContainer} has not yet {@linkplain #start() been started}, this method does nothing.</p>
      *
      * @throws IllegalStateException if this container has already been closed
+     * @deprecated Use facilities like {@link jakarta.enterprise.inject.se.SeContainerInitializer#initialize()} instead.
      */
+    @Deprecated(since = "28.0.0")
     void shutdown();
 }

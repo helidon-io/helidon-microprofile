@@ -24,7 +24,7 @@
 
     <Match>
         <!-- The shared MP registry owner is deliberately updated under LOCK; each instance retains its own ownership. -->
-        <Class name="io.helidon.microprofile.cdi.MpServiceRegistry"/>
+        <Class name="io.helidon.microprofile.cdi.ServiceRegistryExtension$RegistryLifecycle"/>
         <Method name="start"/>
         <Field name="shutdownHandler"/>
         <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>

@@ -28,11 +28,12 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Deprecated(since = "28.0.0")
 class ExplicitCdiProviderTest {
     @Test
     void testCompatibilityProviderPreservesCallingContainer() {
         CDI.setCDIProvider(new HelidonCdiProvider());
-        try (SeContainer first = SeContainerInitializer.newInstance()
+        try (SeContainer _ = SeContainerInitializer.newInstance()
                 .disableDiscovery().addBeanClasses(TestBean2.class).initialize();
              SeContainer second = SeContainerInitializer.newInstance()
                 .disableDiscovery().addBeanClasses(ProviderCaller.class).initialize()) {

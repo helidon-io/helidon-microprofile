@@ -154,6 +154,8 @@ public class SecurityCdiExtension implements Extension {
 
         // security is available in global
         Contexts.globalContext().register(security);
+        // Replace any Security left behind in the current Helidon context by an earlier CDI container before
+        // securityFeatureBuilder.build() resolves its default Security from that context.
         Contexts.context().ifPresent(ctx -> ctx.register(security));
 
         JaxRsCdiExtension jaxrs = bm.getExtension(JaxRsCdiExtension.class);

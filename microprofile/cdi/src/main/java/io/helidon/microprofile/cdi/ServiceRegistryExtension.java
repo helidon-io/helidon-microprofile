@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -35,9 +37,11 @@ import io.helidon.common.context.Context;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.config.Config;
 import io.helidon.metadata.reflection.AnnotationFactory;
 import io.helidon.metadata.reflection.TypeFactory;
 import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.InterceptionMetadata;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
@@ -47,6 +51,7 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import jakarta.annotation.Priority;
@@ -80,6 +85,7 @@ import jakarta.inject.Named;
 import jakarta.inject.Scope;
 import jakarta.inject.Singleton;
 import jakarta.interceptor.Interceptor;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.literal.NamedLiteral;
 
 import static io.helidon.common.context.Contexts.context;
@@ -113,40 +119,29 @@ public class ServiceRegistryExtension implements Extension {
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
 
-    private final Set<CdiServiceId> processedBeans = new HashSet<>();
-    private final MpServiceRegistry mpServiceRegistry;
+    private final Set<CdiServiceId> processedBeans;
+    private final RegistryLifecycle registryLifecycle;
 
     private ServiceRegistry serviceRegistry;
 
     /**
      * Creates an extension whose registry is selected during Helidon CDI initialization.
-     * An existing contextual or MP-owned registry is borrowed; otherwise a registry is created and owned by this extension.
+     *
+     * <p>An existing contextual or MP-owned registry is borrowed; otherwise a registry is created and owned by this
+     * extension.</p>
      */
-    @Api.Internal
     public ServiceRegistryExtension() {
         super();
-        this.mpServiceRegistry = new MpServiceRegistry();
-    }
-
-    /**
-     * Creates an extension using the supplied registry. The caller remains responsible for its configuration and shutdown.
-     * This does not change the registry selected by unrelated {@link io.helidon.service.registry.Services} calls.
-     *
-     * @param serviceRegistry registry to use
-     * @throws NullPointerException if {@code serviceRegistry} is {@code null}
-     */
-    public ServiceRegistryExtension(ServiceRegistry serviceRegistry) {
-        super();
-        this.mpServiceRegistry = new MpServiceRegistry(requireNonNull(serviceRegistry, "serviceRegistry"));
+        this.processedBeans = new HashSet<>();
+        this.registryLifecycle = new RegistryLifecycle();
     }
 
     void shutdown() {
-        mpServiceRegistry.shutdown();
+        this.registryLifecycle.shutdown();
     }
 
     void obtainServiceRegistry(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery bbd) {
-        this.mpServiceRegistry.start();
-        this.serviceRegistry = this.mpServiceRegistry.registry();
+        this.serviceRegistry = this.registryLifecycle.start();
     }
 
     void registerTypes(@Observes @Priority(PLATFORM_AFTER) BeforeBeanDiscovery bbd) {
@@ -870,6 +865,127 @@ public class ServiceRegistryExtension implements Extension {
             return "CDI bean descriptor for: Contract: " + theType.getTypeName()
                     + "; bean: " + serviceType.fqName()
                     + " (" + weight + ")";
+        }
+    }
+
+    private static final class RegistryLifecycle {
+        private static final String GLOBAL_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
+        private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";
+        private static final ReentrantLock LOCK = new ReentrantLock();
+
+        private static RegistryShutdownHandler shutdownHandler;
+
+        private RegistryShutdownHandler createdShutdownHandler;
+
+        private RegistryLifecycle() {
+            super();
+        }
+
+        private static Config config() {
+            org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+            return config instanceof Config helidonConfig ? helidonConfig : config.unwrap(Config.class);
+        }
+
+        private static void configureRegistry(ServiceRegistry registry, Config config) {
+            Context setupContext = Context.create();
+            setupContext.register(GLOBAL_CONTEXT_CLASSIFIER, setupContext);
+            setupContext.register(GLOBAL_REGISTRY_CLASSIFIER, registry);
+            runInContext(setupContext, () -> Services.set(Config.class, config));
+        }
+
+        private static Optional<ServiceRegistry> contextualRegistry() {
+            return context()
+                    .flatMap(context -> context.get(GLOBAL_CONTEXT_CLASSIFIER, Context.class))
+                    .filter(context -> context != globalContext())
+                    .flatMap(context -> context.get(GLOBAL_REGISTRY_CLASSIFIER, ServiceRegistry.class));
+        }
+
+        private ServiceRegistry start() {
+            Optional<ServiceRegistry> contextualRegistry = contextualRegistry();
+            if (contextualRegistry.isPresent()) {
+                return contextualRegistry.get();
+            }
+
+            LOCK.lock();
+            try {
+                if (shutdownHandler != null) {
+                    if (!shutdownHandler.shutdown.get()
+                            && GlobalServiceRegistry.configured()
+                            && GlobalServiceRegistry.registry() == shutdownHandler.registry) {
+                        return shutdownHandler.registry;
+                    }
+                    throw new ServiceRegistryException("Helidon MP service registry is already started.");
+                }
+                Config config = config();
+                ServiceRegistryManager manager = null;
+                try {
+                    if (GlobalServiceRegistry.configured()) {
+                        throw new ServiceRegistryException(
+                                "Application-global service registry was initialized before Helidon MP startup.");
+                    }
+                    manager = ServiceRegistryManager.create();
+                    ServiceRegistry registry = manager.registry();
+                    configureRegistry(registry, config);
+                    ServiceRegistry selectedRegistry = GlobalServiceRegistry.registry(() -> registry);
+                    if (selectedRegistry != registry) {
+                        throw new ServiceRegistryException(
+                                "Application-global service registry was initialized while Helidon MP was starting.");
+                    }
+
+                    RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
+                    shutdownHandler = newShutdownHandler;
+                    this.createdShutdownHandler = newShutdownHandler;
+                    return registry;
+                } catch (RuntimeException | Error e) {
+                    shutdownHandler = null;
+                    if (manager != null) {
+                        try {
+                            manager.shutdown();
+                        } catch (RuntimeException | Error cleanupFailure) {
+                            e.addSuppressed(cleanupFailure);
+                        }
+                    }
+                    throw e;
+                }
+            } finally {
+                LOCK.unlock();
+            }
+        }
+
+        private void shutdown() {
+            LOCK.lock();
+            try {
+                if (this.createdShutdownHandler != null) {
+                    this.createdShutdownHandler.shutdown();
+                    if (shutdownHandler == this.createdShutdownHandler) {
+                        // Clear the static shutdownHandler only if it still "belongs" to us.
+                        shutdownHandler = null;
+                    }
+                }
+            } finally {
+                LOCK.unlock();
+            }
+        }
+
+        private static final class RegistryShutdownHandler {
+            private final ServiceRegistryManager manager;
+            private final ServiceRegistry registry;
+            private final AtomicBoolean shutdown = new AtomicBoolean();
+
+            private RegistryShutdownHandler(ServiceRegistryManager manager, ServiceRegistry registry) {
+                this.manager = manager;
+                this.registry = registry;
+            }
+
+            private void shutdown() {
+                if (this.shutdown.compareAndSet(false, true)) {
+                    try {
+                        this.manager.shutdown();
+                    } catch (Exception e) {
+                        LOGGER.log(System.Logger.Level.ERROR, "Failed to shutdown Helidon MP Service Registry", e);
+                    }
+                }
+            }
         }
     }
 }

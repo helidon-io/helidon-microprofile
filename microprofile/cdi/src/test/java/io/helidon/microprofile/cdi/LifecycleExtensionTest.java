@@ -52,7 +52,7 @@ class LifecycleExtensionTest {
                 events.add("shutdown");
             }
         };
-        try (SeContainer container = SeContainerInitializer.newInstance()
+        try (SeContainer _ = SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(observer)
                 .addBeanClasses(TestBean2.class)

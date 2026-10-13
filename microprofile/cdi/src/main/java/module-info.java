@@ -29,13 +29,13 @@ import io.helidon.common.features.api.HelidonFlavor;
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.cdi {
 
-    requires io.helidon.common.context;
+    requires transitive io.helidon.common.context;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.common.configurable;
     requires io.helidon.common;
     requires io.helidon.microprofile.config.core;
-    requires io.helidon.config;
+    requires transitive io.helidon.config;
     requires io.helidon.logging.common;
     requires io.helidon.metadata.reflection;
     requires jakarta.el; // weld requires jakarta.el.ELResolver on module path
@@ -50,7 +50,7 @@ module io.helidon.microprofile.cdi {
     requires transitive weld.spi;
 
     requires weld.api;
-    requires weld.core.impl;
+    requires transitive weld.core.impl;
     requires weld.environment.common;
     requires transitive weld.se.core;
 

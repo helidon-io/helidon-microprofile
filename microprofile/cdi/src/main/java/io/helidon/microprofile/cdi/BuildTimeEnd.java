@@ -61,5 +61,18 @@ public @interface BuildTimeEnd {
         public static final Literal INSTANCE = new Literal();
 
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Creates a new {@link Literal}.
+         *
+         * @deprecated In prior revisions of this class, the default constructor was not specified, so was implicitly
+         * {@code public}. This explicit constructor replaces the default constructor and is {@code public} for
+         * backwards compatibility only. It should not be used.
+         */
+        @Deprecated(since = "28.0.0")
+        @SuppressWarnings("checkstyle:RedundantModifier") // checkstyle bug
+        public Literal() {
+            super();
+        }
     }
 }

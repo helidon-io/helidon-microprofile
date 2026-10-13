@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Unit test for {@link HelidonContainerInitializer}.
  */
+@Deprecated(since = "28.0.0")
 class HelidonContainerInitializerTest {
     private static ConfigProviderResolver configResolver;
     private static ClassLoader cl;
@@ -182,7 +183,7 @@ class HelidonContainerInitializerTest {
     @SuppressWarnings("unchecked") // generic array creation via addExtensions
     @Test
     void testContainerLookupDoesNotInitialize() {
-        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        HelidonContainer.instance().shutdown();
         assertThrows(IllegalStateException.class, CDI::current);
         assertThat(GlobalServiceRegistry.configured(), is(false));
 
@@ -191,17 +192,17 @@ class HelidonContainerInitializerTest {
                 .addExtensions(ServiceRegistryExtension.class)
                 .addBeanClasses(TestBean.class);
 
-        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        HelidonContainer.instance().shutdown();
         assertThrows(IllegalStateException.class, CDI::current);
         assertThat(GlobalServiceRegistry.configured(), is(false));
 
         try (SeContainer container = initializer.initialize()) {
-            assertThrows(IllegalStateException.class, HelidonContainer::instance);
+            assertThat(HelidonContainer.instance().start(), sameInstance(container));
             assertThat(CDI.current(), sameInstance(container));
             assertThat(GlobalServiceRegistry.configured(), is(true));
         }
 
-        assertThrows(IllegalStateException.class, HelidonContainer::instance);
+        HelidonContainer.instance().shutdown();
         assertThrows(IllegalStateException.class, CDI::current);
         assertThat(GlobalServiceRegistry.configured(), is(false));
     }
@@ -244,7 +245,7 @@ class HelidonContainerInitializerTest {
                 .initialize()) {
             assertThat(first.select(TestBean.class).get().test(), is("test"));
             assertThat(second.select(TestBean2.class).get().message(), is("Hello"));
-            assertThrows(IllegalStateException.class, HelidonContainer::instance);
+            assertThat(HelidonContainer.instance().start(), sameInstance(CDI.current()));
         }
     }
 
@@ -263,7 +264,7 @@ class HelidonContainerInitializerTest {
             assertThrows(IllegalStateException.class, closedContainer::close);
 
             assertThat(CDI.current(), sameInstance(container));
-            assertThrows(IllegalStateException.class, HelidonContainer::instance);
+            assertThat(HelidonContainer.instance().start(), sameInstance(container));
             assertThat(container.isRunning(), is(true));
             assertThat(container.select(TestBean.class).get().test(), is("test"));
         }
