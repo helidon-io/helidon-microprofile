@@ -21,6 +21,7 @@ import io.helidon.webserver.http.ServerRequest;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -55,8 +56,9 @@ interface SyntheticRestRequestWorkItem extends MetricWorkItem {
 
     static SyntheticRestRequestWorkItem create(MetricsCdiExtension metricsCdiExtension,
                                                Class<?> measuredClass,
-                                               Method measuredMethod) {
-        return new AdHoc(metricsCdiExtension, measuredClass, measuredMethod);
+                                               Method measuredMethod,
+                                               MetricRegistry baseRegistry) {
+        return new AdHoc(metricsCdiExtension, measuredClass, measuredMethod, baseRegistry);
     }
 
     record Prepared(MetricID successfulTimerMetricID,
@@ -75,16 +77,21 @@ interface SyntheticRestRequestWorkItem extends MetricWorkItem {
         private final MetricsCdiExtension metricsCdiExtension;
         private final Class<?> measuredClass;
         private final Method measuredMethod;
+        private final MetricRegistry baseRegistry;
 
         private MetricID successfulTimerMetricId;
         private Timer successfulTimer;
         private MetricID unmappedExceptionCounterMetricId;
         private Counter unmappedExceptionCounter;
 
-        private AdHoc(MetricsCdiExtension metricsCdiExtension, Class<?> measuredClass, Method measuredMethod) {
+        private AdHoc(MetricsCdiExtension metricsCdiExtension,
+                      Class<?> measuredClass,
+                      Method measuredMethod,
+                      MetricRegistry baseRegistry) {
             this.metricsCdiExtension = metricsCdiExtension;
             this.measuredClass = measuredClass;
             this.measuredMethod = measuredMethod;
+            this.baseRegistry = baseRegistry;
         }
 
         @Override
@@ -103,7 +110,7 @@ interface SyntheticRestRequestWorkItem extends MetricWorkItem {
         @Override
         public Timer successfulTimer() {
             if (successfulTimer == null) {
-                successfulTimer = MetricsCdiExtension.restEndpointTimer(measuredClass, measuredMethod);
+                successfulTimer = MetricsCdiExtension.restEndpointTimer(measuredClass, measuredMethod, baseRegistry);
             }
             return successfulTimer;
         }
@@ -111,7 +118,8 @@ interface SyntheticRestRequestWorkItem extends MetricWorkItem {
         @Override
         public MetricID unmappedExceptionCounterMetricID() {
             if (unmappedExceptionCounterMetricId == null) {
-                unmappedExceptionCounterMetricId = metricsCdiExtension.restEndpointCounterMetricID(measuredClass, measuredMethod);
+                unmappedExceptionCounterMetricId =
+                    metricsCdiExtension.restEndpointCounterMetricID(measuredClass, measuredMethod);
             }
             return unmappedExceptionCounterMetricId;
         }
@@ -119,7 +127,7 @@ interface SyntheticRestRequestWorkItem extends MetricWorkItem {
         @Override
         public Counter unmappedExceptionCounter() {
             if (unmappedExceptionCounter == null) {
-                unmappedExceptionCounter = MetricsCdiExtension.restEndpointCounter(measuredClass, measuredMethod);
+                unmappedExceptionCounter = MetricsCdiExtension.restEndpointCounter(measuredClass, measuredMethod, baseRegistry);
             }
             return unmappedExceptionCounter;
         }

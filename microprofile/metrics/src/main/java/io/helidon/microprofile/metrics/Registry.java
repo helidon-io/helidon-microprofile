@@ -136,13 +136,13 @@ class Registry implements MetricRegistry {
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+        return Objects.requireNonNullElseGet(this.<R>getTypedGauge(new MetricID(name, tags)),
                                              () -> createGauge(metadata(name), object, func, tags));
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
-        return Objects.requireNonNullElseGet(getGauge(metricID),
+        return Objects.requireNonNullElseGet(this.<R>getTypedGauge(metricID),
                                              () -> createGauge(
                                                      metadata(metricID),
                                                      object,
@@ -152,19 +152,19 @@ class Registry implements MetricRegistry {
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+        return Objects.requireNonNullElseGet(this.<R>getTypedGauge(metricID(metadata, tags)),
                                              () -> createGauge(metadata, object, func, tags));
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+        return Objects.requireNonNullElseGet(this.<T>getTypedGauge(new MetricID(name, tags)),
                                              () -> createGauge(metadata(name), supplier, tags));
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
-        return Objects.requireNonNullElseGet(getGauge(metricID),
+        return Objects.requireNonNullElseGet(this.<T>getTypedGauge(metricID),
                                              () -> createGauge(metadata(metricID),
                                                                supplier,
                                                                metricID.getTagsAsArray()));
@@ -172,7 +172,7 @@ class Registry implements MetricRegistry {
 
     @Override
     public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+        return Objects.requireNonNullElseGet(this.<T>getTypedGauge(metricID(metadata, tags)),
                                              () -> createGauge(metadata, supplier, tags));
     }
 
@@ -252,7 +252,7 @@ class Registry implements MetricRegistry {
     }
 
     @Override
-    public Gauge getGauge(MetricID metricID) {
+    public Gauge<?> getGauge(MetricID metricID) {
         return getMetric(metricID, Gauge.class);
     }
 
@@ -359,7 +359,9 @@ class Registry implements MetricRegistry {
         try {
             return metricsById.entrySet().stream().filter(entry -> ofType.isInstance(entry.getValue()))
                     .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
+                    .collect(TreeMap::new,
+                             (map, entry) -> map.put(entry.getKey(), ofType.cast(entry.getValue())),
+                             TreeMap::putAll);
         } finally {
             lock.unlock();
         }
@@ -492,6 +494,11 @@ class Registry implements MetricRegistry {
         } finally {
             lock.unlock();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    <R extends Number> Gauge<R> getTypedGauge(MetricID metricID) {
+        return (Gauge<R>) getGauge(metricID);
     }
 
     private static Iterable<Map.Entry<String, String>> iterableEntries(Tag... tags) {
@@ -656,6 +663,7 @@ class Registry implements MetricRegistry {
                                                            delegate));
     }
 
+    @SuppressWarnings("unchecked")
     private <HM extends HelidonMetric<M>,
             M extends Meter,
             B extends Meter.Builder<B, M>> HM createMeter(B builder,
@@ -704,7 +712,7 @@ class Registry implements MetricRegistry {
         if (meter instanceof FunctionalCounter fCounter) {
             return HelidonGauge.create(scope, metadata, fCounter);
         }
-        if (meter instanceof io.helidon.metrics.api.Gauge gauge) {
+        if (meter instanceof io.helidon.metrics.api.Gauge<?> gauge) {
             return HelidonGauge.create(scope, metadata, gauge);
         }
         if (meter instanceof io.helidon.metrics.api.Timer timer) {

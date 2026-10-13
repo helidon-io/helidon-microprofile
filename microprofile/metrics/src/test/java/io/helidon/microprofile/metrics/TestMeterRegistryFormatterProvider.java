@@ -80,4 +80,5 @@ public final class TestMeterRegistryFormatterProvider implements MeterRegistryFo
                                                       Iterable<String> nameSelection) {
         return Optional.empty();
     }
+
 }
