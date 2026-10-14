@@ -243,7 +243,6 @@ public interface Server {
         /**
          * JAX-RS resource configuration to use. This will add the provided resource config
          * as an additional application.
-         * <p>
          *
          * @param config configuration to bootstrap Jersey
          * @return modified builder

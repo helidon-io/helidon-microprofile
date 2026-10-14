@@ -36,36 +36,55 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
- * Initializes Helidon MP support and delivers legacy Helidon lifecycle events during ordinary CDI initialization.
- * Logging, deserialization filtering, and the MP feature-reporting flavor are configured before service registry acquisition.
- * Features are reported late in {@link Startup}, using the {@code features.print-details} configuration property.
- * The legacy events are fired in order during {@link AfterDeploymentValidation}, at priority
- * {@link jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE}, before ordinary-priority observers.
- * Applications that disable extension discovery must explicitly register this extension if they need this setup or
- * features that observe the legacy events. The Helidon testing framework supplies it automatically for its test containers.
+ * An {@link Extension} that ensures {@linkplain LogConfig#configureRuntime() logging is configured}, {@linkplain
+ * SerializationConfig#configureRuntime() serialization is configured}, and certain "lifecycle events" fired by previous
+ * versions of Helidon MicroProfile continue to be fired for backwards compatibility (though they are deprecated; prefer
+ * standard CDI lifecycle events instead for new development).
+ *
+ * <p>Applications and tests that {@linkplain jakarta.enterprise.inject.se.SeContainerInitializer#disableDiscovery()
+ * disable extension discovery} must explicitly {@linkplain
+ * jakarta.enterprise.inject.se.SeContainerInitializer#addExtensions(Extension...) register this extension} if they need
+ * this setup or features that observe these events. The Helidon testing framework supplies it automatically for its
+ * test containers.</p>
+ *
+ * @see LogConfig#configureRuntime()
+ * @see SerializationConfig#configureRuntime()
  */
 @Api.Stable
 public final class LifecycleExtension implements Extension {
     /**
-     * Creates the compatibility extension for CDI discovery or explicit registration.
+     * Creates a new {@link LifecycleExtension}.
      */
     public LifecycleExtension() {
         super();
     }
 
     private void onDiscovery(@Observes @Priority(PLATFORM_BEFORE - 1) BeforeBeanDiscovery event) {
-        // Run before service registry acquisition, which can initialize Helidon services.
+        // The priority is so this runs before service registry acquisition (see ServiceRegistryExtension), which can
+        // initialize Helidon services that might need logging and serialization set up properly.
         LogConfig.configureRuntime();
         SerializationConfig.configureRuntime();
         HelidonFeatures.flavor(HelidonFlavor.MP);
     }
 
     @SuppressWarnings("deprecation")
-    private void onValidation(@Observes @Priority(PLATFORM_BEFORE) AfterDeploymentValidation event, BeanManager beanManager) {
+    private void fireBuildTimeStartAndEnd(@Observes @Priority(PLATFORM_BEFORE) AfterDeploymentValidation event,
+                                          BeanManager beanManager) {
         Event<Object> events = beanManager.getEvent();
+        // ("STATIC_INSTANCE" is the event fired by prior versions of Helidon MicroProfile and is used here for
+        // backwards compatibility.)
         events.select(BuildTimeStart.Literal.INSTANCE).fire("STATIC_INSTANCE");
         events.select(BuildTimeEnd.Literal.INSTANCE).fire("STATIC_INSTANCE");
-        events.select(RuntimeStart.Literal.INSTANCE).fire(ConfigProvider.getConfig());
+    }
+
+    @SuppressWarnings("deprecation")
+    private void fireRuntimeStart(@Observes @Priority(PLATFORM_BEFORE + 2) AfterDeploymentValidation event,
+                                  BeanManager beanManager) {
+        // Note that io.helidon.microprofile.server.ServerCdiExtension has an AfterDeploymentValidation observer that
+        // runs "in between" the #fireBuildTimeStartAndEnd(AfterDeploymentValidation, BeanManager) observer above and
+        // this observer. This preserves an ordering that was present in prior versions of Helidon MicroProfile and that
+        // end users might be relying on.
+        beanManager.getEvent().select(RuntimeStart.Literal.INSTANCE).fire(ConfigProvider.getConfig());
     }
 
     private void onStartup(@Observes @Priority(PLATFORM_AFTER) Startup event) {

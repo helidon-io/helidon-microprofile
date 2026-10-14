@@ -35,7 +35,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * <p>{@link LifecycleExtension} fires this event during {@link
  * jakarta.enterprise.inject.spi.AfterDeploymentValidation}, at priority {@link
- * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE}, after {@link BuildTimeStart} and {@link BuildTimeEnd}. Its
+ * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE} plus two, after {@link BuildTimeStart} and {@link BuildTimeEnd}. Its
  * payload is the current {@link org.eclipse.microprofile.config.Config} returned by {@link
  * org.eclipse.microprofile.config.ConfigProvider#getConfig()} at delivery time. All three events now occur within
  * ordinary CDI initialization and no longer represent separate build and runtime phases.</p>

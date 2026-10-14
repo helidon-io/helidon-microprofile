@@ -43,7 +43,6 @@ import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jersey.webserver.JaxRsService;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Scopes;
@@ -364,18 +363,13 @@ public class ServerCdiExtension implements Extension {
         return (null == prio) ? Prioritized.DEFAULT_PRIORITY : prio.value();
     }
 
-    private void prepareRuntime(@Observes @RuntimeStart Config config) {
-        if (this.config == null) {
-            configure(config);
-        }
-    }
-
-    private void afterDeploymentValidation(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
-        // Preserve customizations made after our RuntimeStart observer by configuring here only if it has not run.
-        // This still precedes ServerImpl's programmatic overrides at the default observer priority.
-        if (this.config == null) {
-            configure(toHelidonConfig(getConfig()));
-        }
+    private void afterDeploymentValidation(@Observes @Priority(PLATFORM_BEFORE + 1) AfterDeploymentValidation event) {
+        // Prior versions of Helidon MicroProfile that split CDI's implementation into a build-time part and a runtime
+        // part fired events when "build time" started and ended, and when "runtime" started and ended. This extension
+        // used to take action when runtime started. That event's ordering was very specific. The priority here
+        // preserves that ordering as best as possible while still using standard lifecycle events instead. See
+        // io.helidon.microprofile.cdi.LifecycleExtension's AfterDeploymentValidation observers for more information.
+        this.configure(toHelidonConfig(getConfig()));
     }
 
     private void configure(Config config) {
