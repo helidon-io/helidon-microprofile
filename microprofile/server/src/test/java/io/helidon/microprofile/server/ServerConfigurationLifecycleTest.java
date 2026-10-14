@@ -213,7 +213,7 @@ class ServerConfigurationLifecycleTest {
     }
 
     @Nested
-    class WithoutLifecycleExtension {
+    class WithoutCdiExtension {
         private final TestRouting routing = new TestRouting();
         private SeContainer container;
 
@@ -236,7 +236,7 @@ class ServerConfigurationLifecycleTest {
                     .disableDiscovery()
                     .addExtensions(customize,
                                    new JaxRsCdiExtension(),
-                                   // (No LifecycleExtension on purpose.)
+                                   // (No CdiExtension on purpose.)
                                    new ServerCdiExtension(),
                                    new ServiceRegistryExtension())
                     .addBeanClasses(TestBean.class)

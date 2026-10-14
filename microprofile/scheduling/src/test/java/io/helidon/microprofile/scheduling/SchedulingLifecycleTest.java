@@ -67,7 +67,7 @@ class SchedulingLifecycleTest {
             }
         };
 
-        // Scheduling must work without io.helidon.microprofile.cdi.LifecycleExtension; note it is not present in the
+        // Scheduling must work without io.helidon.microprofile.cdi.CdiExtension; note it is not present in the
         // addExtensions() call.
         container = SeContainerInitializer.newInstance()
                 .disableDiscovery()

@@ -368,7 +368,7 @@ public class ServerCdiExtension implements Extension {
         // part fired events when "build time" started and ended, and when "runtime" started and ended. This extension
         // used to take action when runtime started. That event's ordering was very specific. The priority here
         // preserves that ordering as best as possible while still using standard lifecycle events instead. See
-        // io.helidon.microprofile.cdi.LifecycleExtension's AfterDeploymentValidation observers for more information.
+        // io.helidon.microprofile.cdi.CdiExtension's AfterDeploymentValidation observers for more information.
         this.configure(toHelidonConfig(getConfig()));
     }
 

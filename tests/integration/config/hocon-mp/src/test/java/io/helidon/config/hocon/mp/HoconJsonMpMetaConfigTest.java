@@ -16,7 +16,7 @@
 
 package io.helidon.config.hocon.mp;
 
-import io.helidon.microprofile.cdi.LifecycleExtension;
+import io.helidon.microprofile.cdi.CdiExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -48,7 +48,7 @@ class HoconJsonMpMetaConfigTest {
 
         container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(LifecycleExtension.class,
+                .addExtensions(CdiExtension.class,
                                ConfigCdiExtension.class,
                                ServerCdiExtension.class,
                                JaxRsCdiExtension.class)

@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.helidon.microprofile.cdi.BuildTimeEnd;
 import io.helidon.microprofile.cdi.BuildTimeStart;
-import io.helidon.microprofile.cdi.LifecycleExtension;
+import io.helidon.microprofile.cdi.CdiExtension;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.testing.AddExtension;
 import io.helidon.microprofile.testing.DisableDiscovery;
@@ -52,14 +52,14 @@ class TestLifecycleEvents {
     }
 
     @Test
-    @AddExtension(LifecycleExtension.class)
+    @AddExtension(CdiExtension.class)
     void testExplicitExtensionWithDiscovery(SeContainer container) {
         assertEvents(container);
     }
 
     @Test
     @DisableDiscovery
-    @AddExtension(LifecycleExtension.class)
+    @AddExtension(CdiExtension.class)
     void testExplicitExtensionWithoutDiscovery(SeContainer container) {
         assertEvents(container);
     }

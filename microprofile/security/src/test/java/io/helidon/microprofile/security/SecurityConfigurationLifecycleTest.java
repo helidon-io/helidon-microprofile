@@ -53,7 +53,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Verifies security configuration and builder customization ordering during CDI startup, with and without
- * LifecycleExtension. Configuration registered during AfterBeanDiscovery must be applied before application
+ * CdiExtension. Configuration registered during AfterBeanDiscovery must be applied before application
  * customization observers run, and their changes must survive until Security is built. Authentication checks
  * verify that providers added by those observers are used.
  */
@@ -126,7 +126,7 @@ class SecurityConfigurationLifecycleTest {
         this.security = this.container.getBeanManager().getExtension(SecurityCdiExtension.class).security().orElseThrow();
     }
 
-    private SeContainerInitializer createInitializerWithoutLifecycleExtension() {
+    private SeContainerInitializer createInitializerWithoutCdiExtension() {
         return createInitializer()
                 .disableDiscovery()
                 .addExtensions(new ServiceRegistryExtension(), new ServerCdiExtension(),
@@ -179,10 +179,10 @@ class SecurityConfigurationLifecycleTest {
     }
 
     @Nested
-    class WithoutLifecycleExtension {
+    class WithoutCdiExtension {
         @BeforeEach
         void start() {
-            startContainer(createInitializerWithoutLifecycleExtension());
+            startContainer(createInitializerWithoutCdiExtension());
         }
 
         @Test
@@ -202,7 +202,7 @@ class SecurityConfigurationLifecycleTest {
                             .addAuthenticationProvider(_ -> success(Principal.create("validation-user")));
                 }
             };
-            startContainer(createInitializerWithoutLifecycleExtension().addExtensions(customize));
+            startContainer(createInitializerWithoutCdiExtension().addExtensions(customize));
         }
 
         @Test

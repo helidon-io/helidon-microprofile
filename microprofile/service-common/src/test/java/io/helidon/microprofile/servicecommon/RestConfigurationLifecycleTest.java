@@ -17,7 +17,7 @@ package io.helidon.microprofile.servicecommon;
 
 import java.util.Map;
 
-import io.helidon.microprofile.cdi.LifecycleExtension;
+import io.helidon.microprofile.cdi.CdiExtension;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.config.core.MpConfigSources;
 
@@ -117,7 +117,7 @@ class RestConfigurationLifecycleTest {
     }
 
     @Nested
-    class WithoutLifecycleExtension {
+    class WithoutCdiExtension {
         @BeforeEach
         void start() {
             container = createInitializer().initialize();
@@ -132,10 +132,10 @@ class RestConfigurationLifecycleTest {
     }
 
     @Nested
-    class WithLifecycleExtension {
+    class WithCdiExtension {
         @BeforeEach
         void start() {
-            container = createInitializer().addExtensions(new LifecycleExtension()).initialize();
+            container = createInitializer().addExtensions(new CdiExtension()).initialize();
         }
 
         @Test

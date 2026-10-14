@@ -89,7 +89,7 @@ class LifecycleSetupTest {
         try (SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
-                .addExtensions(new LifecycleExtension(), verification)
+                .addExtensions(new CdiExtension(), verification)
                 .initialize()) {
             assertThat(container.isRunning(), is(true));
             // Feature reporting is asynchronous; wait for its observable output.

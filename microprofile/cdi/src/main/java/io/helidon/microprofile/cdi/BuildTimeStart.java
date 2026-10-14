@@ -33,7 +33,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * A qualifier qualifying an event that was fired by earlier versions of Helidon MicroProfile.
  *
- * <p>{@link LifecycleExtension} fires this event with the string payload {@code "STATIC_INSTANCE"} during {@link
+ * <p>{@link CdiExtension} fires this event with the string payload {@code "STATIC_INSTANCE"} during {@link
  * jakarta.enterprise.inject.spi.AfterDeploymentValidation}, at priority {@link
  * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE}, followed by {@link BuildTimeEnd} and {@link RuntimeStart}.
  * All three events now occur within ordinary CDI initialization and no longer represent separate build and runtime

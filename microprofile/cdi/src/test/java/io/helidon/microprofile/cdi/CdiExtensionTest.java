@@ -39,7 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
-class LifecycleExtensionTest {
+class CdiExtensionTest {
     @Test
     void testStandardStartupAndShutdown() {
         List<String> events = new ArrayList<>();
@@ -88,7 +88,7 @@ class LifecycleExtensionTest {
 
         try (SeContainer container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(LifecycleExtension.class, ServiceRegistryExtension.class)
+                .addExtensions(CdiExtension.class, ServiceRegistryExtension.class)
                 .addExtensions(testExtension, configure)
                 .initialize()) {
             assertThat(container.getBeanManager().getExtension(TestExtension.class), sameInstance(testExtension));

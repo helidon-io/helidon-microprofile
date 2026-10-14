@@ -110,7 +110,7 @@ class AccessLogConfigurationLifecycleTest {
         this.container = initializer.initialize();
     }
 
-    private SeContainerInitializer createInitializerWithoutLifecycleExtension(Map<String, String> properties) {
+    private SeContainerInitializer createInitializerWithoutCdiExtension(Map<String, String> properties) {
         return createInitializer(properties)
                 .disableDiscovery()
                 .addExtensions(new ServiceRegistryExtension(), new ServerCdiExtension(),
@@ -254,10 +254,10 @@ class AccessLogConfigurationLifecycleTest {
     }
 
     @Nested
-    class WithoutLifecycleExtension {
+    class WithoutCdiExtension {
         @BeforeEach
         void start() {
-            startContainer(createInitializerWithoutLifecycleExtension(Map.of()));
+            startContainer(createInitializerWithoutCdiExtension(Map.of()));
         }
 
         @Test
@@ -267,11 +267,11 @@ class AccessLogConfigurationLifecycleTest {
     }
 
     @Nested
-    class OldConfigurationWithoutLifecycleExtension {
+    class OldConfigurationWithoutCdiExtension {
         @BeforeEach
         void start() {
-            startContainer(createInitializerWithoutLifecycleExtension(Map.of("server.access-log.enabled", "false",
-                                                                            "server.access-log.logger-name", "old-access-log")));
+            startContainer(createInitializerWithoutCdiExtension(Map.of("server.access-log.enabled", "false",
+                                                                      "server.access-log.logger-name", "old-access-log")));
         }
 
         @Test
@@ -281,10 +281,10 @@ class AccessLogConfigurationLifecycleTest {
     }
 
     @Nested
-    class NewConfigurationWithoutLifecycleExtension {
+    class NewConfigurationWithoutCdiExtension {
         @BeforeEach
         void start() {
-            startContainer(createInitializerWithoutLifecycleExtension(Map.of("server.features.access-log.enabled", "false")));
+            startContainer(createInitializerWithoutCdiExtension(Map.of("server.features.access-log.enabled", "false")));
         }
 
         @Test
@@ -306,7 +306,7 @@ class AccessLogConfigurationLifecycleTest {
                                                 .build());
                 }
             };
-            startContainer(createInitializerWithoutLifecycleExtension(Map.of()).addExtensions(customize));
+            startContainer(createInitializerWithoutCdiExtension(Map.of()).addExtensions(customize));
         }
 
         @Test

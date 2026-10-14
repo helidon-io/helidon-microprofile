@@ -144,7 +144,7 @@ class OidcLifecycleTest {
         @BeforeEach
         void start() {
             // Disabling security must avoid accessing the server extension, even without
-            // io.helidon.microprofile.cdi.LifecycleExtension.
+            // io.helidon.microprofile.cdi.CdiExtension.
             container = createInitializer(Map.of("security.enabled", "false"))
                     .disableDiscovery()
                     .addExtensions(new OidcCdiExtension())

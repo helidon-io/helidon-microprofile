@@ -19,7 +19,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.microprofile.cdi.LifecycleExtension;
+import io.helidon.microprofile.cdi.CdiExtension;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -102,7 +102,7 @@ class HelidonRestCdiExtensionTest {
             this.extension.prepareRuntime(firstConfig);
             this.container = SeContainerInitializer.newInstance()
                     .disableDiscovery()
-                    .addExtensions(new LifecycleExtension(), this.extension)
+                    .addExtensions(new CdiExtension(), this.extension)
                     .addBeanClasses(TestBean.class)
                     .initialize();
         }

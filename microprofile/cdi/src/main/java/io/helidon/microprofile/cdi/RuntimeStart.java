@@ -33,7 +33,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * A qualifier qualifying an event that was fired by earlier versions of Helidon MicroProfile.
  *
- * <p>{@link LifecycleExtension} fires this event during {@link
+ * <p>{@link CdiExtension} fires this event during {@link
  * jakarta.enterprise.inject.spi.AfterDeploymentValidation}, at priority {@link
  * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE} plus two, after {@link BuildTimeStart} and {@link BuildTimeEnd}. Its
  * payload is the current {@link org.eclipse.microprofile.config.Config} returned by {@link

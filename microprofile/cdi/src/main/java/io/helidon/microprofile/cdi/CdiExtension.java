@@ -37,9 +37,9 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * An {@link Extension} that ensures {@linkplain LogConfig#configureRuntime() logging is configured}, {@linkplain
- * SerializationConfig#configureRuntime() serialization is configured}, and certain "lifecycle events" fired by previous
- * versions of Helidon MicroProfile continue to be fired for backwards compatibility (though they are deprecated; prefer
- * standard CDI lifecycle events instead for new development).
+ * SerializationConfig#configureRuntime() serialization is configured}, and Helidon features are reported. It also
+ * ensures certain "lifecycle events" fired by previous versions of Helidon MicroProfile continue to be fired for
+ * backwards compatibility (though they are deprecated; prefer standard CDI lifecycle events instead for new development).
  *
  * <p>Applications and tests that {@linkplain jakarta.enterprise.inject.se.SeContainerInitializer#disableDiscovery()
  * disable extension discovery} must explicitly {@linkplain
@@ -51,11 +51,11 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * @see SerializationConfig#configureRuntime()
  */
 @Api.Stable
-public final class LifecycleExtension implements Extension {
+public final class CdiExtension implements Extension {
     /**
-     * Creates a new {@link LifecycleExtension}.
+     * Creates a new {@link CdiExtension}.
      */
-    public LifecycleExtension() {
+    public CdiExtension() {
         super();
     }
 

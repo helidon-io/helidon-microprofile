@@ -21,7 +21,7 @@ import java.util.Set;
 
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.microprofile.cdi.LifecycleExtension;
+import io.helidon.microprofile.cdi.CdiExtension;
 import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -148,7 +148,7 @@ class RegistryFactoryLifecycleTest {
     private static SeContainer startContainer() {
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(LifecycleExtension.class,
+                .addExtensions(CdiExtension.class,
                                ServiceRegistryExtension.class,
                                MetricsCdiExtension.class,
                                ServerCdiExtension.class,
