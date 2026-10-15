@@ -82,15 +82,20 @@ class ParallelRunTest {
     @Test
     void testFailedStartDoesNotCloseRunningContainer() {
         Server rejectedServer = Server.builder().port(0).build();
+        Server anotherRejectedServer = Server.builder().port(0).build();
         Server runningServer = Server.builder().port(0).build().start();
         SeContainer runningContainer = (SeContainer) CDI.current();
 
         try {
             assertThrows(IllegalStateException.class, rejectedServer::start);
             assertThrows(IllegalStateException.class, rejectedServer::stop);
+            assertThrows(IllegalStateException.class, anotherRejectedServer::start);
             assertThat(runningContainer.isRunning(), is(true));
             assertThat(CDI.current(), sameInstance(runningContainer));
         } finally {
+            if (anotherRejectedServer.port() > 0) {
+                anotherRejectedServer.stop();
+            }
             runningServer.stop();
         }
     }
