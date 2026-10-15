@@ -229,23 +229,6 @@ public class ServiceRegistryExtension implements Extension {
         this.shutdown();
     }
 
-    private void addServiceDescriptor(ServiceDescriptor<?> descriptor) {
-        requireNonNull(descriptor, "descriptor");
-        // Preserve access to other contextual values while directing this addition to our retained registry.
-        Context registrationContext = Context.create(context().orElse(globalContext()));
-
-        // GlobalServiceRegistry first uses this exact key to find the Context containing the registry.
-        // Point it here so that "global" lookup uses this context instead of an inherited or JVM-wide location.
-        registrationContext.register("helidon-registry-static-context", registrationContext);
-
-        // It then uses this exact key to find the ServiceRegistry within that selected context.
-        registrationContext.register("helidon-registry", this.serviceRegistry);
-
-        // runInContext restores the previous binding on return or failure.
-        // A successfully added descriptor remains in the registry after the temporary binding ends.
-        runInContext(registrationContext, () -> Services.add(descriptor));
-    }
-
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {
         if (annotation.typeName().equals(CDI_NAMED_TYPE)) {
             return io.helidon.common.types.Annotation.builder()
@@ -269,6 +252,23 @@ public class ServiceRegistryExtension implements Extension {
                         .map(ServiceRegistryExtension::mapNamed)
                         .map(Qualifier::create)
         ).collect(Collectors.toUnmodifiableSet());
+    }
+
+    private void addServiceDescriptor(ServiceDescriptor<?> descriptor) {
+        requireNonNull(descriptor, "descriptor");
+        // Preserve access to other contextual values while directing this addition to our retained registry.
+        Context registrationContext = Context.create(context().orElse(globalContext()));
+
+        // GlobalServiceRegistry first uses this exact key to find the Context containing the registry.
+        // Point it here so that "global" lookup uses this context instead of an inherited or JVM-wide location.
+        registrationContext.register("helidon-registry-static-context", registrationContext);
+
+        // It then uses this exact key to find the ServiceRegistry within that selected context.
+        registrationContext.register("helidon-registry", this.serviceRegistry);
+
+        // runInContext restores the previous binding on return or failure.
+        // A successfully added descriptor remains in the registry after the temporary binding ends.
+        runInContext(registrationContext, () -> Services.add(descriptor));
     }
 
     // all the parameters are needed, private method

@@ -53,6 +53,9 @@ public final class HelidonBeanDefiningAnnotations {
      * Installs additional Helidon-specific bean-defining annotations into an {@link SeContainerInitializer} that
      * supports this facility.
      *
+     * <p>Uses the current thread's context class loader, or this class's defining class loader if the context class
+     * loader is {@code null}.</p>
+     *
      * @param <T> the {@link SeContainerInitializer} type
      *
      * @param seContainerInitializer a non-{@code null} {@link SeContainerInitializer}
@@ -64,7 +67,11 @@ public final class HelidonBeanDefiningAnnotations {
      * @see #addHelidonBeanDefiningAnnotations(SeContainerInitializer, ClassLoader)
      */
     public static <T extends SeContainerInitializer> T addHelidonBeanDefiningAnnotations(T seContainerInitializer) {
-        return addHelidonBeanDefiningAnnotations(seContainerInitializer, Thread.currentThread().getContextClassLoader());
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader == null) {
+            classLoader = HelidonBeanDefiningAnnotations.class.getClassLoader();
+        }
+        return addHelidonBeanDefiningAnnotations(seContainerInitializer, classLoader);
     }
 
     /**
@@ -75,22 +82,17 @@ public final class HelidonBeanDefiningAnnotations {
      *
      * @param seContainerInitializer a non-{@code null} {@link SeContainerInitializer}
      *
-     * @param classLoader a {@link ClassLoader}
+     * @param classLoader a non-{@code null} {@link ClassLoader}
      *
      * @return the supplied {@link SeContainerInitializer}
      *
-     * @throws NullPointerException if {@code seContainerInitializer} is {@code null}
+     * @throws NullPointerException if {@code seContainerInitializer} or {@code classLoader} is {@code null}
      */
     public static <T extends SeContainerInitializer> T addHelidonBeanDefiningAnnotations(T seContainerInitializer,
                                                                                          ClassLoader classLoader) {
         requireNonNull(seContainerInitializer, "seContainerInitializer");
+        requireNonNull(classLoader, "classLoader");
         Set<Class<?>> classes = newHashSet(HELIDON_BEAN_DEFINING_ANNOTATION_CLASSNAMES.size());
-        if (classLoader == null) {
-            classLoader = Thread.currentThread().getContextClassLoader();
-            if (classLoader == null) {
-                classLoader = HelidonBeanDefiningAnnotations.class.getClassLoader();
-            }
-        }
         for (String className : HELIDON_BEAN_DEFINING_ANNOTATION_CLASSNAMES) {
             try {
                 classes.add(Class.forName(className, false, classLoader));

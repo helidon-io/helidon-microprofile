@@ -143,7 +143,11 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
 
     @Override
     public SeContainer initialize() {
-        addHelidonBeanDefiningAnnotations(this.delegate, this.classLoader);
+        if (this.classLoader == null) {
+            addHelidonBeanDefiningAnnotations(this.delegate);
+        } else {
+            addHelidonBeanDefiningAnnotations(this.delegate, this.classLoader);
+        }
         addCdiProperties(this.delegate);
         return this.delegate.initialize();
     }
