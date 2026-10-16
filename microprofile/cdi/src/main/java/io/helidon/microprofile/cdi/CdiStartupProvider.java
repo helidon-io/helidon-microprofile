@@ -24,6 +24,7 @@ import io.helidon.spi.HelidonStartupProvider;
 /**
  * {@link java.util.ServiceLoader} implementation of a Helidon startup provider.
  */
+@Api.Stable
 @Weight(Weighted.DEFAULT_WEIGHT + 100) // must have higher than default, to start CDI and not Helidon Injection
 public class CdiStartupProvider implements HelidonStartupProvider {
     /**

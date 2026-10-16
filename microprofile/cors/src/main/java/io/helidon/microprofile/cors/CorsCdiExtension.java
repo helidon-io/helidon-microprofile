@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.cors.Cors;
 import io.helidon.webserver.cors.CorsFeature;
@@ -34,13 +33,16 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * CDI extension for processing CORS-annotated types.
@@ -114,8 +116,8 @@ public class CorsCdiExtension implements Extension {
         corsConfigs.addAll(endpointList);
     }
 
-    void prepareRuntime(@Observes @RuntimeStart Config config) {
-        this.config = config;
+    void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        this.config = toHelidonConfig(getConfig());
     }
 
     void ready(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,

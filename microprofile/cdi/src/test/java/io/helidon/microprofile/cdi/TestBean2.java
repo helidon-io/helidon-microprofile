@@ -22,6 +22,16 @@ import jakarta.enterprise.context.Dependent;
  */
 @Dependent
 public class TestBean2 {
+
+    /**
+     * Creates a new {@link TestBean2}.
+     */
+    public TestBean2() {
+        // This constructor was implicit in prior revisions of this class and hence public. This explicit constructor
+        // silences warnings and hence is also public.
+        super();
+    }
+
     public String message() {
         return "Hello";
     }

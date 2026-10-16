@@ -16,230 +16,245 @@
 
 package io.helidon.microprofile.cdi;
 
-import java.lang.invoke.MethodHandles;
+import java.lang.classfile.ClassFile;
+import java.lang.reflect.Method;
 import java.security.ProtectionDomain;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.NativeImageHelper;
+import io.helidon.common.Api;
 
-import org.jboss.weld.logging.BeanLogger;
+import org.jboss.weld.bean.proxy.util.WeldDefaultProxyServices;
 import org.jboss.weld.serialization.spi.ProxyServices;
 
-class HelidonProxyServices implements ProxyServices {
-    private static final Logger LOGGER = Logger.getLogger(HelidonProxyServices.class.getName());
-    private static final String WELD_JAVAX_PREFIX = "org.jboss.weldx.";
-    private static final String WELD_JAVA_PREFIX = "org.jboss.weld.";
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Arrays.copyOfRange;
+import static java.util.Objects.requireNonNull;
 
-    // a cache of all classloaders (this should be empty in most cases, as we use a single class loader in Helidon)
-    private final Map<ClassLoader, ClassDefiningCl> classLoaders = Collections.synchronizedMap(new IdentityHashMap<>());
-    private final ClassLoader contextCl;
-    private final ClassDefiningCl contextClassDefiningCl;
-    private final Module myModule;
+/**
+ * A {@link ProxyServices} implementation for solving certain Java module-related problems during the generation of
+ * proxy classes.
+ *
+ * <p>Proxy class definition is first delegated to another {@link ProxyServices}, normally {@link
+ * WeldDefaultProxyServices}, which is what Weld uses by default. If Java module access problems prevent that proxy
+ * class from being defined, and if the class that needs to be proxied is an interface meeting certain conditions, a
+ * proxy class is instead defined in a child {@link ClassLoader}'s unnamed module, using the name and bytecode generated
+ * by Weld's internals.</p>
+ */
+@Api.Internal
+public final class HelidonProxyServices implements ProxyServices {
+    private final Lock lock;
+    private final ProxyServices delegate;
+    private final Map<ClassLoader, ProxyClassLoader> classLoaders;
 
-    HelidonProxyServices() {
-        // cache classloader and module of this class
-        this.contextCl = HelidonProxyServices.class.getClassLoader();
-        this.contextClassDefiningCl = createCl(contextCl);
-        this.myModule = HelidonProxyServices.class.getModule();
+    /**
+     * Creates a new {@link HelidonProxyServices}.
+     */
+    public HelidonProxyServices() {
+        this(new WeldDefaultProxyServices());
     }
 
-    @Override
-    public void cleanup() {
-        classLoaders.clear();
+    private HelidonProxyServices(ProxyServices delegate) {
+        super();
+        this.lock = new ReentrantLock();
+        this.delegate = requireNonNull(delegate, "delegate");
+        this.classLoaders = new IdentityHashMap<>();
     }
 
-    @Override
-    public Class<?> defineClass(Class<?> originalClass, String className, byte[] classBytes, int off, int len)
-            throws ClassFormatError {
-
-        if (weldInternalProxyClassName(className)) {
-            // this is special case - these classes are defined in a non-existent package
-            // and we need to use a classloader (public lookup will not allow this, and private lookup is not
-            // possible for an empty package)
-            return wrapCl(originalClass.getClassLoader())
-                    .doDefineClass(originalClass, className, classBytes, off, len);
-        }
-        // any other class should be defined using a private lookup
-        try {
-            return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
-        } catch (Exception e) {
-            LOGGER.log(Level.FINEST, "Failed to create class " + className + " using private lookup", e);
-
-            throw e;
-        }
-    }
-
-    @Override
+    @Override // ProxyServices
     public Class<?> defineClass(Class<?> originalClass,
                                 String className,
                                 byte[] classBytes,
-                                int off,
-                                int len,
-                                ProtectionDomain protectionDomain) throws ClassFormatError {
-
-        if (weldInternalProxyClassName(className)) {
-            // this is special case - these classes are defined in a non-existent package
-            // and we need to use a classloader (public lookup will not allow this, and private lookup is not
-            // possible for an empty package)
-            return wrapCl(originalClass.getClassLoader())
-                    .doDefineClass(originalClass, className, classBytes, off, len, protectionDomain);
-        }
-        // any other class should be defined using a private lookup
+                                int offset,
+                                int length,
+                                ProtectionDomain pd) {
         try {
-            return defineClassPrivateLookup(originalClass, className, classBytes, off, len);
-        } catch (Exception e) {
-            LOGGER.log(Level.FINEST, "Failed to create class " + className + " using private lookup", e);
-
-            throw e;
-        }
-    }
-
-    @Override
-    public Class<?> loadClass(Class<?> originalClass, String classBinaryName) throws ClassNotFoundException {
-        return wrapCl(originalClass.getClassLoader()).loadClass(classBinaryName);
-    }
-
-    private boolean weldInternalProxyClassName(String className) {
-        return className.startsWith(WELD_JAVAX_PREFIX) || className.startsWith(WELD_JAVA_PREFIX);
-    }
-
-    private Class<?> defineClassPrivateLookup(Class<?> originalClass, String className, byte[] classBytes, int off, int len) {
-        if (NativeImageHelper.isRuntime()) {
-            throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
-                                                    + "class: " + originalClass
-                    .getName());
-        }
-
-        LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
-
-        MethodHandles.Lookup lookup;
-
-        try {
-            // lookup class name "guessed" from the class name of the proxy
-            // proxy name must contain the $ - if it does not, we just use the originalClass as that is safe
-            int index = className.indexOf('$');
-
-            Class<?> lookupClass;
-            if (index < 0) {
-                LOGGER.finest(() -> "Attempt to define a proxy class without a $ in its name. Class name: " + className + ","
-                        + " original class name: " + originalClass.getName());
-                lookupClass = originalClass;
-            } else {
-                // I would like to create a private lookup in the same package as the proxied class, so let's do it
-                // use the "extracted" lookup class name, if that fails, use the original class
-                lookupClass = tryLoading(originalClass, className.substring(0, index));
+            return this.delegate.defineClass(originalClass, className, classBytes, offset, length, pd);
+        } catch (RuntimeException | IllegalAccessError failure) {
+            if (!illegalAccess(failure)) {
+                throw failure;
             }
-
-            Module lookupClassModule = lookupClass.getModule();
-            if (!myModule.canRead(lookupClassModule)) {
-                // we need to read the module to be able to create a private lookup in it
-                // it also needs to open the package we are doing the lookup in
-                myModule.addReads(lookupClassModule);
+            // Module access problem; define an interface-only proxy as a fallback if we can (and the conditions are
+            // right, of course).
+            try {
+                Class<?> proxyClass = this.defineInterfaceProxy(originalClass, className, classBytes, offset, length, pd);
+                if (proxyClass != null) {
+                    return proxyClass;
+                }
+            } catch (RuntimeException | LinkageError fallbackFailure) {
+                fallbackFailure.addSuppressed(failure);
+                throw fallbackFailure;
             }
-
-            // next line would fail if the module does not open its package, with a very meaningful error message
-            lookup = MethodHandles.privateLookupIn(lookupClass, MethodHandles.lookup());
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to define class " + className, e);
-        }
-
-        return defineClass(lookup, className, classBytes, off, len);
-    }
-
-    private Class<?> tryLoading(Class<?> originalClass, String className) {
-        try {
-            return originalClass.getClassLoader().loadClass(className);
-        } catch (Exception e) {
-            LOGGER.log(Level.FINEST, "Attempt to load class " + className + " failed.", e);
-            return originalClass;
+            throw failure;
         }
     }
 
-    private Class<?> defineClass(MethodHandles.Lookup lookup, String className, byte[] classBytes, int off, int len) {
+    @Override // ProxyServices
+    public Class<?> loadClass(Class<?> originalClass, String className) throws ClassNotFoundException {
+        ProxyClassLoader classLoader; // ProxyClassLoader is a nested class; see below
+        this.lock.lock();
         try {
-            byte[] definitionBytes;
-
-            if (classBytes.length == len) {
-                definitionBytes = classBytes;
-            } else {
-                definitionBytes = new byte[len];
-                System.arraycopy(classBytes, off, definitionBytes, 0, len);
+            classLoader = this.classLoaders.get(parentClassLoader(originalClass));
+        } finally {
+            this.lock.unlock();
+        }
+        if (classLoader != null) {
+            Class<?> proxyClass = classLoader.loadedClass(className);
+            if (proxyClass != null) {
+                return proxyClass;
             }
+        }
+        return this.delegate.loadClass(originalClass, className);
+    }
 
-            return lookup.defineClass(definitionBytes);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to define class " + className, e);
+    @Override // ProxyServices
+    public void cleanup() {
+        this.lock.lock();
+        try {
+            this.classLoaders.clear();
+        } finally {
+            this.lock.unlock();
+        }
+        this.delegate.cleanup();
+    }
+
+    private static ClassLoader parentClassLoader(Class<?> originalClass) {
+        ClassLoader classLoader = originalClass.getClassLoader();
+        return classLoader == null ? Thread.currentThread().getContextClassLoader() : classLoader;
+    }
+
+    private static boolean illegalAccess(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof IllegalAccessException || cause instanceof IllegalAccessError) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isAccessible(Class<?> type, ClassLoader classLoader) {
+        while (type.isArray()) {
+            type = type.getComponentType();
+        }
+        if (type.isPrimitive()) {
+            return true;
+        }
+        if (!isPublic(type.getModifiers())
+                || !type.getModule().isExported(type.getPackageName(), classLoader.getUnnamedModule())) {
+            return false;
+        }
+        try {
+            return Class.forName(type.getName(), false, classLoader) == type;
+        } catch (ClassNotFoundException _) {
+            return false;
         }
     }
 
-    private ClassDefiningCl wrapCl(ClassLoader origCl) {
-        if (origCl instanceof ClassDefiningCl) {
-            return (ClassDefiningCl) origCl;
+    // Can we load this interface type and all the types it references?
+    private static boolean isAccessibleInterface(Class<?> type, ClassLoader classLoader) {
+        if (!type.isInterface() || type.isSealed() || !isAccessible(type, classLoader)) {
+            // If it's a non-interface type, then that's not what we're built for.
+            // If it's a sealed interface, then we can't implement it.
+            // If it is some kind of type that can't be loaded by the supplied ClassLoader, then there's nothing we can
+            // do.
+            return false;
         }
-        if (origCl == contextCl) {
-            return contextClassDefiningCl;
+        for (Class<?> superinterface : type.getInterfaces()) {
+            if (!isAccessibleInterface(superinterface, classLoader)) {
+                return false;
+            }
         }
-        return classLoaders.computeIfAbsent(origCl, this::createCl);
+        for (Method method : type.getMethods()) {
+            // Static interface methods are not implemented by the generated proxy.
+            if (isStatic(method.getModifiers())) {
+                continue;
+            }
+            if (!isAccessible(method.getReturnType(), classLoader)) {
+                return false;
+            }
+            for (Class<?> parameterType : method.getParameterTypes()) {
+                if (!isAccessible(parameterType, classLoader)) {
+                    return false;
+                }
+            }
+            for (Class<?> exceptionType : method.getExceptionTypes()) {
+                if (!isAccessible(exceptionType, classLoader)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
-    private ClassDefiningCl createCl(ClassLoader parent) {
-        return new ClassDefiningCl(parent);
+    private Class<?> defineInterfaceProxy(Class<?> originalClass,
+                                          String className,
+                                          byte[] classBytes,
+                                          int offset,
+                                          int length,
+                                          ProtectionDomain pd) {
+        byte[] definition = offset == 0 && length == classBytes.length
+            ? classBytes
+            : copyOfRange(classBytes, offset, offset + length);
+        var model = ClassFile.of().parse(definition);
+        if (model.superclass().isEmpty() || !model.superclass().orElseThrow().asInternalName().equals("java/lang/Object")) {
+            return null;
+        }
+
+        ProxyClassLoader classLoader;
+        this.lock.lock();
+        try {
+            classLoader = this.classLoaders.computeIfAbsent(parentClassLoader(originalClass), ProxyClassLoader::new);
+        } finally {
+            this.lock.unlock();
+        }
+
+        // Inspect the actual interfaces instead of relying on Weld's generated class-name format.
+        try {
+            for (var entry : model.interfaces()) {
+                Class<?> type = Class.forName(entry.asInternalName().replace('/', '.'), false, classLoader);
+                if (!isAccessibleInterface(type, classLoader)) {
+                    return null;
+                }
+            }
+        } catch (ClassNotFoundException _) {
+            return null;
+        }
+
+        // The package name is unchanged, but the proxy class will belong to the child loader's unnamed module.
+        // (Only public, exported contracts are available.)
+        return classLoader.defineProxyClass(className, definition, pd);
     }
 
-    // a classloader that exposes define class methods
-    private static class ClassDefiningCl extends ClassLoader {
-        protected ClassDefiningCl(ClassLoader parent) {
+    private static final class ProxyClassLoader extends ClassLoader {
+        private final Lock lock;
+
+        private ProxyClassLoader(ClassLoader parent) {
             super(parent);
+            this.lock = new ReentrantLock();
         }
 
-        Class<?> doDefineClass(Class<?> originalClass, String className, byte[] bytes, int off, int len) {
-            if (NativeImageHelper.isRuntime()) {
-                throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
-                                                        + "class: " + originalClass
-                        .getName());
-            }
-
-            LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
-
+        private Class<?> loadedClass(String className) {
+            // Basically just ClassLoader#findLoadedClass(String) under lock, but we can't override that method.
+            this.lock.lock();
             try {
-                // avoid duplicate attempts to define a class
-                return super.loadClass(className);
-            } catch (ClassNotFoundException e) {
-                return super.defineClass(className, bytes, off, len);
+                return this.findLoadedClass(className);
+            } finally {
+                this.lock.unlock();
             }
         }
 
-        Class<?> doDefineClass(Class<?> originalClass,
-                               String className,
-                               byte[] bytes,
-                               int off,
-                               int len,
-                               ProtectionDomain domain) {
-            if (NativeImageHelper.isRuntime()) {
-                throw new IllegalStateException("Cannot define class in native image. Class name: " + className + ", original "
-                                                        + "class: " + originalClass
-                        .getName());
-            }
-
-            LOGGER.finest("Defining class " + className + " original class: " + originalClass.getName());
-
+        private Class<?> defineProxyClass(String className, byte[] definition, ProtectionDomain pd) {
+            this.lock.lock();
             try {
-                // avoid duplicate attempts to define a class
-                return super.loadClass(className);
-            } catch (ClassNotFoundException e) {
-                return super.defineClass(className, bytes, off, len, domain);
-            }
-        }
-
-        Class<?> doLoad(String className) {
-            try {
-                return super.loadClass(className, true);
-            } catch (ClassNotFoundException e) {
-                throw BeanLogger.LOG.cannotLoadClass(className, e);
+                Class<?> proxyClass = this.findLoadedClass(className);
+                return proxyClass == null
+                        ? this.defineClass(className, definition, 0, definition.length, pd)
+                        : proxyClass;
+            } finally {
+                this.lock.unlock();
             }
         }
     }

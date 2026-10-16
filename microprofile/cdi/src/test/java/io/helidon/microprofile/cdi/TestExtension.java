@@ -39,8 +39,18 @@ public class TestExtension implements Extension {
     static final String APPLICATION_BEFORE_DESTROYED = "abd";
     static final String APPLICATION_DESTROYED = "ad";
 
-    private final List<String> events = new LinkedList<>();
+    private final List<String> events;
     private Config runtimeConfig;
+
+    /**
+     * Creates a new {@link TestExtension}.
+     */
+    public TestExtension() {
+        // This constructor was implicit in prior revisions of this class and hence public. This explicit constructor
+        // silences warnings and hence is also public.
+        super();
+        this.events = new LinkedList<>();
+    }
 
     // must be public so it works with never versions of Java (do not want to open this module to weld)
     public void registerBeans(@Observes BeforeBeanDiscovery bbd) {
@@ -49,14 +59,17 @@ public class TestExtension implements Extension {
         bbd.addAnnotatedType(TestBean2.class, "unit-test-bean2");
     }
 
+    @SuppressWarnings("deprecation")
     public void buildTimeStart(@Observes @BuildTimeStart Object event) {
         events.add(BUILD_TIME_START);
     }
 
+    @SuppressWarnings("deprecation")
     public void buildTimeEnd(@Observes @BuildTimeEnd Object event) {
         events.add(BUILD_TIME_END);
     }
 
+    @SuppressWarnings("deprecation")
     public void runTimeInit(@Observes @RuntimeStart Config config) {
         events.add(RUNTIME_INIT);
         runtimeConfig = config;

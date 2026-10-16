@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,10 +44,20 @@ import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 /**
  * CDI extension to support the {@link ExecuteOn} annotation.
  */
+@Api.Stable
 public class ExecuteOnExtension implements Extension {
 
-    private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
-    private final LazyValue<Map<Method, MethodType>> methodType = LazyValue.create(ConcurrentHashMap::new);
+    private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap;
+    private final LazyValue<Map<Method, MethodType>> methodType;
+
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    public ExecuteOnExtension() {
+        super();
+        this.methodMap = LazyValue.create(ConcurrentHashMap::new);
+        this.methodType = LazyValue.create(ConcurrentHashMap::new);
+    }
 
     void registerMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
         registerMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));

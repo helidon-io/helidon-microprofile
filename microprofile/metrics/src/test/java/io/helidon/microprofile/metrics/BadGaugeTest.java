@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.microprofile.cdi.CdiExtension;
+import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -137,7 +139,11 @@ public class BadGaugeTest {
         MetricsCdiExtension.shutdown();
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(MetricsCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)
+                .addExtensions(CdiExtension.class,
+                               ServiceRegistryExtension.class,
+                               MetricsCdiExtension.class,
+                               ServerCdiExtension.class,
+                               JaxRsCdiExtension.class)
                 .addExtensions(new ScopeExtension(scope, GaugeBean.class))
                 .initialize();
     }

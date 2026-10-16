@@ -24,10 +24,14 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
 import io.helidon.common.testing.virtualthreads.PinningRecorder;
+import io.helidon.microprofile.cdi.CdiExtension;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 import static io.helidon.microprofile.testing.ReflectionHelper.requirePublic;
 
 /**
@@ -164,15 +168,17 @@ public class HelidonTestContainer {
             pinningRecorder.record(Duration.ofMillis(testInfo.pinningThreshold()));
         }
         HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
-        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        // Initializer properties need the test configuration before discovery starts.
+        testExtension.resolveTestConfig();
+        SeContainerInitializer initializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance());
         if (testInfo.disableDiscovery()) {
-            initializer.disableDiscovery();
+            initializer.disableDiscovery().addExtensions(CdiExtension.class);
         }
         for (AddExtension extension : testInfo.addExtensions()) {
             initializer.addExtensions(requirePublic(extension.value()));
         }
         initializer.addExtensions(testExtension);
-        container = initializer.initialize();
+        container = initialize(addCdiProperties(initializer));
     }
 
     @Override

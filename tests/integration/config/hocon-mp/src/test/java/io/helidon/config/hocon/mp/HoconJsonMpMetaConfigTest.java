@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.hocon.mp;
 
+import io.helidon.microprofile.cdi.CdiExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -47,7 +48,10 @@ class HoconJsonMpMetaConfigTest {
 
         container = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(ConfigCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)
+                .addExtensions(CdiExtension.class,
+                               ConfigCdiExtension.class,
+                               ServerCdiExtension.class,
+                               JaxRsCdiExtension.class)
                 .addBeanClasses(ConfigBean.class)
                 .initialize();
 

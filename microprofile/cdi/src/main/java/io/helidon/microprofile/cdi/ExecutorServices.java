@@ -18,21 +18,25 @@ package io.helidon.microprofile.cdi;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
+
 import org.jboss.weld.executor.CommonForkJoinPoolExecutorServices;
 
 /**
- * A {@link CommonForkJoinPoolExecutorServices} whose {@link
- * #wrap(Collection)} method simply returns the supplied {@link
- * Collection} of {@link Callable}s unchanged.
+ * A {@link CommonForkJoinPoolExecutorServices} whose {@link #wrap(Collection)} method simply returns the supplied
+ * {@link Collection} of {@link Callable}s unchanged.
  *
- * <p>This class exists to work around <a
- * href="https://issues.redhat.com/browse/WELD-2494"
- * target="_parent">WELD-2494</a>, which, in turn, was working around
- * <a href="https://bugs.openjdk.java.net/browse/JDK-8184335"
- * target="_parent">JDK-8184335</a>.</p>
+ * <p>This class was introduced to work around <a href="https://issues.redhat.com/browse/WELD-2494"
+ * target="_parent">WELD-2494</a>, which, in turn, was working around <a
+ * href="https://bugs.openjdk.java.net/browse/JDK-8184335" target="_parent">JDK-8184335</a>.</p>
+ *
+ * <p>Helidon no longer registers this service automatically and it is no longer required.</p>
  *
  * @see #wrap(Collection)
+ * @deprecated This class is no longer needed and will be removed in a future release.
  */
+@Api.Stable // really is internal, but we don't want old callers failing
+@Deprecated(forRemoval = true, since = "28.0.0")
 public final class ExecutorServices extends CommonForkJoinPoolExecutorServices {
 
     /**
@@ -53,7 +57,7 @@ public final class ExecutorServices extends CommonForkJoinPoolExecutorServices {
      * @see <a href="https://issues.redhat.com/browse/WELD-2494"
      *         target="_parent">WELD-2494</a>
      */
-    @Override
+    @Override // CommonForkJoinPoolExecutorServices
     public <T> Collection<? extends Callable<T>> wrap(Collection<? extends Callable<T>> tasks) {
         return tasks;
     }

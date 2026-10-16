@@ -49,6 +49,15 @@ public class Gh1446Test {
     private static ConfigProviderResolver configResolver;
     private static ClassLoader cl;
 
+    /**
+     * Creates a new {@link Gh1446Test}.
+     */
+    public Gh1446Test() {
+        // This constructor was implicit in prior revisions of this class, and hence was public. Therefore this explicit
+        // constructor is public as well.
+        super();
+    }
+
     @BeforeAll
     static void initClass() {
         originalConfig = ConfigProvider.getConfig();
@@ -80,7 +89,6 @@ public class Gh1446Test {
         assertThat(thrown.getMessage(), is("Survive this!"));
 
         assertThrows(IllegalStateException.class, CDI::current, "There should be no CDI instance available");
-
     }
 
     private static class FailingExtension implements Extension {

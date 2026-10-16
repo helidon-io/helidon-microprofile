@@ -31,10 +31,10 @@ module io.helidon.microprofile.scheduling {
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.config;
-    requires io.helidon.scheduling;
+    requires transitive io.helidon.scheduling;
 
     requires static io.helidon.common.features.api;
-    requires static jakarta.cdi;
+    requires static transitive jakarta.cdi;
     requires static jakarta.inject;
 
     exports io.helidon.microprofile.scheduling;

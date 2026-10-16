@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.stream.IntStream;
 
 import io.helidon.common.reactive.Multi;
+import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.messaging.connectors.mock.MockConnector;
@@ -46,6 +47,7 @@ import static org.eclipse.microprofile.reactive.messaging.spi.ConnectorFactory.O
 @DisableDiscovery
 @AddBean(JmsConnector.class)
 @AddBean(MockConnector.class)
+@AddExtension(ServiceRegistryExtension.class)
 @AddExtension(ConfigCdiExtension.class)
 @AddExtension(MessagingCdiExtension.class)
 @AddConfig(key = JNDI_ENV_PFX + "java.naming.provider.url", value = AbstractJmsTest.BROKER_URL)

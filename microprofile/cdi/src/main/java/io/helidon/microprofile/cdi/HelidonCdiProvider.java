@@ -16,31 +16,28 @@
 
 package io.helidon.microprofile.cdi;
 
-import java.util.concurrent.atomic.AtomicReference;
+import io.helidon.common.Api;
 
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.inject.spi.CDIProvider;
+import org.jboss.weld.environment.se.WeldSEProvider;
 
 /**
- * Implementation of the CDI SPI.
+ * Compatibility provider for stock Weld containers.
+ *
+ * @deprecated Use Weld's automatically discovered CDI provider.
  */
-public class HelidonCdiProvider implements CDIProvider {
-    private static final AtomicReference<CDI<Object>> CURRENT_CDI = new AtomicReference<>();
-
-    static void setCdi(CDI<Object> cdi) {
-        CURRENT_CDI.set(cdi);
-    }
-
-    static void unset() {
-        CURRENT_CDI.set(null);
+@Api.Stable
+@Deprecated(since = "28.0.0")
+public class HelidonCdiProvider extends WeldSEProvider {
+    /**
+     * Creates a compatibility provider.
+     */
+    public HelidonCdiProvider() {
+        super();
     }
 
     @Override
     public CDI<Object> getCDI() {
-        CDI<Object> cdi = CURRENT_CDI.get();
-        if (null == cdi) {
-            throw new IllegalStateException("There is no CDI instance available");
-        }
-        return cdi;
+        return super.getCDI();
     }
 }

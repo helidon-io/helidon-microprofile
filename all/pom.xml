@@ -67,14 +67,6 @@
             <artifactId>helidon-microprofile-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.weld</groupId>
-            <artifactId>weld-core-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.weld</groupId>
-            <artifactId>weld-se-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>

@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.Api;
 import io.helidon.common.Builder;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.resumable.ResumableSupport;
@@ -42,7 +43,6 @@ import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jersey.webserver.JaxRsService;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.config.core.Prioritized;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Scopes;
@@ -74,6 +74,7 @@ import jakarta.enterprise.context.BeforeDestroyed;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
@@ -89,10 +90,13 @@ import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
+import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Extension to handle web server configuration and lifecycle.
@@ -101,17 +105,15 @@ public class ServerCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(ServerCdiExtension.class.getName());
     private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
-    private final Map<Bean<?>, RoutingConfiguration> serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
-    private final List<HttpRouting.Builder> routingsWithKPIMetrics = new ArrayList<>();
+    private final AtomicBoolean startingOrStarted;
+    private final Map<Bean<?>, RoutingConfiguration> serviceBeans;
+    private final List<HttpRouting.Builder> routingsWithKPIMetrics;
     // build time
-    private WebServerConfig.Builder serverBuilder = WebServer.builder()
-            .shutdownHook(false) // we use a custom CDI shutdown hook in HelidonContainerImpl
-            .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
-            .port(7001);
-    private ObserveFeatureConfig.Builder observeBuilder = ObserveFeature.builder();
-    private HttpRouting.Builder routingBuilder = HttpRouting.builder();
-    private Map<String, HttpRouting.Builder> namedRoutings = new HashMap<>();
-    private Map<String, Router.Builder> namedRouters = new HashMap<>();
+    private WebServerConfig.Builder serverBuilder;
+    private ObserveFeatureConfig.Builder observeBuilder;
+    private LazyValue<HttpRouting.Builder> routingBuilderSupplier;
+    private Map<String, HttpRouting.Builder> namedRoutings;
+    private Map<String, Router.Builder> namedRouters;
     private String basePath;
     private Config config;
 
@@ -120,7 +122,7 @@ public class ServerCdiExtension implements Extension {
 
     // these fields may be accessed from different threads than created on
     private volatile int port;
-    private volatile String listenHost = "0.0.0.0";
+    private volatile String listenHost;
     private volatile boolean started;
 
     private Context context;
@@ -130,6 +132,19 @@ public class ServerCdiExtension implements Extension {
      */
     @Api.Internal
     public ServerCdiExtension() {
+        super();
+        this.startingOrStarted = new AtomicBoolean();
+        this.serviceBeans = Collections.synchronizedMap(new IdentityHashMap<>());
+        this.routingsWithKPIMetrics = new ArrayList<>();
+        this.serverBuilder = WebServer.builder()
+            .shutdownHook(false) // CDI shuts down the server before closing its service registry
+            .featuresDiscoverServices(false) // we need to explicitly configure features, as they use different sources of config
+            .port(7001);
+        this.observeBuilder = ObserveFeature.builder();
+        this.routingBuilderSupplier = LazyValue.create(HttpRouting::builder);
+        this.namedRoutings = new HashMap<>();
+        this.namedRouters = new HashMap<>();
+        this.listenHost = "0.0.0.0";
     }
 
     /**
@@ -138,7 +153,7 @@ public class ServerCdiExtension implements Extension {
      * @return server routing builder
      */
     public HttpRouting.Builder serverRoutingBuilder() {
-        return routingBuilder;
+        return routingBuilderSupplier == null ? null : routingBuilderSupplier.get();
     }
 
     /**
@@ -345,6 +360,27 @@ public class ServerCdiExtension implements Extension {
         this.listenHost = listenHost;
     }
 
+    void stopServer() {
+        if (!this.startingOrStarted.compareAndSet(true, false)) {
+            return;
+        }
+        try {
+            if (this.webserver == null || !this.started) {
+                return;
+            }
+            long beforeT = System.nanoTime();
+            try {
+                this.webserver.stop();
+                this.started = false;
+            } finally {
+                long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
+                LOGGER.log(Level.INFO, () -> "Server stopped in " + t + " milliseconds.");
+            }
+        } finally {
+            IN_PROGRESS_OR_RUNNING.set(false);
+        }
+    }
+
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
         List<Bean<?>> prioritized = new ArrayList<>(beans);
         prioritized.sort((o1, o2) -> {
@@ -360,7 +396,16 @@ public class ServerCdiExtension implements Extension {
         return (null == prio) ? Prioritized.DEFAULT_PRIORITY : prio.value();
     }
 
-    private void prepareRuntime(@Observes @RuntimeStart Config config) {
+    private void afterDeploymentValidation(@Observes @Priority(PLATFORM_BEFORE + 1) AfterDeploymentValidation event) {
+        // Prior versions of Helidon MicroProfile that split CDI's implementation into a build-time part and a runtime
+        // part fired events when "build time" started and ended, and when "runtime" started and ended. This extension
+        // used to take action when runtime started. That event's ordering was very specific. The priority here
+        // preserves that ordering as best as possible while still using standard lifecycle events instead. See
+        // io.helidon.microprofile.cdi.CdiExtension's AfterDeploymentValidation observers for more information.
+        this.configure(toHelidonConfig(getConfig()));
+    }
+
+    private void configure(Config config) {
         this.serverBuilder.config(config.get("server"));
         this.observeBuilder.config(config.get("server.features.observe"));
         this.config = config;
@@ -447,6 +492,8 @@ public class ServerCdiExtension implements Extension {
             throw new IllegalStateException("There is another builder in progress, or another Server running. "
                                                     + "You cannot run more than one in parallel");
         }
+        this.startingOrStarted.set(true);
+        onInitializationFailure(this::stopServer);
 
         // redirect to the first page when root is accessed (if configured)
         registerDefaultRedirect();
@@ -463,7 +510,7 @@ public class ServerCdiExtension implements Extension {
         serverBuilder.addFeature(observeBuilder.build());
 
         // start the webserver
-        serverBuilder.routing(routingBuilder);
+        serverBuilder.routing(serverRoutingBuilder());
 
         namedRouters.forEach((name, routerBuilder) -> {
             ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
@@ -533,7 +580,7 @@ public class ServerCdiExtension implements Extension {
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
         observeBuilder = null;
-        routingBuilder = null;
+        routingBuilderSupplier = null;
         namedRoutings = null;
         namedRouters = null;
 
@@ -579,7 +626,7 @@ public class ServerCdiExtension implements Extension {
     private void registerDefaultRedirect() {
         Optional.ofNullable(basePath)
                 .or(() -> config.get("server.base-path").asString().asOptional())
-                .ifPresent(basePath -> routingBuilder.any("/", (req, res) -> {
+                .ifPresent(basePath -> serverRoutingBuilder().any("/", (req, res) -> {
                     res.status(Status.MOVED_PERMANENTLY_301);
                     res.headers().set(HeaderNames.LOCATION, basePath);
                     res.send();
@@ -632,9 +679,9 @@ public class ServerCdiExtension implements Extension {
         HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
-            routingBuilder.register(context.asString().get(), staticContent);
+            serverRoutingBuilder().register(context.asString().get(), staticContent);
         } else {
-            routingBuilder.register(staticContent);
+            serverRoutingBuilder().register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
@@ -659,9 +706,9 @@ public class ServerCdiExtension implements Extension {
         HttpService staticContent = StaticContentFeature.createService(builder.build());
 
         if (context.exists()) {
-            routingBuilder.register(context.asString().get(), staticContent);
+            serverRoutingBuilder().register(context.asString().get(), staticContent);
         } else {
-            routingBuilder.register(staticContent);
+            serverRoutingBuilder().register(staticContent);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static classpath");
     }
@@ -680,32 +727,8 @@ public class ServerCdiExtension implements Extension {
         return normalizedLocation;
     }
 
-    private void stopServer(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        try {
-            if (started) {
-                doStop();
-            }
-        } finally {
-            // as there only can be a single CDI in a single JVM, once this CDI is shutting down, we
-            // can start another one
-            IN_PROGRESS_OR_RUNNING.set(false);
-        }
-    }
-
-    private void doStop() {
-        if (null == webserver || !started) {
-            // nothing to do
-            return;
-        }
-        long beforeT = System.nanoTime();
-
-        try {
-            webserver.stop();
-            started = false;
-        } finally {
-            long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
-            LOGGER.log(Level.INFO, () -> "Server stopped in " + t + " milliseconds.");
-        }
+    private void beforeDestroyed(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {
+        this.stopServer();
     }
 
     private void addApplication(JaxRsCdiExtension jaxRs, JaxRsApplication applicationMeta,

@@ -30,7 +30,11 @@
     <artifactId>helidon-microprofile-cdi</artifactId>
     <name>Helidon MicroProfile CDI</name>
 
-    <description>Helidon extension of Weld to support ahead of time compilation</description>
+    <description>Helidon MicroProfile integration with Weld</description>
+
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -38,8 +42,7 @@
             <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
-            <!-- the actual CDI implementation - repackaged by us -->
-            <groupId>io.helidon.microprofile.weld</groupId>
+            <groupId>org.jboss.weld.se</groupId>
             <artifactId>weld-se-core</artifactId>
         </dependency>
         <dependency>
@@ -164,9 +167,6 @@
                 <configuration>
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <systemPropertyVariables>
-                        <mp.initializer.allow>true</mp.initializer.allow>
-                    </systemPropertyVariables>
                 </configuration>
 
             </plugin>

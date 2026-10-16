@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -32,6 +31,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
@@ -42,7 +42,10 @@ import jakarta.websocket.server.ServerApplicationConfig;
 import jakarta.websocket.server.ServerEndpoint;
 import jakarta.websocket.server.ServerEndpointConfig;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Configure Tyrus related things.
@@ -64,8 +67,8 @@ public class TyrusCdiExtension implements Extension {
         appBuilder.updateApplicationClass(applicationClass);
     }
 
-    void prepareRuntime(@Observes @RuntimeStart Config config) {
-        this.config = config;
+    void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        this.config = toHelidonConfig(getConfig());
     }
 
     void startServer(@Observes @Priority(PLATFORM_AFTER + 99) @Initialized(ApplicationScoped.class) Object event,

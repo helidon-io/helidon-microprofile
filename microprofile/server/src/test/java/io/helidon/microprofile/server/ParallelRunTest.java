@@ -21,7 +21,9 @@ import java.util.Map;
 import io.helidon.microprofile.cdi.Main;
 import io.helidon.microprofile.config.core.MpConfigSources;
 
+import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.CDI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
@@ -30,6 +32,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -75,6 +80,27 @@ class ParallelRunTest {
     }
 
     @Test
+    void testFailedStartDoesNotCloseRunningContainer() {
+        Server rejectedServer = Server.builder().port(0).build();
+        Server anotherRejectedServer = Server.builder().port(0).build();
+        Server runningServer = Server.builder().port(0).build().start();
+        SeContainer runningContainer = (SeContainer) CDI.current();
+
+        try {
+            assertThrows(IllegalStateException.class, rejectedServer::start);
+            assertThrows(IllegalStateException.class, rejectedServer::stop);
+            assertThrows(IllegalStateException.class, anotherRejectedServer::start);
+            assertThat(runningContainer.isRunning(), is(true));
+            assertThat(CDI.current(), sameInstance(runningContainer));
+        } finally {
+            if (anotherRejectedServer.port() > 0) {
+                anotherRejectedServer.stop();
+            }
+            runningServer.stop();
+        }
+    }
+
+    @Test
     void testParallelCdiFails() {
         Config config = resolver.getBuilder()
                 .withSources(MpConfigSources.create(Map.of("server.port", "0",
@@ -99,12 +125,9 @@ class ParallelRunTest {
                 .build();
         resolver.registerConfig(config, cl);
 
-        try {
-            SeContainerInitializer.newInstance().initialize();
+        try (SeContainer _ = SeContainerInitializer.newInstance().initialize()) {
             assertThrows(IllegalStateException.class, () -> SeContainerInitializer.newInstance()
                     .initialize());
-        } finally {
-            Main.shutdown();
         }
     }
 
