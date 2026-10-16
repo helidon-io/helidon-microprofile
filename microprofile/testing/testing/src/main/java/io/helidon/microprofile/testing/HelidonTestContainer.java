@@ -31,6 +31,7 @@ import jakarta.enterprise.inject.se.SeContainerInitializer;
 
 import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
 import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 import static io.helidon.microprofile.testing.ReflectionHelper.requirePublic;
 
 /**
@@ -177,7 +178,7 @@ public class HelidonTestContainer {
             initializer.addExtensions(requirePublic(extension.value()));
         }
         initializer.addExtensions(testExtension);
-        container = addCdiProperties(initializer).initialize();
+        container = initialize(addCdiProperties(initializer));
     }
 
     @Override

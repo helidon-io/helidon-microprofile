@@ -70,6 +70,7 @@ public final class HelidonCdiProperties {
      */
     public static <T extends SeContainerInitializer> T addCdiProperties(T seContainerInitializer, Config config) {
         requireNonNull(seContainerInitializer, "seContainerInitializer");
+        requireNonNull(config, "config");
         MpConfig.toHelidonConfig(config)
                 .get("cdi")
                 .detach()

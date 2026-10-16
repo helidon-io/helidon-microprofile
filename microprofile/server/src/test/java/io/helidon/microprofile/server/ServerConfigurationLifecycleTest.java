@@ -84,6 +84,21 @@ class ServerConfigurationLifecycleTest {
     private interface TestRoutingBuilder extends Builder<TestRoutingBuilder, TestRouting> {
     }
 
+    @Dependent
+    static class TestBean {
+    }
+
+    private static class TestRouting implements Routing {
+        private int port;
+        private int backlog;
+
+        @Override
+        public void afterStart(WebServer server) {
+            this.port = server.port("custom");
+            this.backlog = server.prototype().backlog();
+        }
+    }
+
     @Nested
     class ProgrammaticOverrides {
         private ServerSocket occupiedPort;
@@ -258,21 +273,6 @@ class ServerConfigurationLifecycleTest {
         @Test
         void defaultPriorityValidationCustomizationWinsOverConfiguration() {
             assertThat(this.routing.backlog, is(20));
-        }
-    }
-
-    @Dependent
-    static class TestBean {
-    }
-
-    private static class TestRouting implements Routing {
-        private int port;
-        private int backlog;
-
-        @Override
-        public void afterStart(WebServer server) {
-            this.port = server.port("custom");
-            this.backlog = server.prototype().backlog();
         }
     }
 

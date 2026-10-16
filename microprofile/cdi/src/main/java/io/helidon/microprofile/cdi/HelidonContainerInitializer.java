@@ -149,6 +149,6 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
             addHelidonBeanDefiningAnnotations(this.delegate, this.classLoader);
         }
         addCdiProperties(this.delegate);
-        return this.delegate.initialize();
+        return SeContainerInitializers.initialize(this.delegate);
     }
 }

@@ -27,9 +27,12 @@ import io.helidon.microprofile.config.core.MpConfigSources;
 import io.helidon.service.registry.GlobalServiceRegistry;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.weld.bean.builtin.BeanManagerProxy;
@@ -153,6 +156,23 @@ class HelidonContainerInitializerTest {
             WeldConfiguration configuration = BeanManagerProxy.unwrap(container.getBeanManager())
                     .getServices().get(WeldConfiguration.class);
             assertThat(configuration.getBooleanProperty(CONCURRENT_DEPLOYMENT), is(false));
+        }
+    }
+
+    @Test
+    void testAdapterClosesOwnedRegistryAfterStartupFailure() {
+        ServiceRegistryExtension registryExtension = new ServiceRegistryExtension();
+        StartupFailureExtension failureExtension = new StartupFailureExtension();
+        SeContainerInitializer initializer = new HelidonContainerInitializer()
+                .disableDiscovery()
+                .addBeanClasses(TestBean.class)
+                .addExtensions(registryExtension, failureExtension);
+        try {
+            assertThat(assertThrows(IllegalStateException.class, initializer::initialize),
+                       sameInstance(failureExtension.failure));
+            assertThat(GlobalServiceRegistry.configured(), is(false));
+        } finally {
+            registryExtension.shutdown();
         }
     }
 
@@ -286,6 +306,15 @@ class HelidonContainerInitializerTest {
                        is(false));
         }
         assertThat(container.isRunning(), is(false));
+    }
+
+    static class StartupFailureExtension implements Extension {
+        private final IllegalStateException failure = new IllegalStateException("Deliberate startup failure");
+
+        void startup(@Observes Startup event) {
+            assertThat(GlobalServiceRegistry.configured(), is(true));
+            throw this.failure;
+        }
     }
 
     @ApplicationScoped

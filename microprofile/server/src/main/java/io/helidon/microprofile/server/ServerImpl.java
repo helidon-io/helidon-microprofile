@@ -34,6 +34,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
 import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 
 /**
  * Server to handle lifecycle of MicroProfile implementation.
@@ -48,7 +49,6 @@ public class ServerImpl implements Server {
     private final String host;
 
     private SeContainer container;
-    private ServerCdiExtension serverCdiExtension;
     private volatile int port;
 
     ServerImpl(Builder builder) {
@@ -78,8 +78,6 @@ public class ServerImpl implements Server {
                 .addExtensions(new Extension() {
                     private void configure(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
                         ServerCdiExtension serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
-                        // Retain access to the server even if CDI initialization fails without returning a container.
-                        ServerImpl.this.serverCdiExtension = serverCdiExtension;
                         if (basePath != null) {
                             serverCdiExtension.basePath(basePath);
                         }
@@ -118,18 +116,13 @@ public class ServerImpl implements Server {
             }
 
             ConfigProviderResolver.instance().registerConfig(this.config, this.classLoader);
-            SeContainer startedContainer = null;
+            SeContainer startedContainer = initialize(addCdiProperties(this.containerInitializer, this.config));
             try {
-                startedContainer = addCdiProperties(this.containerInitializer, this.config).initialize();
                 this.port = startedContainer.getBeanManager().getExtension(ServerCdiExtension.class).port();
                 this.container = startedContainer;
             } catch (RuntimeException | Error e) {
                 try {
-                    if (startedContainer != null) {
-                        startedContainer.close();
-                    } else if (this.serverCdiExtension != null) {
-                        this.serverCdiExtension.stopServer();
-                    }
+                    startedContainer.close();
                 } catch (RuntimeException | Error cleanupFailure) {
                     e.addSuppressed(cleanupFailure);
                 }

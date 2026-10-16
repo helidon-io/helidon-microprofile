@@ -30,8 +30,10 @@ import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
@@ -46,17 +48,29 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HelidonContainerTest {
+    private static final ScopedValue<HelidonContainerTest> CURRENT_TEST = ScopedValue.newInstance();
+
     private final List<SeContainer> containers;
+    private final IllegalStateException failure;
+
+    private ServiceRegistryExtension failedRegistryExtension;
 
     private HelidonContainerTest() {
         this.containers = new ArrayList<>();
+        this.failure = new IllegalStateException("Deliberate startup failure");
     }
 
     @AfterEach
     void closeContainers() {
-        for (SeContainer container : this.containers.reversed()) {
-            if (container.isRunning()) {
-                container.close();
+        try {
+            for (SeContainer container : this.containers.reversed()) {
+                if (container.isRunning()) {
+                    container.close();
+                }
+            }
+        } finally {
+            if (this.failedRegistryExtension != null) {
+                this.failedRegistryExtension.shutdown();
             }
         }
     }
@@ -163,6 +177,25 @@ class HelidonContainerTest {
         assertThat(HelidonContainer.instance().start(), sameInstance(second));
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    void startupFailureClosesOwnedRegistryAndAllowsRetry() {
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+        HelidonContainer adapter = HelidonContainer.instance();
+
+        ScopedValue.where(CURRENT_TEST, this).run(() ->
+                assertThat(assertThrows(IllegalStateException.class, adapter::start), sameInstance(this.failure)));
+
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+
+        SeContainer replacement = retain(adapter.start());
+        assertThat(replacement.isRunning(), is(true));
+        assertThat(GlobalServiceRegistry.configured(), is(true));
+        adapter.shutdown();
+        assertThat(replacement.isRunning(), is(false));
+        assertThat(GlobalServiceRegistry.configured(), is(false));
+    }
+
     private static SeContainerInitializer initializer() {
         return SeContainerInitializer.newInstance().disableDiscovery().addBeanClasses(TestBean2.class);
     }
@@ -170,6 +203,18 @@ class HelidonContainerTest {
     private SeContainer retain(SeContainer container) {
         this.containers.add(container);
         return container;
+    }
+
+    // Discovered for the adapter's bootstrap; inactive outside this test's failing initialization.
+    public static class StartupFailureExtension implements Extension {
+        void startup(@Observes Startup event, BeanManager beanManager) {
+            if (CURRENT_TEST.isBound()) {
+                HelidonContainerTest test = CURRENT_TEST.get();
+                test.failedRegistryExtension = beanManager.getExtension(ServiceRegistryExtension.class);
+                assertThat(GlobalServiceRegistry.configured(), is(true));
+                throw test.failure;
+            }
+        }
     }
 
     static class ShutdownObserver implements Extension {

@@ -51,6 +51,7 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 
+import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
 import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -61,11 +62,21 @@ import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
  */
 public class SchedulingCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(SchedulingCdiExtension.class.getName());
-    private final Queue<AnnotatedMethod<?>> methods = new LinkedList<>();
-    private final Map<AnnotatedMethod<?>, Bean<?>> beans = new HashMap<>();
-    private final Queue<ScheduledExecutorService> executors = new LinkedList<>();
+    private final Queue<AnnotatedMethod<?>> methods;
+    private final Map<AnnotatedMethod<?>, Bean<?>> beans;
+    private final Queue<ScheduledExecutorService> executors;
     private Config config;
     private Config schedulingConfig;
+
+    /**
+     * Required public constructor for {@link java.util.ServiceLoader}.
+     */
+    public SchedulingCdiExtension() {
+        super();
+        this.methods = new LinkedList<>();
+        this.beans = new HashMap<>();
+        this.executors = new LinkedList<>();
+    }
 
     @SuppressWarnings("unchecked")
     static <T> T lookup(Bean<?> bean, BeanManager beanManager) {
@@ -141,6 +152,7 @@ public class SchedulingCdiExtension implements Extension {
 
         ScheduledExecutorService executorService = scheduledThreadPoolbuilder.build().get();
         executors.add(executorService);
+        onInitializationFailure(this::terminate);
 
         for (AnnotatedMethod<?> am : methods) {
             Class<?> aClass = am.getDeclaringType().getJavaClass();
@@ -198,7 +210,7 @@ public class SchedulingCdiExtension implements Extension {
     }
 
     void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
-        executors.forEach(ExecutorService::shutdownNow);
+        this.terminate();
     }
 
     private void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
@@ -209,5 +221,9 @@ public class SchedulingCdiExtension implements Extension {
     private boolean hasScheduleAnnotation(AnnotatedMethod<?> am) {
         return am.isAnnotationPresent(Scheduling.Cron.class)
                 || am.isAnnotationPresent(Scheduling.FixedRate.class);
+    }
+
+    private void terminate() {
+        this.executors.forEach(ExecutorService::shutdownNow);
     }
 }

@@ -27,6 +27,7 @@ import jakarta.enterprise.inject.se.SeContainerInitializer;
 
 import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
 import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 
 /**
  * This is the "master" main class of Helidon MP.
@@ -75,7 +76,7 @@ public final class Main {
         try {
             if (inUse == null || !inUse.isRunning()) {
                 LogConfig.initClass();
-                inUse = addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())).initialize();
+                inUse = initialize(addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())));
                 started = true;
             }
         } finally {

@@ -104,7 +104,8 @@ final class HelidonContainerAdapter implements HelidonContainer {
         }
         initializing = true;
         try {
-            return addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())).initialize();
+            return SeContainerInitializers.initialize(
+                    addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())));
         } finally {
             initializing = false;
         }

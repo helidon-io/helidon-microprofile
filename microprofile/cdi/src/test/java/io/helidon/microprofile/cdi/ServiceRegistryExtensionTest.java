@@ -40,6 +40,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.context.Contexts.runInContext;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -89,7 +90,7 @@ class ServiceRegistryExtensionTest {
             ValidationFailure failure = new ValidationFailure();
             runInContext(context(registry), () -> {
                 assertThrows(RuntimeException.class,
-                             () -> initializer(extension).addExtensions(failure).initialize());
+                             () -> initialize(initializer(extension).addExtensions(failure)));
                 assertThat(GlobalServiceRegistry.registry(), sameInstance(registry));
             });
             assertThat(failure.observed, is(true));
@@ -100,6 +101,31 @@ class ServiceRegistryExtensionTest {
             manager.shutdown();
             unrelatedOwner.shutdown();
         }
+    }
+
+    @Test
+    void failedBorrowerLeavesRunningOwnerAlone() {
+        ServiceRegistryExtension owner = new ServiceRegistryExtension();
+        ServiceRegistryExtension borrower = new ServiceRegistryExtension();
+        RegistryService service;
+        try (SeContainer container = initialize(initializer(owner))) {
+            ServiceRegistry registry = GlobalServiceRegistry.registry();
+            service = registry.get(RegistryService.class);
+            ValidationFailure failure = new ValidationFailure();
+
+            assertThrows(RuntimeException.class,
+                         () -> initialize(initializer(borrower).addExtensions(failure)));
+
+            assertThat(failure.observed, is(true));
+            assertThat(container.isRunning(), is(true));
+            assertThat(service.destructions, is(0));
+            assertThat(GlobalServiceRegistry.registry(), sameInstance(registry));
+        } finally {
+            borrower.shutdown();
+            owner.shutdown();
+        }
+        assertThat(service.destructions, is(1));
+        assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
     @Test

@@ -91,6 +91,7 @@ import org.jboss.weld.literal.NamedLiteral;
 import static io.helidon.common.context.Contexts.context;
 import static io.helidon.common.context.Contexts.globalContext;
 import static io.helidon.common.context.Contexts.runInContext;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
 import static io.helidon.service.registry.Service.Named.DEFAULT_NAME;
 import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -935,6 +936,7 @@ public class ServiceRegistryExtension implements Extension {
                     RegistryShutdownHandler newShutdownHandler = new RegistryShutdownHandler(manager, registry);
                     shutdownHandler = newShutdownHandler;
                     this.createdShutdownHandler = newShutdownHandler;
+                    onInitializationFailure(this::shutdown);
                     return registry;
                 } catch (RuntimeException | Error e) {
                     shutdownHandler = null;
