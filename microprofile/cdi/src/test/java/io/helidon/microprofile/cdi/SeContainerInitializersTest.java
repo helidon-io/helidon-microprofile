@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
-import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.registerCleanupAction;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,7 +64,7 @@ class SeContainerInitializersTest {
         TestInitializer initializer = initializer(() -> { });
         initializer.addExtensions(new Extension() {
             void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
-                onInitializationFailure(() -> SeContainerInitializersTest.this.cleanupCalls.add("successful"));
+                registerCleanupAction(() -> SeContainerInitializersTest.this.cleanupCalls.add("successful"));
             }
         });
 
@@ -84,8 +84,8 @@ class SeContainerInitializersTest {
     void failureRunsActionsInReverseOrderAndPreservesException() {
         IllegalStateException failure = new IllegalStateException("Initialization failed");
         TestInitializer initializer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("first"));
-            onInitializationFailure(() -> this.cleanupCalls.add("second"));
+            registerCleanupAction(() -> this.cleanupCalls.add("first"));
+            registerCleanupAction(() -> this.cleanupCalls.add("second"));
             throw failure;
         });
 
@@ -97,7 +97,7 @@ class SeContainerInitializersTest {
     void errorAlsoRunsCleanup() {
         AssertionError failure = new AssertionError("Initialization failed");
         TestInitializer initializer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("cleanup"));
+            registerCleanupAction(() -> this.cleanupCalls.add("cleanup"));
             throw failure;
         });
 
@@ -111,12 +111,12 @@ class SeContainerInitializersTest {
         IllegalStateException cleanupException = new IllegalStateException("Cleanup failed");
         AssertionError cleanupError = new AssertionError("Cleanup failed");
         TestInitializer initializer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("first"));
-            onInitializationFailure(() -> {
+            registerCleanupAction(() -> this.cleanupCalls.add("first"));
+            registerCleanupAction(() -> {
                 this.cleanupCalls.add("second");
                 throw cleanupException;
             });
-            onInitializationFailure(() -> {
+            registerCleanupAction(() -> {
                 this.cleanupCalls.add("third");
                 throw cleanupError;
             });
@@ -132,8 +132,8 @@ class SeContainerInitializersTest {
     void cleanupRethrowingOriginalFailureDoesNotPreventOtherCleanup() {
         IllegalStateException failure = new IllegalStateException("Initialization failed");
         TestInitializer initializer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("cleanup"));
-            onInitializationFailure(() -> {
+            registerCleanupAction(() -> this.cleanupCalls.add("cleanup"));
+            registerCleanupAction(() -> {
                 throw failure;
             });
             throw failure;
@@ -146,12 +146,12 @@ class SeContainerInitializersTest {
 
     @Test
     void registrationOutsideInitializationIsIgnored() {
-        onInitializationFailure(() -> this.cleanupCalls.add("outside"));
+        registerCleanupAction(() -> this.cleanupCalls.add("outside"));
         assertThrows(IllegalStateException.class, () -> initialize(initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("inside"));
+            registerCleanupAction(() -> this.cleanupCalls.add("inside"));
             throw new IllegalStateException("Initialization failed");
         })));
-        onInitializationFailure(() -> this.cleanupCalls.add("after"));
+        registerCleanupAction(() -> this.cleanupCalls.add("after"));
         assertThrows(IllegalStateException.class, () -> initialize(initializer(() -> {
             throw new IllegalStateException("Subsequent initialization failed");
         })));
@@ -164,14 +164,14 @@ class SeContainerInitializersTest {
         IllegalStateException innerFailure = new IllegalStateException("Inner initialization failed");
         IllegalStateException outerFailure = new IllegalStateException("Outer initialization failed");
         TestInitializer inner = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("inner"));
+            registerCleanupAction(() -> this.cleanupCalls.add("inner"));
             throw innerFailure;
         });
         TestInitializer outer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("outer-before"));
+            registerCleanupAction(() -> this.cleanupCalls.add("outer-before"));
             assertThat(assertThrows(IllegalStateException.class, () -> initialize(inner)), sameInstance(innerFailure));
             assertThat(this.cleanupCalls, contains("inner"));
-            onInitializationFailure(() -> this.cleanupCalls.add("outer-after"));
+            registerCleanupAction(() -> this.cleanupCalls.add("outer-after"));
             throw outerFailure;
         });
 
@@ -181,9 +181,9 @@ class SeContainerInitializersTest {
 
     @Test
     void successfulNestedInitializationSurvivesOuterFailure() {
-        TestInitializer inner = initializer(() -> onInitializationFailure(() -> this.cleanupCalls.add("inner")));
+        TestInitializer inner = initializer(() -> registerCleanupAction(() -> this.cleanupCalls.add("inner")));
         TestInitializer outer = initializer(() -> {
-            onInitializationFailure(() -> this.cleanupCalls.add("outer"));
+            registerCleanupAction(() -> this.cleanupCalls.add("outer"));
             initialize(inner);
             throw new IllegalStateException("Outer initialization failed");
         });
@@ -196,7 +196,7 @@ class SeContainerInitializersTest {
     @Test
     void nullArgumentsAreRejected() {
         assertThrows(NullPointerException.class, () -> initialize(null));
-        assertThrows(NullPointerException.class, () -> onInitializationFailure(null));
+        assertThrows(NullPointerException.class, () -> registerCleanupAction(null));
     }
 
     private TestInitializer initializer(Runnable initialization) {

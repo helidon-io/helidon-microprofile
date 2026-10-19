@@ -26,6 +26,13 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static java.util.Objects.requireNonNull;
+import static org.jboss.weld.environment.deployment.discovery.jandex.Jandex.DISABLE_JANDEX_DISCOVERY_STRATEGY;
+import static org.jboss.weld.environment.se.Weld.ALLOW_OPTIMIZED_CLEANUP;
+import static org.jboss.weld.environment.se.Weld.ARCHIVE_ISOLATION_SYSTEM_PROPERTY;
+import static org.jboss.weld.environment.se.Weld.EMPTY_BEANS_XML_DISCOVERY_MODE_ALL;
+import static org.jboss.weld.environment.se.Weld.JAVAX_ENTERPRISE_INJECT_SCAN_IMPLICIT;
+import static org.jboss.weld.environment.se.Weld.SCAN_CLASSPATH_ENTRIES_SYSTEM_PROPERTY;
+import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 
 /**
  * An installer of CDI initializer properties from MicroProfile configuration.
@@ -55,8 +62,20 @@ public final class HelidonCdiProperties {
     /**
      * Adds configuration entries under {@code cdi.} as initializer properties, removing the {@code cdi.} prefix.
      *
-     * <p>Values are supplied as strings. Existing properties with the same names are replaced; other properties are
-     * preserved. Subsequent initializer calls may override the added properties.</p>
+     * <p>Values are supplied as strings, except for the following Weld SE options, whose values are converted using
+     * {@link Boolean#valueOf(String)}:</p>
+     * <ul>
+     * <li>{@value org.jboss.weld.environment.se.Weld#ALLOW_OPTIMIZED_CLEANUP}</li>
+     * <li>{@value org.jboss.weld.environment.se.Weld#ARCHIVE_ISOLATION_SYSTEM_PROPERTY}</li>
+     * <li>{@value org.jboss.weld.environment.se.Weld#EMPTY_BEANS_XML_DISCOVERY_MODE_ALL}</li>
+     * <li>{@value org.jboss.weld.environment.se.Weld#JAVAX_ENTERPRISE_INJECT_SCAN_IMPLICIT}</li>
+     * <li>{@value org.jboss.weld.environment.se.Weld#SCAN_CLASSPATH_ENTRIES_SYSTEM_PROPERTY}</li>
+     * <li>{@value org.jboss.weld.environment.se.Weld#SHUTDOWN_HOOK_SYSTEM_PROPERTY}</li>
+     * <li>{@value org.jboss.weld.environment.deployment.discovery.jandex.Jandex#DISABLE_JANDEX_DISCOVERY_STRATEGY}</li>
+     * </ul>
+     *
+     * <p>Existing properties with the same names are replaced; other properties are preserved. Subsequent initializer
+     * calls may override the added properties.</p>
      *
      * <p>Call this method before {@link SeContainerInitializer#initialize()} and after preparing the desired
      * configuration. For example, {@code cdi.org.jboss.weld.se.archive.isolation} becomes
@@ -76,7 +95,21 @@ public final class HelidonCdiProperties {
                 .detach()
                 .asMap()
                 .orElseGet(Map::of)
-                .forEach(seContainerInitializer::addProperty);
+                .forEach((name, value) -> seContainerInitializer.addProperty(name, propertyValue(name, value)));
         return seContainerInitializer;
+    }
+
+    private static Object propertyValue(String name, String value) {
+        // Weld SE checks these initializer options against Boolean.TRUE; its core configuration parser accepts strings.
+        return switch (name) {
+        case ALLOW_OPTIMIZED_CLEANUP,
+             ARCHIVE_ISOLATION_SYSTEM_PROPERTY,
+             EMPTY_BEANS_XML_DISCOVERY_MODE_ALL,
+             JAVAX_ENTERPRISE_INJECT_SCAN_IMPLICIT,
+             SCAN_CLASSPATH_ENTRIES_SYSTEM_PROPERTY,
+             SHUTDOWN_HOOK_SYSTEM_PROPERTY,
+             DISABLE_JANDEX_DISCOVERY_STRATEGY -> Boolean.valueOf(value);
+        default -> value;
+        };
     }
 }

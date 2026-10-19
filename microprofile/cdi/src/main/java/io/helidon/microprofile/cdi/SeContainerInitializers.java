@@ -27,11 +27,11 @@ import jakarta.enterprise.inject.se.SeContainerInitializer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Initializes {@link SeContainer}s with cleanup of participating resources when initialization fails.
+ * A utility class for working with {@link SeContainerInitializer} instances.
  *
  * @see #initialize(SeContainerInitializer)
  */
-@Api.Internal
+@Api.Stable
 public final class SeContainerInitializers {
     private static final ScopedValue<Deque<Runnable>> CLEANUP_ACTIONS = ScopedValue.newInstance();
 
@@ -41,9 +41,9 @@ public final class SeContainerInitializers {
 
     /**
      * {@linkplain SeContainerInitializer#initialize() Initializes} a {@linkplain SeContainer container}, running
-     * {@linkplain #onInitializationFailure(Runnable) previously registered cleanup actions} if an error occurs.
+     * {@linkplain #registerCleanupAction(Runnable) previously registered cleanup actions} if an error occurs.
      *
-     * <p>If no error occurs, any {@linkplain #onInitializationFailure(Runnable) registered cleanup actions} are simply
+     * <p>If no error occurs, any {@linkplain #registerCleanupAction(Runnable) registered cleanup actions} are simply
      * discarded without being {@linkplain Runnable#run() run}.</p>
      *
      * <p>Cleanup actions run in reverse registration order.</p>
@@ -52,7 +52,7 @@ public final class SeContainerInitializers {
      * @return a non-{@code null} {@link SeContainer}
      * @throws NullPointerException if {@code initializer} is {@code null}
      * @throws RuntimeException if an error occurs during initialization; cleanup actions will have been run
-     * @see #onInitializationFailure(Runnable)
+     * @see #registerCleanupAction(Runnable)
      * @see SeContainerInitializer#initialize()
      */
     public static SeContainer initialize(SeContainerInitializer initializer) {
@@ -95,7 +95,7 @@ public final class SeContainerInitializers {
      * @throws NullPointerException if {@code cleanupAction} is {@code null}
      * @see #initialize(SeContainerInitializer)
      */
-    public static void onInitializationFailure(Runnable cleanupAction) {
+    public static void registerCleanupAction(Runnable cleanupAction) {
         requireNonNull(cleanupAction, "cleanupAction");
         if (CLEANUP_ACTIONS.isBound()) {
             CLEANUP_ACTIONS.get().addLast(cleanupAction);

@@ -131,7 +131,7 @@ class HelidonContainerTest {
 
     @SuppressWarnings("deprecation")
     @Test
-    void HelidonContainerUsesSeContainerStartedLater() {
+    void helidonContainerUsesSeContainerStartedLater() {
         HelidonContainer helidonContainer = HelidonContainer.instance();
         SeContainer seContainer = retain(initializer().initialize());
         assertThat(helidonContainer.start(), sameInstance(seContainer));

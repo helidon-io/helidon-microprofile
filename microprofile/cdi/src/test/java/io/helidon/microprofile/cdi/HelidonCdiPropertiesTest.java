@@ -43,12 +43,14 @@ class HelidonCdiPropertiesTest {
         initializer.addProperty("overlap", "before");
         Config config = config(Map.of("cdi.overlap", "configured",
                                       "cdi.org.jboss.weld.bootstrap.concurrentDeployment", "false",
+                                      "cdi.custom.boolean.text", "true",
                                       "application.name", "ignored",
                                       "cdix.name", "ignored"));
 
         assertThat(addCdiProperties(initializer, config), sameInstance(initializer));
         assertThat(initializer.value("overlap"), is("configured"));
         assertThat(initializer.value("org.jboss.weld.bootstrap.concurrentDeployment"), is("false"));
+        assertThat(initializer.value("custom.boolean.text"), is("true"));
         assertThat(initializer.value("org.jboss.weld.se.additionalBeanDefiningAnnotations"), sameInstance(annotations));
         assertThat(initializer.value("application.name"), nullValue());
         assertThat(initializer.value("name"), nullValue());
@@ -56,6 +58,32 @@ class HelidonCdiPropertiesTest {
 
         initializer.addProperty("overlap", "after");
         assertThat(initializer.value("overlap"), is("after"));
+    }
+
+    @Test
+    void testWeldSeBooleanProperties() {
+        // When you supply properties to an SeContainerInitializer implemented by Weld, you just have to know (from
+        // documentation, etc.) which ones should be converted to Booleans. Somewhat interestingly, Weld's internal
+        // configuration system will _not_ do type conversion if a given property is submitted as a System
+        // property. That is probably a Weld issue.
+        for (String name : Set.of("jakarta.enterprise.inject.scan.implicit",
+                                  "org.jboss.weld.bootstrap.allowOptimizedCleanup",
+                                  "org.jboss.weld.discovery.disableJandexDiscovery",
+                                  "org.jboss.weld.se.archive.isolation",
+                                  "org.jboss.weld.se.discovery.emptyBeansXmlModeAll",
+                                  "org.jboss.weld.se.scan.classpath.entries",
+                                  "org.jboss.weld.se.shutdownHook")) {
+            for (String value : Set.of("true", "false", "TrUe")) {
+                PropertyInitializer initializer = new PropertyInitializer();
+                initializer.addProperty(name, !Boolean.parseBoolean(value));
+
+                addCdiProperties(initializer, config(Map.of("cdi." + name, value)));
+
+                assertThat(name + "=" + value, initializer.value(name), is(Boolean.valueOf(value)));
+                initializer.addProperty(name, !Boolean.parseBoolean(value));
+                assertThat(initializer.value(name), is(!Boolean.parseBoolean(value)));
+            }
+        }
     }
 
     @Test

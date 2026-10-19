@@ -54,9 +54,10 @@ public class HelidonTestContainer {
     private final HelidonTestInfo<?> testInfo;
     private final HelidonTestScope testScope;
     private final BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final ReentrantLock lock = new ReentrantLock();
-    private final int id = NEXT_ID.getAndIncrement();
+    private final AtomicBoolean closed;
+    private final ReentrantLock lock;
+    private final int id;
+
     private SeContainer container;
     private PinningRecorder pinningRecorder;
     private RuntimeException error;
@@ -71,21 +72,27 @@ public class HelidonTestContainer {
     public HelidonTestContainer(HelidonTestInfo<?> testInfo,
                                 HelidonTestScope testScope,
                                 BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory) {
-
+        super();
         this.testInfo = testInfo;
         this.testScope = testScope;
         this.extensionFactory = extensionFactory;
+        this.closed = new AtomicBoolean(false);
+        this.lock = new ReentrantLock();
+        this.id = NEXT_ID.getAndIncrement();
     }
 
     /**
      * Stop the container.
      */
     public void close() {
-        if (container != null && closed.compareAndSet(false, true)) {
+        if (this.container != null && this.closed.compareAndSet(false, true)) {
             LOGGER.log(Level.DEBUG, "closing container id={0}", id);
-            container.close();
-            if (pinningRecorder != null) {
-                pinningRecorder.close();
+            try {
+                this.container.close();
+            } finally {
+                if (this.pinningRecorder != null) {
+                    this.pinningRecorder.close();
+                }
             }
         }
     }
@@ -96,7 +103,7 @@ public class HelidonTestContainer {
      * @return {@code true} if closed, {@code false} otherwise
      */
     public boolean closed() {
-        return closed.get();
+        return this.closed.get();
     }
 
     /**
@@ -105,7 +112,7 @@ public class HelidonTestContainer {
      * @return {@code true} if failed, {@code false} otherwise
      */
     public boolean initFailed() {
-        return error != null;
+        return this.error != null;
     }
 
     /**
@@ -120,10 +127,10 @@ public class HelidonTestContainer {
      */
     @SuppressWarnings("resource")
     public <T> T resolveInstance(Class<T> type, Annotation... qualifiers) throws InitializationFailed {
-        if (type.isAssignableFrom(SeContainer.class)) {
+        if (SeContainer.class.isAssignableFrom(type)) {
             return type.cast(container());
         }
-        return container().select(type, qualifiers).get();
+        return this.container().select(type, qualifiers).get();
     }
 
     /**
@@ -137,48 +144,72 @@ public class HelidonTestContainer {
      */
     @SuppressWarnings("resource")
     public boolean isSupported(Class<?> type, Annotation... qualifiers) throws InitializationFailed {
-        return !container().select(type, qualifiers).isUnsatisfied();
+        return !this.container().select(type, qualifiers).isUnsatisfied();
     }
 
     private SeContainer container() {
-        if (error == null && container == null) {
+        if (this.error == null && this.container == null) {
+            this.lock.lock();
             try {
-                lock.lock();
-                if (error == null && container == null) {
-                    start();
+                if (this.error == null && this.container == null) {
+                    this.start();
                 }
             } catch (RuntimeException ex) {
-                error = ex;
+                this.error = ex;
                 throw ex;
             } finally {
-                lock.unlock();
+                this.lock.unlock();
             }
         }
-        if (error != null) {
-            throw new InitializationFailed(error);
+        if (this.error != null) {
+            throw new InitializationFailed(this.error);
         }
-        return container;
+        return this.container;
     }
 
     @SuppressWarnings("unchecked")
     private void start() {
         LOGGER.log(Level.DEBUG, "starting container\n{0}", this);
-        if (testInfo.pinningDetection()) {
-            pinningRecorder = PinningRecorder.create();
-            pinningRecorder.record(Duration.ofMillis(testInfo.pinningThreshold()));
+        HelidonTestExtension testExtension = null;
+        try {
+            if (this.testInfo.pinningDetection()) {
+                this.pinningRecorder = PinningRecorder.create();
+                this.pinningRecorder.record(Duration.ofMillis(this.testInfo.pinningThreshold()));
+            }
+            testExtension = this.extensionFactory.apply(this.testInfo, this.testScope);
+            // Initializer properties need the test configuration before discovery starts.
+            testExtension.resolveTestConfig();
+            SeContainerInitializer initializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance());
+            if (this.testInfo.disableDiscovery()) {
+                initializer.disableDiscovery().addExtensions(CdiExtension.class);
+            }
+            for (AddExtension extension : this.testInfo.addExtensions()) {
+                initializer.addExtensions(requirePublic(extension.value()));
+            }
+            initializer.addExtensions(testExtension);
+            this.container = initialize(addCdiProperties(initializer));
+        } catch (RuntimeException | Error failure) {
+            // Test configuration and the recorder are acquired before initialize binds its cleanup actions.
+            if (testExtension != null) {
+                try {
+                    testExtension.cleanup();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    if (cleanupFailure != failure) {
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+            if (this.pinningRecorder != null) {
+                try {
+                    this.pinningRecorder.close();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    if (cleanupFailure != failure) {
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+            throw failure;
         }
-        HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
-        // Initializer properties need the test configuration before discovery starts.
-        testExtension.resolveTestConfig();
-        SeContainerInitializer initializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance());
-        if (testInfo.disableDiscovery()) {
-            initializer.disableDiscovery().addExtensions(CdiExtension.class);
-        }
-        for (AddExtension extension : testInfo.addExtensions()) {
-            initializer.addExtensions(requirePublic(extension.value()));
-        }
-        initializer.addExtensions(testExtension);
-        container = initialize(addCdiProperties(initializer));
     }
 
     @Override

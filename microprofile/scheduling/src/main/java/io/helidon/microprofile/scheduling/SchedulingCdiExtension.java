@@ -51,7 +51,7 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 
-import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.registerCleanupAction;
 import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
@@ -152,7 +152,7 @@ public class SchedulingCdiExtension implements Extension {
 
         ScheduledExecutorService executorService = scheduledThreadPoolbuilder.build().get();
         executors.add(executorService);
-        onInitializationFailure(this::terminate);
+        registerCleanupAction(this::terminate);
 
         for (AnnotatedMethod<?> am : methods) {
             Class<?> aClass = am.getDeclaringType().getJavaClass();

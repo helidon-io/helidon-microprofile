@@ -90,7 +90,7 @@ import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 
-import static io.helidon.microprofile.cdi.SeContainerInitializers.onInitializationFailure;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.registerCleanupAction;
 import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -493,7 +493,7 @@ public class ServerCdiExtension implements Extension {
                                                     + "You cannot run more than one in parallel");
         }
         this.startingOrStarted.set(true);
-        onInitializationFailure(this::stopServer);
+        registerCleanupAction(this::stopServer);
 
         // redirect to the first page when root is accessed (if configured)
         registerDefaultRedirect();

@@ -28,6 +28,13 @@
  * <p>
  * If the current context supplies a service registry, Helidon MP uses that registry without replacing its Config service or
  * shutting it down. The registry owner remains responsible for its configuration and lifetime.
+ * <p>
+ * Applications bootstrapping Helidon MP directly can use
+ * {@link io.helidon.microprofile.cdi.SeContainerInitializers#initialize(jakarta.enterprise.inject.se.SeContainerInitializer)}
+ * to attempt cleanup of participating resources if CDI initialization fails. This includes an owned service registry
+ * and resources registered by other participating extensions. The caller remains responsible for normal closure of
+ * the returned container. Direct calls to the initializer's {@code initialize()} method do not activate this cleanup
+ * facility.
  *
  * @see jakarta.enterprise.context
  */
