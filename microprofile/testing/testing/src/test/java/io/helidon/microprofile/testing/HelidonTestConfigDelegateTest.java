@@ -26,15 +26,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 class HelidonTestConfigDelegateTest {
 
     @Test
-    void removedValuesDoNotCreateNodes() {
+    void emptyValuesPreserveNodesWithoutScalarValues() {
         Config mpConfig = ConfigProviderResolver.instance().getBuilder()
                 .withSources(MpConfigSources.create(Map.of("complex.present", "value",
-                                                          "complex.removed", "",
-                                                          "absent.removed", "")))
+                                                          "complex.empty", "",
+                                                          "empty.child", "")))
                 .build();
         HelidonTestConfigDelegate config = new HelidonTestConfigDelegate() {
             @Override
@@ -44,7 +45,13 @@ class HelidonTestConfigDelegateTest {
         };
 
         assertThat(config.get("complex").get("present").asString().get(), is("value"));
-        assertThat(config.get("complex.removed").exists(), is(false));
+        assertThat(config.get("complex.empty").exists(), is(true));
+        assertThat(config.get("complex.empty").hasValue(), is(false));
+        assertThat(config.get("complex.empty").asString().isPresent(), is(false));
+        assertThat(config.get("empty").asNodeList().get(), hasSize(1));
+        assertThat(config.get("empty.child").exists(), is(true));
+        assertThat(config.get("empty.child").hasValue(), is(false));
+        assertThat(config.getOptionalValue("empty.child", String.class).isPresent(), is(false));
         assertThat(config.get("absent").exists(), is(false));
     }
 }
