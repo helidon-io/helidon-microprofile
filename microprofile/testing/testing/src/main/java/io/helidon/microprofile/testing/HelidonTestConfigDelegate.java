@@ -225,8 +225,11 @@ abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.con
                     if (name.startsWith(key + ".")) {
                         String k = name.substring(key.length() + 1);
                         String v = delegate.getConfigValue(name).getValue();
-                        builder.addValue(k, v);
-                        hasEntries = true;
+                        // A listed property can have no effective value, for example when an empty value removes it.
+                        if (v != null) {
+                            builder.addValue(k, v);
+                            hasEntries = true;
+                        }
                     }
                 }
                 if (hasEntries) {
