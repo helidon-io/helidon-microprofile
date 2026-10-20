@@ -44,18 +44,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MainRegistryFailureTest {
     private static final ScopedValue<MainRegistryFailureTest> CURRENT_TEST = ScopedValue.newInstance();
 
-    private final IllegalStateException failure;
+    private final IllegalStateException failure = new IllegalStateException("Deliberate initialization failure");
     private FailureStage failureStage;
     private ServiceRegistryExtension extension;
     private ServiceRegistry registry;
     private RegistryService service;
     private boolean failureObserved;
     private int shutdownNotifications;
-
-    MainRegistryFailureTest() {
-        super();
-        this.failure = new IllegalStateException("Deliberate initialization failure");
-    }
 
     @BeforeEach
     void setUp() {

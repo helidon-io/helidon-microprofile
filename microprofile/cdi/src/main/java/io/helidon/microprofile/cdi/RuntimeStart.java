@@ -74,7 +74,6 @@ public @interface RuntimeStart {
         @Deprecated(since = "28.0.0")
         @SuppressWarnings("checkstyle:RedundantModifier") // checkstyle bug
         public Literal() {
-            super();
         }
     }
 }

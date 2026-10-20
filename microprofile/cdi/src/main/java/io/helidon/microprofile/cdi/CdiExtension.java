@@ -56,7 +56,6 @@ public final class CdiExtension implements Extension {
      * Creates a new {@link CdiExtension}.
      */
     public CdiExtension() {
-        super();
     }
 
     private void onDiscovery(@Observes @Priority(PLATFORM_BEFORE - 1) BeforeBeanDiscovery event) {

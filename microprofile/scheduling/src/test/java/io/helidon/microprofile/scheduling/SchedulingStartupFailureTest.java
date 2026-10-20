@@ -56,10 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class SchedulingStartupFailureTest {
     private static final ScopedValue<SchedulingStartupFailureTest> CURRENT_TEST = ScopedValue.newInstance();
 
-    private final IllegalStateException startupFailure;
-    private final CountDownLatch taskStarted;
-    private final CountDownLatch taskInterrupted;
-    private final CountDownLatch releaseTask;
+    private final IllegalStateException startupFailure = new IllegalStateException("Deliberate startup failure");
+    private final CountDownLatch taskStarted = new CountDownLatch(1);
+    private final CountDownLatch taskInterrupted = new CountDownLatch(1);
+    private final CountDownLatch releaseTask = new CountDownLatch(1);
     private ConfigProviderResolver resolver;
     private ClassLoader classLoader;
     private Config originalConfig;
@@ -69,14 +69,6 @@ class SchedulingStartupFailureTest {
     private SeContainer container;
     private ScheduledExecutorService executor;
     private boolean failStartup;
-
-    SchedulingStartupFailureTest() {
-        super();
-        this.startupFailure = new IllegalStateException("Deliberate startup failure");
-        this.taskStarted = new CountDownLatch(1);
-        this.taskInterrupted = new CountDownLatch(1);
-        this.releaseTask = new CountDownLatch(1);
-    }
 
     @BeforeEach
     void setUp() {

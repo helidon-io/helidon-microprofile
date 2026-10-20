@@ -26,15 +26,6 @@ public class TestBean {
     @Inject
     public TestBean2 testBean2;
 
-    /**
-     * Creates a new {@link TestBean}.
-     */
-    public TestBean() {
-        // This constructor was implicit in prior revisions of this class and hence public. This explicit constructor
-        // silences warnings and hence is also public.
-        super();
-    }
-
     public TestBean2 getTestBean2() {
         return testBean2;
     }

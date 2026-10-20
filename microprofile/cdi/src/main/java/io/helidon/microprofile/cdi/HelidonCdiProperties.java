@@ -43,7 +43,6 @@ import static org.jboss.weld.environment.se.Weld.SHUTDOWN_HOOK_SYSTEM_PROPERTY;
 public final class HelidonCdiProperties {
 
     private HelidonCdiProperties() {
-        super();
     }
 
     /**

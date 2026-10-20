@@ -45,7 +45,6 @@ public class HelidonContainerInitializer extends SeContainerInitializer {
      * Creates a Helidon CDI container initializer.
      */
     public HelidonContainerInitializer() {
-        super();
     }
 
     @Override

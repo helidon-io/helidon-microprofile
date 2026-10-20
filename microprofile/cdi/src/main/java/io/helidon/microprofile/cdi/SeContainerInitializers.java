@@ -36,7 +36,6 @@ public final class SeContainerInitializers {
     private static final ScopedValue<Deque<Runnable>> CLEANUP_ACTIONS = ScopedValue.newInstance();
 
     private SeContainerInitializers() {
-        super();
     }
 
     /**

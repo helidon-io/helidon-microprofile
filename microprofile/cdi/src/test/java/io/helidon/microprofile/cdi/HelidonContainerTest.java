@@ -50,15 +50,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class HelidonContainerTest {
     private static final ScopedValue<HelidonContainerTest> CURRENT_TEST = ScopedValue.newInstance();
 
-    private final List<SeContainer> containers;
-    private final IllegalStateException failure;
+    private final List<SeContainer> containers = new ArrayList<>();
+    private final IllegalStateException failure = new IllegalStateException("Deliberate startup failure");
 
     private ServiceRegistryExtension failedRegistryExtension;
-
-    private HelidonContainerTest() {
-        this.containers = new ArrayList<>();
-        this.failure = new IllegalStateException("Deliberate startup failure");
-    }
 
     @AfterEach
     void closeContainers() {

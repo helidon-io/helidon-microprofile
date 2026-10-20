@@ -879,7 +879,6 @@ public class ServiceRegistryExtension implements Extension {
         private RegistryShutdownHandler createdShutdownHandler;
 
         private RegistryLifecycle() {
-            super();
         }
 
         private static Config config() {

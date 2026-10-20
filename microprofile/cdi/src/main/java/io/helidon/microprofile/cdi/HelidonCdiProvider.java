@@ -33,7 +33,6 @@ public class HelidonCdiProvider extends WeldSEProvider {
      * Creates a compatibility provider.
      */
     public HelidonCdiProvider() {
-        super();
     }
 
     @Override

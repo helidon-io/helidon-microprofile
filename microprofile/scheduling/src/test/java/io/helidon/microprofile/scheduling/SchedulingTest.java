@@ -76,10 +76,6 @@ public class SchedulingTest {
     AtomicInteger noConcurrentContenderCnt = new AtomicInteger(0);
     AtomicInteger concurrentContenderCnt = new AtomicInteger(0);
 
-    public SchedulingTest() {
-        super();
-    }
-
     @Scheduling.FixedRate("PT0.1S")
     public void rate() {
         fixedRateLatch.countDown();
@@ -225,10 +221,6 @@ public class SchedulingTest {
         volatile long duration = 0;
         volatile long stamp = 0;
 
-        public ScheduledBean() {
-            super();
-        }
-
         public CountDownLatch getCountDownLatch() {
             return countDownLatch;
         }
@@ -256,10 +248,6 @@ public class SchedulingTest {
         private static final System.Logger LOGGER = System.getLogger(ScheduledVetoMeBean.class.getName());
 
         static volatile boolean triggered;
-
-        public ScheduledVetoMeBean() {
-            super();
-        }
 
         @Scheduling.Cron("0/1 * * * * ? *")
         public void test1sec() {

@@ -26,10 +26,6 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
  */
 public class TestVetoingCdiExtension implements Extension {
 
-    public TestVetoingCdiExtension() {
-        super();
-    }
-
     void processAnnotatedType(@Observes ProcessAnnotatedType<?> pat) {
         AnnotatedType<?> annotatedType = pat.getAnnotatedType();
         Class<?> clazz = annotatedType.getJavaClass();

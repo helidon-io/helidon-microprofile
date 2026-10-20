@@ -37,10 +37,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class InvalidStateTest {
 
-    public InvalidStateTest() {
-        super();
-    }
-
     @Test
     void zeroRate() {
         assertDeploymentException(IllegalArgumentException.class, ZeroRateBean.class);

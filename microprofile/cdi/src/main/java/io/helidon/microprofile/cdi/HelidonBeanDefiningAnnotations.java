@@ -46,7 +46,6 @@ public final class HelidonBeanDefiningAnnotations {
                "org.eclipse.microprofile.graphql.Type");
 
     private HelidonBeanDefiningAnnotations() {
-        super();
     }
 
     /**

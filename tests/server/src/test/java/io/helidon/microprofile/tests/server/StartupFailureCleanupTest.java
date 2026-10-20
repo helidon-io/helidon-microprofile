@@ -66,18 +66,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class StartupFailureCleanupTest {
     private static final ScopedValue<TestApplication> CURRENT_APPLICATION = ScopedValue.newInstance();
 
-    private final TestApplication application;
-    private final TestApplication replacement;
+    private final TestApplication application = new TestApplication();
+    private final TestApplication replacement = new TestApplication();
     private ConfigProviderResolver resolver;
     private ClassLoader classLoader;
     private Config originalConfig;
     private Config config;
-
-    StartupFailureCleanupTest() {
-        super();
-        this.application = new TestApplication();
-        this.replacement = new TestApplication();
-    }
 
     @BeforeEach
     void setUp() {
