@@ -54,7 +54,6 @@
         <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
-        <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>5.0.1</version.lib.jakarta.el-api>
         <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
         <version.lib.jakarta.interceptor-api>2.1.0</version.lib.jakarta.interceptor-api>
@@ -90,8 +89,8 @@
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
-        <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
-        <version.lib.weld>5.1.6.Final</version.lib.weld>
+        <version.lib.weld-api>6.0.Final</version.lib.weld-api>
+        <version.lib.weld>6.0.4.Final</version.lib.weld>
         <version.lib.crac>1.5.0</version.lib.crac>
         <version.lib.yasson>3.0.5</version.lib.yasson>
     </properties>
@@ -177,16 +176,6 @@
                 <groupId>jakarta.ws.rs</groupId>
                 <artifactId>jakarta.ws.rs-api</artifactId>
                 <version>${version.lib.jakarta.jaxrs-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>jakarta.enterprise.cdi-api</artifactId>
-                <version>${version.lib.jakarta.cdi-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.enterprise</groupId>
-                <artifactId>jakarta.enterprise.lang-model</artifactId>
-                <version>${version.lib.jakarta.cdi-api}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.el</groupId>
