@@ -29,29 +29,30 @@ import io.helidon.common.features.api.HelidonFlavor;
 @SuppressWarnings({"requires-automatic", "requires-transitive-automatic"})
 module io.helidon.microprofile.cdi {
 
-    requires io.helidon.common.context;
+    requires transitive io.helidon.common.context;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.common.configurable;
     requires io.helidon.common;
     requires io.helidon.microprofile.config.core;
-    requires io.helidon.config;
+    requires transitive io.helidon.config;
     requires io.helidon.logging.common;
-    requires io.helidon.service.registry;
     requires io.helidon.metadata.reflection;
     requires jakarta.el; // weld requires jakarta.el.ELResolver on module path
     requires java.sql; // weld requires java.sql.Date and we fail if not on classpath
     requires jdk.unsupported; // needed for Unsafe used from Weld
-    requires microprofile.config.api;
+    requires transitive microprofile.config.api;
 
     requires transitive io.helidon;
+    requires transitive io.helidon.service.registry;
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
     requires transitive weld.spi;
 
-    requires weld.core.impl;
+    requires weld.api;
+    requires transitive weld.core.impl;
     requires weld.environment.common;
-    requires weld.se.core;
+    requires transitive weld.se.core;
 
     // Need by weld
     requires org.jboss.logging;
@@ -62,13 +63,12 @@ module io.helidon.microprofile.cdi {
 
     provides io.helidon.spi.HelidonStartupProvider
             with io.helidon.microprofile.cdi.CdiStartupProvider;
-    provides jakarta.enterprise.inject.se.SeContainerInitializer
-            with io.helidon.microprofile.cdi.HelidonContainerInitializer;
-    provides jakarta.enterprise.inject.spi.CDIProvider
-            with io.helidon.microprofile.cdi.HelidonCdiProvider;
-
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.cdi.CdiExtension,
+                 io.helidon.microprofile.cdi.ExecuteOnExtension,
+                 io.helidon.microprofile.cdi.ServiceRegistryExtension;
     provides org.jboss.weld.bootstrap.api.Service
-            with io.helidon.microprofile.cdi.ExecutorServices;
+            with io.helidon.microprofile.cdi.HelidonProxyServices;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
 

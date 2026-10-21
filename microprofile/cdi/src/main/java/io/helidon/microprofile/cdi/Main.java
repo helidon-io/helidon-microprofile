@@ -15,16 +15,23 @@
  */
 package io.helidon.microprofile.cdi;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
+import io.helidon.logging.common.LogConfig;
+
 import jakarta.enterprise.inject.se.SeContainer;
-import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 
 /**
  * This is the "master" main class of Helidon MP.
- * You can boot the Helidon MP instance using this class if you want do not need to modify
+ * You can boot the Helidon MP instance using this class if you do not need to modify
  * anything using builders.
  * <h2>Startup</h2>
  * <h3>Configuration</h3>
@@ -45,16 +52,11 @@ import jakarta.enterprise.inject.spi.CDI;
  *     <li>Placing file {@code logging.properties} on the classpath</li>
  * </ul>
  */
+@Api.Stable
 public final class Main {
     private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-    private static final AtomicBoolean MAIN_CALLED = new AtomicBoolean();
-    private static final HelidonContainer CONTAINER;
-    private static volatile HelidonContainer inUse;
-
-    static {
-        // static initialization to support GraalVM native image
-        CONTAINER = ContainerInstanceHolder.get();
-    }
+    private static final Lock CONTAINER_ACCESS = new ReentrantLock();
+    private static SeContainer inUse;
 
     private Main() {
     }
@@ -64,39 +66,45 @@ public final class Main {
      * This will also start all features on the classpath, such as JAX-RS.
      * This method should only be invoked when custom configuration is not used (in cases you rely on
      * config sources from classpath, or on meta-configuration).
+     * If the container started by this class is still running, this method does nothing.
      *
      * @param args command line arguments, currently ignored
      */
     public static void main(String[] args) {
-        if (ContainerInstanceHolder.isReset()) {
-            // in case somebody restarted the container, we need to get a new one
-            inUse = ContainerInstanceHolder.get();
-        } else {
-            // use the statically initialized one
-            inUse = CONTAINER;
+        boolean started = false;
+        CONTAINER_ACCESS.lock();
+        try {
+            if (inUse == null || !inUse.isRunning()) {
+                LogConfig.initClass();
+                inUse = initialize(addCdiProperties(addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance())));
+                started = true;
+            }
+        } finally {
+            CONTAINER_ACCESS.unlock();
         }
-
-        inUse.start();
-        MAIN_CALLED.set(true);
+        // Honor this launcher's exit request after CDI initialization completes.
+        if (started && "!".equals(System.getProperty("exit.on.started"))) {
+            LOGGER.info("Exiting, -Dexit.on.started set.");
+            System.exit(0);
+        }
     }
 
     /**
-     * Shutdown CDI container.
+     * Shut down the CDI container started by this class and release its reference.
+     * If this class has no running container, this method does nothing.
+     * Containers started independently must be closed by their callers.
      */
     public static void shutdown() {
-        if (null != inUse && MAIN_CALLED.get()) {
-            LOGGER.finest("Shutting down container from cdi.Main");
-            // re-set the main called, so if somebody starts, shuts down and starts again, we correctly evaluate the
-            // shutdown method
-            MAIN_CALLED.set(false);
-            inUse.shutdown();
-        } else {
-            // now we need to cover cases where the main method was not invoked
-            try {
-                ((SeContainer) CDI.current()).close();
-            } catch (IllegalStateException e) {
-                LOGGER.log(Level.FINEST, "Failed to obtain a CDI instance to shut down, probably duplicate call", e);
+        CONTAINER_ACCESS.lock();
+        try {
+            SeContainer container = inUse;
+            inUse = null;
+            if (container != null && container.isRunning()) {
+                LOGGER.finest("Shutting down container from cdi.Main");
+                container.close();
             }
+        } finally {
+            CONTAINER_ACCESS.unlock();
         }
     }
 }

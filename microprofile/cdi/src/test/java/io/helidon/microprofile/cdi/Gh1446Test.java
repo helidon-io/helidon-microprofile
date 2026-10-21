@@ -80,7 +80,6 @@ public class Gh1446Test {
         assertThat(thrown.getMessage(), is("Survive this!"));
 
         assertThrows(IllegalStateException.class, CDI::current, "There should be no CDI instance available");
-
     }
 
     private static class FailingExtension implements Extension {

@@ -22,9 +22,9 @@
         xmlns="https://github.com/spotbugs/filter/3.0.0"
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
-        <!-- Desired behavior -->
-        <Class name="io.helidon.microprofile.server"/>
-        <Method name="exitOnStarted"/>
+        <!-- Explicit exit.on.started request, after CDI has registered its shutdown hook. -->
+        <Class name="io.helidon.microprofile.server.ServerImpl"/>
+        <Method name="start"/>
         <Bug pattern="DM_EXIT"/>
     </Match>
 </FindBugsFilter>

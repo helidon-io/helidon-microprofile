@@ -49,14 +49,17 @@ public class TestExtension implements Extension {
         bbd.addAnnotatedType(TestBean2.class, "unit-test-bean2");
     }
 
+    @SuppressWarnings("deprecation")
     public void buildTimeStart(@Observes @BuildTimeStart Object event) {
         events.add(BUILD_TIME_START);
     }
 
+    @SuppressWarnings("deprecation")
     public void buildTimeEnd(@Observes @BuildTimeEnd Object event) {
         events.add(BUILD_TIME_END);
     }
 
+    @SuppressWarnings("deprecation")
     public void runTimeInit(@Observes @RuntimeStart Config config) {
         events.add(RUNTIME_INIT);
         runtimeConfig = config;

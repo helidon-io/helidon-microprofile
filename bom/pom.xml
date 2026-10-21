@@ -103,16 +103,6 @@
                 <version>${helidon.mp.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.weld</groupId>
-                <artifactId>weld-core-impl</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.microprofile.weld</groupId>
-                <artifactId>weld-se-core</artifactId>
-                <version>${helidon.mp.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile.cdi</groupId>
                 <artifactId>helidon-microprofile-cdi</artifactId>
                 <version>${helidon.mp.version}</version>

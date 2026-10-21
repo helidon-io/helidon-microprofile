@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.config.Config;
-import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.security.SecurityCdiExtension;
 import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -68,12 +67,15 @@ import org.eclipse.microprofile.jwt.Claim;
 import org.eclipse.microprofile.jwt.ClaimValue;
 import org.eclipse.microprofile.jwt.Claims;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * JWT Authentication CDI extension class.
@@ -169,8 +171,8 @@ public class JwtAuthCdiExtension implements Extension {
         });
     }
 
-    void configured(@Observes @RuntimeStart Config config) {
-        this.config = config;
+    void configure(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event) {
+        this.config = toHelidonConfig(getConfig());
     }
 
     void registerProvider(@Observes

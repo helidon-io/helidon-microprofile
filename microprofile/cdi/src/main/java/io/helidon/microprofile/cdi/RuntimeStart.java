@@ -17,8 +17,9 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import io.helidon.common.Api;
 
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
@@ -27,35 +28,34 @@ import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Run time of the application (as opposed to build time).
- * <p>This is from the point of view of ahead of time compilation, such as when using GraalVM native-image.
- * <p>There are two phases of an application lifecycle:
- * <ul>
- *     <li>{@link BuildTimeStart} - Application should not connect anywhere,
- *     this is to initialize the environment before {@code native-image} is generated. Configuration available is build-time
- *     specific and MUST not be used for runtime operation of this application</li>
- *     <li>Runtime (this annotation) - Application is starting and should set up all resources. Configuration
- *     available at runtime is intended for runtime of this application</li>
- * </ul>
+ * A qualifier qualifying an event that was fired by earlier versions of Helidon MicroProfile.
  *
- * <p>Example of usage in a CDI {@link jakarta.enterprise.inject.spi.Extension}:
- * <pre>
- * void initRuntime(@Observes @RuntimeStart io.helidon.config.Config config) {}
- * </pre>
+ * <p>{@link CdiExtension} fires this event during {@link
+ * jakarta.enterprise.inject.spi.AfterDeploymentValidation}, at priority {@link
+ * jakarta.interceptor.Interceptor.Priority#PLATFORM_BEFORE} plus two, after {@link BuildTimeStart} and {@link BuildTimeEnd}. Its
+ * payload is the current {@link org.eclipse.microprofile.config.Config} returned by {@link
+ * org.eclipse.microprofile.config.ConfigProvider#getConfig()} at delivery time. All three events now occur within
+ * ordinary CDI initialization and no longer represent separate build and runtime phases.</p>
  *
- * End of runtime is equivalent to end of {@link jakarta.enterprise.context.ApplicationScoped}, so there is no need
- * to create additional annotations.
+ * @deprecated Observe standard CDI lifecycle events appropriate to the work being performed. Obtain {@link
+ * org.eclipse.microprofile.config.Config} instances via injection or through MicroProfile Config APIs directly.
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Api.Stable
+@Deprecated(since = "28.0.0")
 @Documented
 @Qualifier
+@Retention(RUNTIME)
 @Target({TYPE, METHOD, PARAMETER, FIELD})
 public @interface RuntimeStart {
     /**
      * Annotation literal to use when an annotation instance is needed.
+     *
+     * @deprecated This literal supports the deprecated {@link RuntimeStart} compatibility event.
      */
+    @Deprecated(since = "28.0.0")
     final class Literal extends AnnotationLiteral<RuntimeStart> implements RuntimeStart {
         /**
          * Singleton instance of a literal of this annotation.
@@ -63,5 +63,17 @@ public @interface RuntimeStart {
         public static final Literal INSTANCE = new Literal();
 
         private static final long serialVersionUID = 1L;
+
+        /**
+         * Creates a new {@link Literal}.
+         *
+         * @deprecated In prior revisions of this class, the default constructor was not specified, so was implicitly
+         * {@code public}. This explicit constructor replaces the default constructor and is {@code public} for
+         * backwards compatibility only. It should not be used.
+         */
+        @Deprecated(since = "28.0.0")
+        @SuppressWarnings("checkstyle:RedundantModifier") // checkstyle bug
+        public Literal() {
+        }
     }
 }

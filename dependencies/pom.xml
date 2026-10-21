@@ -416,6 +416,11 @@
                 <version>${version.lib.hibernate-validator}</version>
             </dependency>
             <dependency>
+                <groupId>org.jboss.weld.se</groupId>
+                <artifactId>weld-se-core</artifactId>
+                <version>${version.lib.weld}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-api</artifactId>
                 <version>${version.lib.weld-api}</version>
@@ -434,12 +439,6 @@
                 <groupId>org.jboss.weld</groupId>
                 <artifactId>weld-lite-extension-translator</artifactId>
                 <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.weld</groupId>
-                        <artifactId>weld-core-impl</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld.environment</groupId>

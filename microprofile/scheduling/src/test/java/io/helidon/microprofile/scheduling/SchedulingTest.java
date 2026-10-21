@@ -247,7 +247,7 @@ public class SchedulingTest {
 
         private static final System.Logger LOGGER = System.getLogger(ScheduledVetoMeBean.class.getName());
 
-        static volatile boolean triggered = false;
+        static volatile boolean triggered;
 
         @Scheduling.Cron("0/1 * * * * ? *")
         public void test1sec() {

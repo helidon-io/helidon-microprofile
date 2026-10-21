@@ -22,6 +22,7 @@ import jakarta.enterprise.context.Dependent;
  */
 @Dependent
 public class TestBean2 {
+
     public String message() {
         return "Hello";
     }

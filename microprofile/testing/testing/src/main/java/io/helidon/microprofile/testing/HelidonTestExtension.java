@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -98,6 +99,7 @@ public abstract class HelidonTestExtension implements Extension {
     private final HelidonTestScope testScope;
     private final Map<Annotation, String> sockets = new HashMap<>();
     private final List<Method> afterStop = new ArrayList<>();
+    private final AtomicBoolean cleanedUp = new AtomicBoolean();
 
     /**
      * Create a new instance.
@@ -279,6 +281,20 @@ public abstract class HelidonTestExtension implements Extension {
         sockets.put(annotation, value);
     }
 
+    void resolveTestConfig() {
+        testConfig.resolve();
+    }
+
+    void cleanup() {
+        if (this.cleanedUp.compareAndSet(false, true)) {
+            try {
+                this.afterStop.forEach(m -> invoke(Void.class, m, null));
+            } finally {
+                this.testConfig.restore();
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Class<? extends Extension> serverClass() {
         try {
@@ -352,9 +368,6 @@ public abstract class HelidonTestExtension implements Extension {
     }
 
     private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager bm) {
-        // remove bootstrap config
-        testConfig.resolve();
-
         // add the test class
         event.addAnnotatedType(testInfo.testClass(), "HelidonTest")
                 .add(HelidonTestScoped.Literal.INSTANCE);
@@ -451,11 +464,7 @@ public abstract class HelidonTestExtension implements Extension {
                            @Destroyed(ApplicationScoped.class)
                            Object ignored) {
 
-        try {
-            afterStop.forEach(m -> invoke(Void.class, m, null));
-        } finally {
-            testConfig.restore();
-        }
+        this.cleanup();
     }
 
     private void processAnnotated(Annotated elt, Set<Class<? extends Annotation>> types, Consumer<Annotation> action) {

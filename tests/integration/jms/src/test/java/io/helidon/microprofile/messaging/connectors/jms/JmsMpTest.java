@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.testing.AddBean;
@@ -65,6 +66,7 @@ import static org.hamcrest.Matchers.is;
         @AddBean(AbstractSampleBean.ChannelDerivedMessage.class),
 })
 @AddExtensions({
+        @AddExtension(ServiceRegistryExtension.class),
         @AddExtension(ConfigCdiExtension.class),
         @AddExtension(MessagingCdiExtension.class),
 })

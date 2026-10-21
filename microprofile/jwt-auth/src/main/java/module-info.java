@@ -31,6 +31,7 @@ module io.helidon.microprofile.jwt.auth {
 
     requires io.helidon.common.pki;
     requires io.helidon.common;
+    requires io.helidon.microprofile.config.core;
     requires io.helidon.microprofile.security;
     requires io.helidon.microprofile.server;
     requires io.helidon.security.util;

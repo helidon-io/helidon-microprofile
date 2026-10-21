@@ -19,84 +19,150 @@ package io.helidon.microprofile.server;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.microprofile.cdi.HelidonContainer;
-
+import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
-import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
+import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
 
 /**
- * Server to handle lifecycle of microprofile implementation.
+ * Server to handle lifecycle of MicroProfile implementation.
  */
 public class ServerImpl implements Server {
-    private static final System.Logger LOGGER = System.getLogger(Server.class.getName());
-
     private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
 
-    private final HelidonContainer helidonContainer = HelidonContainer.instance();
-    private final SeContainer container;
+    private final Lock containerAccess;
+    private final SeContainerInitializer containerInitializer;
+    private final Config config;
+    private final ClassLoader classLoader;
     private final String host;
-    private final ServerCdiExtension serverExtension;
 
-    private int port = -1;
+    private SeContainer container;
+    private volatile int port;
 
     ServerImpl(Builder builder) {
-        this.container = (SeContainer) CDI.current();
-        LOGGER.log(Level.TRACE, () -> "Container context id: " + HelidonContainer.instance().context().id());
+        this.containerAccess = new ReentrantLock();
+        this.config = builder.config();
+        this.port = -1;
 
-        InetAddress listenHost;
-        if (null == builder.host()) {
-            listenHost = InetAddress.getLoopbackAddress();
-        } else {
-            try {
-                listenHost = InetAddress.getByName(builder.host());
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException("Failed to create address for host: " + builder.host(), e);
-            }
+        InetAddress listenAddress;
+        try {
+            listenAddress = InetAddress.getByName(builder.host());
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("Failed to create address for host: " + builder.host(), e);
         }
-        this.host = listenHost.getHostName();
+        this.host = listenAddress.getHostName();
 
-        BeanManager beanManager = container.getBeanManager();
+        int builderPort = builder.port();
+        String basePath = builder.basePath();
+        boolean retainDiscoveredApplications = builder.retainDiscoveredApplications();
+        List<JaxRsApplication> applications = List.copyOf(builder.applications());
+        List<Class<?>> resourceClasses = List.copyOf(builder.resourceClasses());
 
-        this.serverExtension = beanManager.getExtension(ServerCdiExtension.class);
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        this.classLoader = contextClassLoader == null ? Server.class.getClassLoader() : contextClassLoader;
 
-        serverExtension.context(helidonContainer.context());
+        this.containerInitializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance(), this.classLoader)
+                .setClassLoader(ServerImpl.this.classLoader)
+                .addExtensions(new Extension() {
+                    private void configure(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
+                        ServerCdiExtension serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
+                        if (basePath != null) {
+                            serverCdiExtension.basePath(basePath);
+                        }
+                        serverCdiExtension.serverBuilder()
+                                .port(builderPort)
+                                .address(listenAddress);
+                        serverCdiExtension.listenHost(ServerImpl.this.host);
 
-        serverExtension.serverBuilder()
-                .port(builder.port())
-                .address(listenHost);
-
-        serverExtension.listenHost(this.host);
-
+                        JaxRsCdiExtension jaxRsCdiExtension = beanManager.getExtension(JaxRsCdiExtension.class);
+                        if ((!applications.isEmpty() || !resourceClasses.isEmpty()) && !retainDiscoveredApplications) {
+                            jaxRsCdiExtension.removeApplications();
+                        }
+                        if (!resourceClasses.isEmpty()) {
+                            jaxRsCdiExtension.removeResourceClasses();
+                            jaxRsCdiExtension.addResourceClasses(resourceClasses);
+                        }
+                        jaxRsCdiExtension.addApplications(applications);
+                        if (!resourceClasses.isEmpty()) {
+                            jaxRsCdiExtension.addSyntheticApplication(resourceClasses);
+                        }
+                    }
+                });
     }
 
     @Override
     public Server start() {
         STARTUP_LOGGER.log(Level.TRACE, ServerImpl.class.getName(), "start ENTRY");
 
-        helidonContainer.start();
+        this.containerAccess.lock();
+        try {
+            if (this.container != null) {
+                if (!this.container.isRunning()) {
+                    throw new IllegalStateException("Server has been stopped; build a new server instead");
+                }
+                return this;
+            }
 
-        STARTUP_LOGGER.log(Level.TRACE, "Started up");
+            ConfigProviderResolver.instance().registerConfig(this.config, this.classLoader);
+            SeContainer startedContainer = initialize(addCdiProperties(this.containerInitializer, this.config));
+            try {
+                this.port = startedContainer.getBeanManager().getExtension(ServerCdiExtension.class).port();
+                this.container = startedContainer;
+            } catch (RuntimeException | Error e) {
+                try {
+                    startedContainer.close();
+                } catch (RuntimeException | Error cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                }
+                throw e;
+            }
 
-        this.port = serverExtension.port();
-
+            STARTUP_LOGGER.log(Level.TRACE, "Started up");
+        } finally {
+            this.containerAccess.unlock();
+        }
+        // Honor this launcher's exit request after CDI initialization completes.
+        if ("!".equals(System.getProperty("exit.on.started"))) {
+            STARTUP_LOGGER.log(Level.INFO, "Exiting, -Dexit.on.started set.");
+            System.exit(0);
+        }
         return this;
     }
 
     @Override
     public Server stop() {
-        container.close();
-        return this;
+        this.containerAccess.lock();
+        try {
+            if (this.container == null) {
+                throw new IllegalStateException("Server has not been started");
+            }
+            this.container.close();
+            return this;
+        } finally {
+            this.containerAccess.unlock();
+        }
     }
 
     @Override
     public String host() {
-        return host;
+        return this.host;
     }
 
     @Override
     public int port() {
-        return port;
+        return this.port;
     }
+
 }

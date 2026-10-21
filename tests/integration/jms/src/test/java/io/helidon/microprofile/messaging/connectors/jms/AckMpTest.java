@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.microprofile.cdi.ServiceRegistryExtension;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.messaging.MessagingCdiExtension;
 import io.helidon.microprofile.testing.AddBean;
@@ -58,6 +59,7 @@ import static org.hamcrest.Matchers.is;
         @AddBean(AckMpTest.ChannelAck.class),
 })
 @AddExtensions({
+        @AddExtension(ServiceRegistryExtension.class),
         @AddExtension(ConfigCdiExtension.class),
         @AddExtension(MessagingCdiExtension.class),
 })

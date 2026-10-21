@@ -16,18 +16,25 @@
 /**
  * CDI extension for Helidon MP.
  * <p>
- * Helidon MP owns the application-global service registry. It installs the registry before initializing CDI and keeps the
- * registry available until CDI shutdown, including bean {@code @PreDestroy} callbacks, has completed. Helidon MP then shuts
- * down the registry and its services.
+ * By default, Helidon MP creates and owns the application-global service registry. It installs the registry before
+ * initializing CDI and keeps the registry available until CDI shutdown, including bean {@code @PreDestroy} callbacks, has
+ * completed. Helidon MP then shuts down the registry and its services.
  * <p>
  * MP Config initialized before Helidon MP starts is retained without creating an application-global registry. Helidon MP
- * publishes that configuration after installing its registry and before initializing CDI. Any application-global registry
- * configured before Helidon MP starts is rejected; applications must not configure
- * {@link io.helidon.service.registry.GlobalServiceRegistry} or initialize it through
+ * publishes that configuration after installing its registry and before initializing CDI. Default registry acquisition
+ * rejects an application-global registry configured independently before Helidon MP starts. Applications using that path
+ * must not configure {@link io.helidon.service.registry.GlobalServiceRegistry} or initialize it through
  * {@link io.helidon.service.registry.Services} before starting Helidon MP.
  * <p>
- * If the current context supplies a service registry, Helidon MP uses that registry without replacing its Config service;
- * the contextual registry owner is responsible for its configuration.
+ * If the current context supplies a service registry, Helidon MP uses that registry without replacing its Config service or
+ * shutting it down. The registry owner remains responsible for its configuration and lifetime.
+ * <p>
+ * Applications bootstrapping Helidon MP directly can use
+ * {@link io.helidon.microprofile.cdi.SeContainerInitializers#initialize(jakarta.enterprise.inject.se.SeContainerInitializer)}
+ * to attempt cleanup of participating resources if CDI initialization fails. This includes an owned service registry
+ * and resources registered by other participating extensions. The caller remains responsible for normal closure of
+ * the returned container. Direct calls to the initializer's {@code initialize()} method do not activate this cleanup
+ * facility.
  *
  * @see jakarta.enterprise.context
  */

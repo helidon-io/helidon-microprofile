@@ -43,6 +43,10 @@
             <artifactId>helidon-microprofile-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>

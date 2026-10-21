@@ -17,158 +17,137 @@ package io.helidon.microprofile.cdi;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import io.helidon.common.Api;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.Extension;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.weld.environment.se.Weld;
+
+import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
+import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
 
 /**
- * This class ensures that container is created by us.
+ * Initializes a Weld container with Helidon's additional bean-defining annotations and CDI properties.
+ *
+ * @deprecated Use {@link jakarta.enterprise.inject.se.SeContainerInitializer#newInstance()} and apply
+ *             {@link io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations} and
+ *             {@link io.helidon.microprofile.cdi.HelidonCdiProperties} as needed.
  */
+@Api.Stable
+@Deprecated(since = "28.0.0")
 public class HelidonContainerInitializer extends SeContainerInitializer {
-    static final String CONFIG_ALLOW_INITIALIZER = "mp.initializer.allow";
-    static final String CONFIG_INITIALIZER_NO_WARN = "mp.initializer.no-warn";
-    private static final Logger LOGGER = Logger.getLogger(HelidonContainerInitializer.class.getName());
-    private final HelidonContainerImpl container = new HelidonContainerImpl();
-    private final boolean serviceRegistryOwner;
+    private final SeContainerInitializer delegate = new Weld();
+    private ClassLoader classLoader;
 
     /**
-     * This constructor ensures that we are not created through standard CDI means.
-     *
-     * @throws java.lang.IllegalStateException unless explicitly configured not to do so.
+     * Creates a Helidon CDI container initializer.
      */
     public HelidonContainerInitializer() {
-        boolean newServiceRegistryOwner = MpServiceRegistry.start();
-        try {
-            Config config = ConfigProvider.getConfig();
-            if (!config.getOptionalValue(CONFIG_ALLOW_INITIALIZER, Boolean.class).orElse(false)) {
-                throw new IllegalStateException("Helidon MUST be started using "
-                                                        + Main.class.getName()
-                                                        + ", or through io.helidon.microprofile.server.Server. "
-                                                        + "This is to ensure compatibility with GraalVM native-image. "
-                                                        + "If you want to still use SeContainerInitializer, please configure "
-                                                        + CONFIG_ALLOW_INITIALIZER + "=true to disable this exception.");
-            }
-            if (!config.getOptionalValue(CONFIG_INITIALIZER_NO_WARN, Boolean.class).orElse(false)) {
-                LOGGER.warning("You are using SeContainerInitializer. This application will not work with GraalVM native-image."
-                                       + " You can disable this warning by configuring " + CONFIG_INITIALIZER_NO_WARN + "=true.");
-            }
-            ContainerInstanceHolder.set(container);
-            serviceRegistryOwner = newServiceRegistryOwner;
-        } catch (RuntimeException | Error e) {
-            if (newServiceRegistryOwner) {
-                MpServiceRegistry.shutdown();
-            }
-            throw e;
-        }
     }
 
     @Override
     public SeContainerInitializer addBeanClasses(Class<?>... classes) {
-        container.addBeanClasses(classes);
+        this.delegate.addBeanClasses(classes);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Class<?>... packageClasses) {
-        container.addPackages(packageClasses);
+        this.delegate.addPackages(packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Class<?>... packageClasses) {
-        container.addPackages(scanRecursively, packageClasses);
+        this.delegate.addPackages(scanRecursively, packageClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(Package... packages) {
-        container.addPackages(packages);
+        this.delegate.addPackages(packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addPackages(boolean scanRecursively, Package... packages) {
-        container.addPackages(scanRecursively, packages);
+        this.delegate.addPackages(scanRecursively, packages);
         return this;
     }
 
     @Override
     public SeContainerInitializer addExtensions(Extension... extensions) {
-        container.addExtensions(extensions);
+        this.delegate.addExtensions(extensions);
         return this;
     }
 
     @Override
+    @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer addExtensions(Class<? extends Extension>... extensions) {
-        container.addExtensions(extensions);
+        this.delegate.addExtensions(extensions);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableInterceptors(Class<?>... interceptorClasses) {
-        container.enableInterceptors(interceptorClasses);
+        this.delegate.enableInterceptors(interceptorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer enableDecorators(Class<?>... decoratorClasses) {
-        container.enableDecorators(decoratorClasses);
+        this.delegate.enableDecorators(decoratorClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer selectAlternatives(Class<?>... alternativeClasses) {
-        container.selectAlternatives(alternativeClasses);
+        this.delegate.selectAlternatives(alternativeClasses);
         return this;
     }
 
     @Override
+    @SuppressWarnings("unchecked") // heap pollution
     public SeContainerInitializer selectAlternativeStereotypes(Class<? extends Annotation>... alternativeStereotypeClasses) {
-        container.selectAlternativeStereotypes(alternativeStereotypeClasses);
+        this.delegate.selectAlternativeStereotypes(alternativeStereotypeClasses);
         return this;
     }
 
     @Override
     public SeContainerInitializer addProperty(String key, Object value) {
-        container.addProperty(key, value);
+        this.delegate.addProperty(key, value);
         return this;
     }
 
     @Override
     public SeContainerInitializer setProperties(Map<String, Object> properties) {
-        container.setProperties(properties);
+        this.delegate.setProperties(properties);
         return this;
     }
 
     @Override
     public SeContainerInitializer disableDiscovery() {
-        container.disableDiscovery();
+        this.delegate.disableDiscovery();
         return this;
     }
 
     @Override
     public SeContainerInitializer setClassLoader(ClassLoader classLoader) {
-        container.setClassLoader(classLoader);
+        this.delegate.setClassLoader(classLoader);
+        this.classLoader = classLoader;
         return this;
     }
 
     @Override
     public SeContainer initialize() {
-        if (HelidonContainerImpl.isRuntime()) {
-            throw new IllegalStateException("Helidon CDI is already started, cannot create two instances in the same JVM");
+        if (this.classLoader == null) {
+            addHelidonBeanDefiningAnnotations(this.delegate);
+        } else {
+            addHelidonBeanDefiningAnnotations(this.delegate, this.classLoader);
         }
-        try {
-            container.initInContext();
-            return container.start();
-        } catch (RuntimeException | Error e) {
-            if (serviceRegistryOwner) {
-                MpServiceRegistry.shutdown();
-            }
-            throw e;
-        }
+        addCdiProperties(this.delegate);
+        return SeContainerInitializers.initialize(this.delegate);
     }
 }

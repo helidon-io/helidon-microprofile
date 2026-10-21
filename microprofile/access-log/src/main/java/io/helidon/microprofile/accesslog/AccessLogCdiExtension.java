@@ -22,10 +22,14 @@ import io.helidon.webserver.accesslog.AccessLogFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 
+import static io.helidon.microprofile.config.core.MpConfig.toHelidonConfig;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static org.eclipse.microprofile.config.ConfigProvider.getConfig;
 
 /**
  * Extension of MicroProfile to add support for access log.
@@ -33,8 +37,25 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 public class AccessLogCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(AccessLogCdiExtension.class.getName());
 
+    private boolean configured;
+
     private void setUpAccessLog(@Observes @Priority(PLATFORM_BEFORE + 10) @RuntimeStart Config config,
                                 BeanManager beanManager) {
+        if (!this.configured) {
+            this.configureAccessLog(config, beanManager);
+            this.configured = true;
+        }
+    }
+
+    private void afterDeploymentValidation(@Observes @Priority(LIBRARY_BEFORE) AfterDeploymentValidation event,
+                                          BeanManager beanManager) {
+        if (!this.configured) {
+            this.configureAccessLog(toHelidonConfig(getConfig()), beanManager);
+            this.configured = true;
+        }
+    }
+
+    private void configureAccessLog(Config config, BeanManager beanManager) {
         Config alConfig = config.get("server.access-log");
         Config newAlConfig = config.get("server.features.access-log");
 

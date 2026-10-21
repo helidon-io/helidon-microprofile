@@ -220,12 +220,16 @@ abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.con
                 // complex value
                 List<String> propertyNames = cache.computeIfAbsent(delegate, this::propertyNames);
                 ConfigNode.ObjectNode.Builder builder = ConfigNode.ObjectNode.builder();
-                boolean hasEntries = false;
+                boolean hasEntries = propertyNames.contains(key);
                 for (String name : propertyNames) {
                     if (name.startsWith(key + ".")) {
                         String k = name.substring(key.length() + 1);
                         String v = delegate.getConfigValue(name).getValue();
-                        builder.addValue(k, v);
+                        if (v == null) {
+                            builder.addObject(k, ConfigNode.ObjectNode.empty());
+                        } else {
+                            builder.addValue(k, v);
+                        }
                         hasEntries = true;
                     }
                 }

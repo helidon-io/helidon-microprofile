@@ -49,7 +49,6 @@
         <module>rest-client</module>
         <module>access-log</module>
         <module>cdi</module>
-        <module>weld</module>
         <module>websocket</module>
         <module>reactive-streams</module>
         <module>messaging</module>
