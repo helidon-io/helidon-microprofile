@@ -29,8 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Manages a single-thread executor which will invoke callbacks to enrollees at a frequency they request.
  * <p>
- * Some enrollments might arrive before the manager is started. We save those and act on them once the
- * manager starts. This makes sure the executor's thread starts only at native image runtime.
+ * Enrollments received before startup are retained and scheduled when the executor starts.
  * </p>
  */
 class PeriodicExecutor {

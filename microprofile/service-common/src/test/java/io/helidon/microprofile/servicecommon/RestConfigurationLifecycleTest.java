@@ -87,6 +87,7 @@ class RestConfigurationLifecycleTest {
                 resolver.registerConfig(config, classLoader);
             }
 
+            @SuppressWarnings("deprecation")
             void runtimeStart(@Observes @RuntimeStart Object event) {
                 runtimeStartObserved = true;
             }
@@ -151,6 +152,7 @@ class RestConfigurationLifecycleTest {
         @BeforeEach
         void start() {
             Extension supply = new Extension() {
+                @SuppressWarnings("deprecation")
                 void supply(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
                     beanManager.getEvent().select(RuntimeStart.Literal.INSTANCE).fire(toHelidonConfig(eventConfig));
                 }

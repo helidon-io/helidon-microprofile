@@ -149,7 +149,7 @@ class ServerConfigurationLifecycleTest {
                 void configure(@Observes AfterBeanDiscovery event) {
                     resolver.registerConfig(config, classLoader);
                 }
-
+                @SuppressWarnings("deprecation")
                 void customize(@Observes @Priority(PLATFORM_AFTER) @RuntimeStart Object event, BeanManager beanManager) {
                     TestRoutingBuilder builder = () -> routing;
                     ServerCdiExtension server = beanManager.getExtension(ServerCdiExtension.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ public abstract class ProcessRunner {
         return switch (execMode) {
             case CLASS_PATH -> new ClassPathRunner();
             case FAT_JAR -> new FatJarRunner();
-            case NATIVE -> new NativeImageRunner();
             case MODULE_PATH -> new ModulePathRunner();
             case JLINK_CLASS_PATH -> new JlinkRunner();
             case JLINK_MODULE_PATH -> new JlinkModulePathRunner();
@@ -244,7 +243,6 @@ public abstract class ProcessRunner {
 
     /**
      * Set the final name of the artifact.
-     * This is the expected name of the native image and jar file
      *
      * @param finalName final name
      * @return this instance
@@ -403,11 +401,6 @@ public abstract class ProcessRunner {
         MODULE_PATH,
 
         /**
-         * Execute native processes.
-         */
-        NATIVE,
-
-        /**
          * Execute processes using the Helidon jlink start script.
          */
         JLINK_CLASS_PATH,
@@ -467,18 +460,6 @@ public abstract class ProcessRunner {
                 cb.append("--add-modules").append(moduleName);
             }
             return cb.command();
-        }
-    }
-
-    private static final class NativeImageRunner extends ProcessRunner {
-
-        @Override
-        protected List<String> command(List<String> opts, List<String> args) {
-            Objects.requireNonNull(finalName, "finalName is null");
-            return new CommandBuilder("target/" + finalName + (IS_WINDOWS ? ".exe" : ""))
-                    .append(opts)
-                    .append(args)
-                    .command();
         }
     }
 

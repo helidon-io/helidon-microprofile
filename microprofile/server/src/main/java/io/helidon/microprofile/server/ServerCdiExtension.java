@@ -108,7 +108,6 @@ public class ServerCdiExtension implements Extension {
     private final AtomicBoolean startingOrStarted;
     private final Map<Bean<?>, RoutingConfiguration> serviceBeans;
     private final List<HttpRouting.Builder> routingsWithKPIMetrics;
-    // build time
     private WebServerConfig.Builder serverBuilder;
     private ObserveFeatureConfig.Builder observeBuilder;
     private LazyValue<HttpRouting.Builder> routingBuilderSupplier;
@@ -116,8 +115,6 @@ public class ServerCdiExtension implements Extension {
     private Map<String, Router.Builder> namedRouters;
     private String basePath;
     private Config config;
-
-    // runtime
     private WebServer webserver;
 
     // these fields may be accessed from different threads than created on
