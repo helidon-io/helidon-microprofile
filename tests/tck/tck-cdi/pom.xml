@@ -85,10 +85,6 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
-                    <excludes>
-                        <!-- TCK Challenge accepted: https://github.com/jakartaee/cdi-tck/issues/485 -->
-                        <exclude>org/jboss/cdi/tck/tests/definition/bean/types/ManagedBeanTypesTest.java</exclude>
-                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
