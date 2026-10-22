@@ -41,7 +41,6 @@ public interface Server {
      * @return Server instance to be started
      * @see #builder()
      */
-    // @SafeVarargs
     static Server create(Application... applications) {
         Builder builder = builder();
         Arrays.stream(applications).forEach(builder::addApplication);
