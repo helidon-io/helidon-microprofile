@@ -195,6 +195,8 @@ public interface Server {
          * you may want to configure this to "/static/index.html".
          * When user requests "http://host:port" or "http://host:port/", the user would be redirected to
          * "http://host:port/static/index.html"
+         * <p>
+         * CDI extensions can override this value before the server starts using {@link ServerCdiExtension#basePath(String)}.
          *
          * @param basePath path to redirect user from root path
          * @return updated builder instance

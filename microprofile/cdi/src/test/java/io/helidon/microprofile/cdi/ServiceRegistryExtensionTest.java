@@ -73,7 +73,6 @@ class ServiceRegistryExtensionTest {
             assertThat(GlobalServiceRegistry.registry(), sameInstance(unrelated));
         } finally {
             manager.shutdown();
-            unrelatedOwner.shutdown();
         }
     }
 
@@ -99,7 +98,6 @@ class ServiceRegistryExtensionTest {
             assertThat(GlobalServiceRegistry.registry(), sameInstance(unrelated));
         } finally {
             manager.shutdown();
-            unrelatedOwner.shutdown();
         }
     }
 
@@ -120,9 +118,6 @@ class ServiceRegistryExtensionTest {
             assertThat(container.isRunning(), is(true));
             assertThat(service.destructions, is(0));
             assertThat(GlobalServiceRegistry.registry(), sameInstance(registry));
-        } finally {
-            borrower.shutdown();
-            owner.shutdown();
         }
         assertThat(service.destructions, is(1));
         assertThat(GlobalServiceRegistry.configured(), is(false));
@@ -145,7 +140,42 @@ class ServiceRegistryExtensionTest {
     }
 
     @Test
-    void ownedRegistryRemainsOnEarlyFailure() {
+    void contextualRegistrySurvivesRawInitializationFailures() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        try {
+            ServiceRegistry registry = manager.registry();
+            RegistryService service = registry.get(RegistryService.class);
+            AtomicInteger shutdowns = new AtomicInteger();
+            Extension earlyFailure = new Extension() {
+                void fail(@Observes @Priority(PLATFORM_AFTER + 1) BeforeBeanDiscovery event) {
+                    throw new IllegalStateException("Deliberate failure during bean discovery");
+                }
+            };
+            Extension capture = new Extension() {
+                void shutdown(@Observes BeforeShutdown event) {
+                    shutdowns.incrementAndGet();
+                }
+            };
+            ValidationFailure validationFailure = new ValidationFailure();
+            runInContext(context(registry), () -> {
+                assertThrows(RuntimeException.class,
+                             () -> initializer(new ServiceRegistryExtension()).addExtensions(earlyFailure, capture).initialize());
+                assertThrows(RuntimeException.class,
+                             () -> initializer(new ServiceRegistryExtension()).addExtensions(validationFailure, capture)
+                                     .initialize());
+                assertThat(GlobalServiceRegistry.registry(), sameInstance(registry));
+            });
+            assertThat(validationFailure.observed, is(true));
+            assertThat(shutdowns.get(), is(0));
+            assertThat(service.destructions, is(0));
+            assertThat(registry.get(RegistryService.class), sameInstance(service));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void ownedRegistryIsCleanedOnEarlyFailure() {
         ServiceRegistryExtension extension = new ServiceRegistryExtension();
         AtomicReference<RegistryService> service = new AtomicReference<>();
         Extension failure = new Extension() {
@@ -154,18 +184,13 @@ class ServiceRegistryExtensionTest {
                 throw new IllegalStateException("Deliberate failure during bean discovery");
             }
         };
-        try {
-            assertThrows(RuntimeException.class, () -> initializer(extension).addExtensions(failure).initialize());
-            assertThat(service.get().destructions, is(0));
-            assertThat(GlobalServiceRegistry.configured(), is(true));
-        } finally {
-            // Rescue the test's registry; failed initialization has no portable cleanup callback.
-            extension.shutdown();
-        }
+        assertThrows(RuntimeException.class, () -> initialize(initializer(extension).addExtensions(failure)));
+        assertThat(service.get().destructions, is(1));
+        assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
     @Test
-    void ownedRegistryCleanupFollowsShutdownNotificationOnValidationFailure() {
+    void ownedRegistryIsCleanedWithoutShutdownNotificationOnValidationFailure() {
         ServiceRegistryExtension extension = new ServiceRegistryExtension();
         AtomicReference<RegistryService> service = new AtomicReference<>();
         AtomicInteger shutdowns = new AtomicInteger();
@@ -179,58 +204,54 @@ class ServiceRegistryExtensionTest {
             }
         };
         ValidationFailure failure = new ValidationFailure();
-        try {
-            assertThrows(RuntimeException.class,
-                         () -> initializer(extension).addExtensions(capture, failure).initialize());
-            assertThat(failure.observed, is(true));
-            // Stock Weld does not promise BeforeShutdown after failed initialization.
-            assertThat(shutdowns.get(), is(0));
-            assertThat(service.get().destructions, is(shutdowns.get()));
-            assertThat(GlobalServiceRegistry.configured(), is(shutdowns.get() == 0));
-        } finally {
-            // Rescue the test's registry; failed initialization has no portable cleanup callback.
-            extension.shutdown();
-        }
+        assertThrows(RuntimeException.class,
+                     () -> initialize(initializer(extension).addExtensions(capture, failure)));
+        assertThat(failure.observed, is(true));
+        // Stock Weld does not promise BeforeShutdown after failed initialization.
+        assertThat(shutdowns.get(), is(0));
+        assertThat(service.get().destructions, is(1));
+        assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
     @Test
-    void borrowedAndRepeatedCleanupLeaveOwnersAlone() {
+    void borrowedAndDelayedCleanupLeaveOwnersAlone() {
         ServiceRegistryExtension first = new ServiceRegistryExtension();
         ServiceRegistryExtension borrower = new ServiceRegistryExtension();
         ServiceRegistryExtension second = new ServiceRegistryExtension();
         ServiceRegistryExtension secondBorrower = new ServiceRegistryExtension();
+        SeContainer firstContainer = initialize(initializer(first));
         try {
             RegistryService firstService;
-            try (SeContainer _ = initializer(first).initialize()) {
-                ServiceRegistry firstRegistry = GlobalServiceRegistry.registry();
-                firstService = firstRegistry.get(RegistryService.class);
-                try (SeContainer _ = initializer(borrower).initialize()) {
-                    assertThat(GlobalServiceRegistry.registry(), sameInstance(firstRegistry));
-                }
-                assertThat(firstService.destructions, is(0));
+            ServiceRegistry firstRegistry = GlobalServiceRegistry.registry();
+            firstService = firstRegistry.get(RegistryService.class);
+            SeContainer borrowerContainer = initialize(initializer(borrower));
+            try {
                 assertThat(GlobalServiceRegistry.registry(), sameInstance(firstRegistry));
-            }
-
-            assertThat(firstService.destructions, is(1));
-            RegistryService secondService;
-            try (SeContainer _ = initializer(second).initialize()) {
-                ServiceRegistry secondRegistry = GlobalServiceRegistry.registry();
-                secondService = secondRegistry.get(RegistryService.class);
-                first.shutdown();
-                borrower.shutdown();
-                assertThat(secondService.destructions, is(0));
-                assertThat(GlobalServiceRegistry.registry(), sameInstance(secondRegistry));
-                try (SeContainer _ = initializer(secondBorrower).initialize()) {
+                assertThat(firstService.destructions, is(0));
+                firstContainer.close();
+                assertThat(firstService.destructions, is(1));
+                RegistryService secondService;
+                try (SeContainer _ = initialize(initializer(second))) {
+                    ServiceRegistry secondRegistry = GlobalServiceRegistry.registry();
+                    secondService = secondRegistry.get(RegistryService.class);
+                    borrowerContainer.close();
+                    assertThat(secondService.destructions, is(0));
                     assertThat(GlobalServiceRegistry.registry(), sameInstance(secondRegistry));
+                    try (SeContainer _ = initialize(initializer(secondBorrower))) {
+                        assertThat(GlobalServiceRegistry.registry(), sameInstance(secondRegistry));
+                    }
+                    assertThat(secondService.destructions, is(0));
                 }
-                assertThat(secondService.destructions, is(0));
+                assertThat(secondService.destructions, is(1));
+            } finally {
+                if (borrowerContainer.isRunning()) {
+                    borrowerContainer.close();
+                }
             }
-            assertThat(secondService.destructions, is(1));
         } finally {
-            first.shutdown();
-            borrower.shutdown();
-            secondBorrower.shutdown();
-            second.shutdown();
+            if (firstContainer.isRunning()) {
+                firstContainer.close();
+            }
         }
     }
 

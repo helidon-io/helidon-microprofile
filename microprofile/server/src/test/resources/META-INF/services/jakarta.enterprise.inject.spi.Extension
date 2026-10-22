@@ -1,1 +1,2 @@
 io.helidon.microprofile.server.ServerStartupFailureTest$StartupFailureExtension
+io.helidon.microprofile.server.ServerLifecycleTest$BasePathExtension

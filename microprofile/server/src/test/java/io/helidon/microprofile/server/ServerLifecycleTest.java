@@ -20,16 +20,21 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.service.registry.GlobalServiceRegistry;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.glassfish.jersey.client.ClientProperties;
 import org.jboss.weld.bean.builtin.BeanManagerProxy;
 import org.jboss.weld.config.WeldConfiguration;
 import org.junit.jupiter.api.Test;
@@ -42,6 +47,8 @@ import static org.jboss.weld.config.ConfigurationKey.CONCURRENT_DEPLOYMENT;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ServerLifecycleTest {
+    private static final ScopedValue<String> RUNTIME_BASE_PATH = ScopedValue.newInstance();
+
     @Test
     void testBuildDefersCdiInitialization() {
         Server server = Server.builder().config(config("deferred")).port(0).build();
@@ -87,12 +94,35 @@ class ServerLifecycleTest {
             var target = client.target("http://127.0.0.1:" + server.port());
             assertThat(target.path("server-lifecycle/captured").request().get(String.class), is("captured"));
             assertThat(target.request().get(String.class), is("captured"));
+            try (Response response = target.property(ClientProperties.FOLLOW_REDIRECTS, false).request().get()) {
+                assertThat(response.getStatus(), is(301));
+                assertThat(response.getHeaderString("Location"), is("/server-lifecycle/captured"));
+            }
             try (Response response = target.path("server-lifecycle/later").request().get()) {
                 assertThat(response.getStatus(), is(404));
             }
         } finally {
             server.stop();
         }
+    }
+
+    @Test
+    void testRuntimeStartBasePathOverridesBuilder() {
+        Server server = Server.builder()
+                .config(config("runtime-base-path"))
+                .host("127.0.0.1")
+                .port(0)
+                .basePath("/builder")
+                .build();
+
+        assertRuntimeStartRedirect(server);
+    }
+
+    @Test
+    void testRuntimeStartBasePathWithoutBuilderSetting() {
+        Server server = Server.builder().config(config("runtime-base-path")).host("127.0.0.1").port(0).build();
+
+        assertRuntimeStartRedirect(server);
     }
 
     @Test
@@ -118,6 +148,18 @@ class ServerLifecycleTest {
         }
     }
 
+    private static void assertRuntimeStartRedirect(Server server) {
+        ScopedValue.where(RUNTIME_BASE_PATH, "/runtime").run(server::start);
+        try (Client client = ClientBuilder.newClient();
+             Response response = client.target("http://127.0.0.1:" + server.port())
+                     .property(ClientProperties.FOLLOW_REDIRECTS, false).request().get()) {
+            assertThat(response.getStatus(), is(301));
+            assertThat(response.getHeaderString("Location"), is("/runtime"));
+        } finally {
+            server.stop();
+        }
+    }
+
     private static Config config(String message) {
         return Config.just(ConfigSources.create(Map.of("server.port", "0", "server-lifecycle.message", message)));
     }
@@ -137,6 +179,15 @@ class ServerLifecycleTest {
         @GET
         public String message() {
             return "later";
+        }
+    }
+
+    public static class BasePathExtension implements Extension {
+        @SuppressWarnings("deprecation")
+        void customize(@Observes @RuntimeStart Object event, BeanManager beanManager) {
+            if (RUNTIME_BASE_PATH.isBound()) {
+                beanManager.getExtension(ServerCdiExtension.class).basePath(RUNTIME_BASE_PATH.get());
+            }
         }
     }
 }

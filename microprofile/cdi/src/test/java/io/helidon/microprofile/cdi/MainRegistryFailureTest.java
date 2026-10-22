@@ -25,7 +25,6 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.CDI;
@@ -46,7 +45,6 @@ class MainRegistryFailureTest {
 
     private final IllegalStateException failure = new IllegalStateException("Deliberate initialization failure");
     private FailureStage failureStage;
-    private ServiceRegistryExtension extension;
     private ServiceRegistry registry;
     private RegistryService service;
     private boolean failureObserved;
@@ -59,13 +57,7 @@ class MainRegistryFailureTest {
 
     @AfterEach
     void tearDown() {
-        try {
-            Main.shutdown();
-        } finally {
-            if (this.extension != null) {
-                this.extension.shutdown();
-            }
-        }
+        Main.shutdown();
     }
 
     @Test
@@ -111,10 +103,6 @@ class MainRegistryFailureTest {
         assertThat(replacementRegistry, not(sameInstance(this.registry)));
         assertThat(replacementService.destructions, is(0));
 
-        this.extension.shutdown();
-        assertThat(GlobalServiceRegistry.registry(), sameInstance(replacementRegistry));
-        assertThat(replacementService.destructions, is(0));
-
         Main.shutdown();
         assertThat(replacement.isRunning(), is(false));
         assertThat(replacementService.destructions, is(1));
@@ -144,10 +132,9 @@ class MainRegistryFailureTest {
 
     // Discovered for Main's ordinary bootstrap; inactive unless this test binds CURRENT_TEST.
     public static class FailureExtension implements Extension {
-        void beforeBeanDiscovery(@Observes @Priority(PLATFORM_AFTER + 1) BeforeBeanDiscovery event, BeanManager beanManager) {
+        void beforeBeanDiscovery(@Observes @Priority(PLATFORM_AFTER + 1) BeforeBeanDiscovery event) {
             if (CURRENT_TEST.isBound()) {
                 MainRegistryFailureTest test = CURRENT_TEST.get();
-                test.extension = beanManager.getExtension(ServiceRegistryExtension.class);
                 test.registry = GlobalServiceRegistry.registry();
                 test.service = test.registry.get(RegistryService.class);
                 if (test.failureStage == FailureStage.DISCOVERY) {

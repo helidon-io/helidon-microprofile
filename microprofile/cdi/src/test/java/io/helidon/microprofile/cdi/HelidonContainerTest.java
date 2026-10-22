@@ -33,7 +33,6 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.Startup;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
@@ -53,19 +52,11 @@ class HelidonContainerTest {
     private final List<SeContainer> containers = new ArrayList<>();
     private final IllegalStateException failure = new IllegalStateException("Deliberate startup failure");
 
-    private ServiceRegistryExtension failedRegistryExtension;
-
     @AfterEach
     void closeContainers() {
-        try {
-            for (SeContainer container : this.containers.reversed()) {
-                if (container.isRunning()) {
-                    container.close();
-                }
-            }
-        } finally {
-            if (this.failedRegistryExtension != null) {
-                this.failedRegistryExtension.shutdown();
+        for (SeContainer container : this.containers.reversed()) {
+            if (container.isRunning()) {
+                container.close();
             }
         }
     }
@@ -202,10 +193,9 @@ class HelidonContainerTest {
 
     // Discovered for the adapter's bootstrap; inactive outside this test's failing initialization.
     public static class StartupFailureExtension implements Extension {
-        void startup(@Observes Startup event, BeanManager beanManager) {
+        void startup(@Observes Startup event) {
             if (CURRENT_TEST.isBound()) {
                 HelidonContainerTest test = CURRENT_TEST.get();
-                test.failedRegistryExtension = beanManager.getExtension(ServiceRegistryExtension.class);
                 assertThat(GlobalServiceRegistry.configured(), is(true));
                 throw test.failure;
             }
