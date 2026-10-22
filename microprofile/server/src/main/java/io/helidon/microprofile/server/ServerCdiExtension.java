@@ -360,27 +360,6 @@ public class ServerCdiExtension implements Extension {
         this.listenHost = listenHost;
     }
 
-    void stopServer() {
-        if (!this.startingOrStarted.compareAndSet(true, false)) {
-            return;
-        }
-        try {
-            if (this.webserver == null || !this.started) {
-                return;
-            }
-            long beforeT = System.nanoTime();
-            try {
-                this.webserver.stop();
-                this.started = false;
-            } finally {
-                long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
-                LOGGER.log(Level.INFO, () -> "Server stopped in " + t + " milliseconds.");
-            }
-        } finally {
-            IN_PROGRESS_OR_RUNNING.set(false);
-        }
-    }
-
     private static List<Bean<?>> prioritySort(Set<Bean<?>> beans) {
         List<Bean<?>> prioritized = new ArrayList<>(beans);
         prioritized.sort((o1, o2) -> {
@@ -725,6 +704,27 @@ public class ServerCdiExtension implements Extension {
             throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
         }
         return normalizedLocation;
+    }
+
+    private void stopServer() {
+        if (!this.startingOrStarted.compareAndSet(true, false)) {
+            return;
+        }
+        try {
+            if (this.webserver == null || !this.started) {
+                return;
+            }
+            long beforeT = System.nanoTime();
+            try {
+                this.webserver.stop();
+                this.started = false;
+            } finally {
+                long t = TimeUnit.MILLISECONDS.convert(System.nanoTime() - beforeT, TimeUnit.NANOSECONDS);
+                LOGGER.log(Level.INFO, () -> "Server stopped in " + t + " milliseconds.");
+            }
+        } finally {
+            IN_PROGRESS_OR_RUNNING.set(false);
+        }
     }
 
     private void beforeDestroyed(@Observes @Priority(PLATFORM_BEFORE) @BeforeDestroyed(ApplicationScoped.class) Object event) {

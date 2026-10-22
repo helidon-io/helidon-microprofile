@@ -167,13 +167,9 @@ class HelidonContainerInitializerTest {
                 .disableDiscovery()
                 .addBeanClasses(TestBean.class)
                 .addExtensions(registryExtension, failureExtension);
-        try {
-            assertThat(assertThrows(IllegalStateException.class, initializer::initialize),
-                       sameInstance(failureExtension.failure));
-            assertThat(GlobalServiceRegistry.configured(), is(false));
-        } finally {
-            registryExtension.shutdown();
-        }
+        assertThat(assertThrows(IllegalStateException.class, initializer::initialize),
+                   sameInstance(failureExtension.failure));
+        assertThat(GlobalServiceRegistry.configured(), is(false));
     }
 
     @Test

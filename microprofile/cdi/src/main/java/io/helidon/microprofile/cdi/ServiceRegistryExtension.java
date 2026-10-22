@@ -137,10 +137,6 @@ public class ServiceRegistryExtension implements Extension {
         this.registryLifecycle = new RegistryLifecycle();
     }
 
-    void shutdown() {
-        this.registryLifecycle.shutdown();
-    }
-
     void obtainServiceRegistry(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery bbd) {
         this.serviceRegistry = this.registryLifecycle.start();
     }
@@ -227,7 +223,7 @@ public class ServiceRegistryExtension implements Extension {
     }
 
     void shutdownServiceRegistry(@Observes @Priority(PLATFORM_AFTER) BeforeShutdown event) {
-        this.shutdown();
+        this.registryLifecycle.shutdown();
     }
 
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {

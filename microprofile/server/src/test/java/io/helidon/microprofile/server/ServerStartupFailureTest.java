@@ -83,14 +83,8 @@ class ServerStartupFailureTest {
                 Main.shutdown();
             }
         } finally {
-            try {
-                if (this.extension != null) {
-                    this.extension.stopServer();
-                }
-            } finally {
-                this.resolver.releaseConfig(this.config);
-                this.resolver.registerConfig(this.originalConfig, this.classLoader);
-            }
+            this.resolver.releaseConfig(this.config);
+            this.resolver.registerConfig(this.originalConfig, this.classLoader);
         }
     }
 
@@ -112,7 +106,6 @@ class ServerStartupFailureTest {
         this.replacement = buildServer(this.boundPort).start();
         assertThat(this.replacement.port(), is(this.boundPort));
 
-        this.extension.stopServer();
         try {
             // Make sure ServerCdiExtension's static IN_PROGRESS_OR_RUNNING flag stays as it is.
             assertThrows(IllegalStateException.class, rejected::start);
@@ -162,9 +155,8 @@ class ServerStartupFailureTest {
         SeContainer replacementContainer = (SeContainer) CDI.current();
         assertThat(replacementContainer.getBeanManager().getExtension(ServerCdiExtension.class).port(), is(this.boundPort));
 
-        this.extension.stopServer();
         try {
-            // Delayed cleanup must not clear the shared running flag claimed by the replacement.
+            // Failed startup cleanup must leave the guard available to the replacement alone.
             assertThrows(IllegalStateException.class, rejected::start);
             assertThat(replacementContainer.isRunning(), is(true));
         } finally {
