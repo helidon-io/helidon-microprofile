@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
@@ -35,6 +36,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import static io.helidon.microprofile.cdi.HelidonBeanDefiningAnnotations.addHelidonBeanDefiningAnnotations;
 import static io.helidon.microprofile.cdi.HelidonCdiProperties.addCdiProperties;
 import static io.helidon.microprofile.cdi.SeContainerInitializers.initialize;
+import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * Server to handle lifecycle of MicroProfile implementation.
@@ -76,11 +78,16 @@ public class ServerImpl implements Server {
         this.containerInitializer = addHelidonBeanDefiningAnnotations(SeContainerInitializer.newInstance(), this.classLoader)
                 .setClassLoader(ServerImpl.this.classLoader)
                 .addExtensions(new Extension() {
+                    private void configureBasePath(@Observes @Priority(PLATFORM_BEFORE + 1) AfterDeploymentValidation event,
+                                                   BeanManager beanManager) {
+                        // Apply the builder value after BuildTimeEnd and before RuntimeStart customizations.
+                        if (basePath != null) {
+                            beanManager.getExtension(ServerCdiExtension.class).basePath(basePath);
+                        }
+                    }
+
                     private void configure(@Observes AfterDeploymentValidation event, BeanManager beanManager) {
                         ServerCdiExtension serverCdiExtension = beanManager.getExtension(ServerCdiExtension.class);
-                        if (basePath != null) {
-                            serverCdiExtension.basePath(basePath);
-                        }
                         serverCdiExtension.serverBuilder()
                                 .port(builderPort)
                                 .address(listenAddress);
