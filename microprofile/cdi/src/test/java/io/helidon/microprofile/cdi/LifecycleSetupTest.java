@@ -67,8 +67,11 @@ class LifecycleSetupTest {
         Logger featureLogger = Logger.getLogger(HelidonFeatures.class.getName());
         FeatureHandler handler = new FeatureHandler();
         Extension verification = new Extension() {
-            void beforeDiscovery(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery event) {
-                // The same priority is used for service registry acquisition.
+            void beforeDiscovery(@Observes @Priority(PLATFORM_BEFORE + 1) BeforeBeanDiscovery event) {
+                // CdiExtension#onDiscovery(BeforeBeanDiscovery) runs at priority PLATFORM_BEFORE (which is 0). Here we
+                // run at priority 1 so we can observe CdiExtension's effects. This priority (1) is the same as that
+                // used by ServiceRegistryExtension#obtainServiceRegistry(BeforeBeanDiscovery), so we also indirectly
+                // prove that obtaining the service registry happens after logging and serialization configuration.
                 assertThat(ObjectInputFilter.Config.getSerialFilter(), notNullValue());
                 assertThat(weldLogger.getLevel(), is(Level.INFO)); // From the test's logging.properties.
                 featureLogger.addHandler(handler);

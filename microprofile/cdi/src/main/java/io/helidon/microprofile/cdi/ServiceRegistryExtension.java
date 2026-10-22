@@ -137,7 +137,9 @@ public class ServiceRegistryExtension implements Extension {
         this.registryLifecycle = new RegistryLifecycle();
     }
 
-    void obtainServiceRegistry(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery bbd) {
+    void obtainServiceRegistry(@Observes @Priority(PLATFORM_BEFORE + 1) BeforeBeanDiscovery bbd) {
+        // The priority is one greater than that of CdiExtension#onDiscovery(BeforeBeanDiscovery). See also
+        // https://github.com/weld/core/issues/3574.
         this.serviceRegistry = this.registryLifecycle.start();
     }
 

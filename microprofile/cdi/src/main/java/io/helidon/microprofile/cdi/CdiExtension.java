@@ -58,9 +58,11 @@ public final class CdiExtension implements Extension {
     public CdiExtension() {
     }
 
-    private void onDiscovery(@Observes @Priority(PLATFORM_BEFORE - 1) BeforeBeanDiscovery event) {
-        // The priority is so this runs before service registry acquisition (see ServiceRegistryExtension), which can
-        // initialize Helidon services that might need logging and serialization set up properly.
+    private void onDiscovery(@Observes @Priority(PLATFORM_BEFORE) BeforeBeanDiscovery event) {
+        // The priority (PLATFORM_BEFORE, which is 0) is so this runs before service registry acquisition (see
+        // ServiceRegistryExtension#obtainServiceRegistry(BeforeBeanDiscovery)), which can initialize Helidon services
+        // that might need logging and serialization set up properly. Until https://github.com/weld/core/issues/3574 is
+        // fixed properly, the priority here must not be negative.
         LogConfig.configureRuntime();
         SerializationConfig.configureRuntime();
         HelidonFeatures.flavor(HelidonFlavor.MP);
