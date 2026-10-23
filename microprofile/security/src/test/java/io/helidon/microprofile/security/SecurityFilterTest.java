@@ -16,17 +16,24 @@
 
 package io.helidon.microprofile.security;
 
+import java.net.URI;
+import java.util.List;
+
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.integration.common.SecurityTracing;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.ContainerRequest;
+import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -170,5 +177,85 @@ class SecurityFilterTest {
 
         assertThat(response.getStatus(), is(403));
         assertThat(message, is("Unit-test"));
+    }
+
+    @Test
+    void testBoundaryRequestTargetUri() {
+        SecurityContext securityContext = security.createContext("testBoundaryRequestTargetUri");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/raw%2Fresource?");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+
+        assertThat(securityContext.env().targetUri(), is(requestUri));
+    }
+
+    @Test
+    void testExistingBoundaryRequestTargetUriIsPreserved() {
+        SecurityContext securityContext = security.createContext("testExistingBoundaryRequestTargetUri");
+        URI discoveredUri = URI.create("https://frontend.example:8443/raw%2Fresource?");
+        securityContext.env(SecurityEnvironment.builder()
+                                    .targetUri(discoveredUri)
+                                    .method("POST")
+                                    .path("/raw/resource")
+                                    .build());
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://attacker.example/rerouted?changed=true");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("attacker.example"));
+        when(request.getMethod()).thenReturn("PUT");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+
+        SecurityEnvironment env = securityContext.env();
+        assertThat(env.targetUri(), is(discoveredUri));
+        assertThat(env.method(), is("PUT"));
+        assertThat(env.path().orElseThrow(), is("/rerouted"));
+        assertThat(env.queryParams().rawValue(), is("changed=true"));
+    }
+
+    private static final class TestSecurityFilter extends SecurityFilterCommon {
+        private static final System.Logger LOGGER = System.getLogger(TestSecurityFilter.class.getName());
+
+        private TestSecurityFilter(Security security) {
+            super(security, new FeatureConfig());
+        }
+
+        @Override
+        protected System.Logger logger() {
+            return LOGGER;
+        }
+
+        @Override
+        protected void processSecurity(ContainerRequestContext request,
+                                       SecurityFilterContext context,
+                                       SecurityTracing tracing,
+                                       SecurityContext securityContext) {
+        }
+
+        @Override
+        protected SecurityFilterContext initRequestFiltering(ContainerRequestContext requestContext) {
+            SecurityFilterContext context = new SecurityFilterContext();
+            SecurityDefinition methodDef = new SecurityDefinition(false, false);
+
+            context.methodSecurity(methodDef);
+            context.resourceName("jax-rs");
+            return configureContext(context, requestContext, requestContext.getUriInfo());
+        }
     }
 }

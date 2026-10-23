@@ -112,6 +112,9 @@ abstract class SecurityFilterCommon {
         }
 
         URI requestUri = request.getUriInfo().getRequestUri();
+        SecurityEnvironment currentEnvironment = securityContext.env();
+        // Preserve the URI discovered at the transport boundary even when Jersey rewrites the request.
+        URI targetUri = currentEnvironment.targetUri() != null ? currentEnvironment.targetUri() : filterContext.targetUri();
         String query = requestUri.getQuery();
         String origRequest;
         if ((null == query) || query.isEmpty()) {
@@ -125,7 +128,7 @@ abstract class SecurityFilterCommon {
         SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
                 .transport(requestUri.getScheme())
                 .path(filterContext.resourcePath())
-                .targetUri(filterContext.targetUri())
+                .targetUri(targetUri)
                 .method(filterContext.method())
                 .queryParams(filterContext.queryParams())
                 .headers(allHeaders)
