@@ -238,7 +238,9 @@ class DistributionCustomizations {
                                            Consumer<T> valueChecker) {
             super(nameExpressionAndValues);
             if (valuesExpression().isBlank()) {
-                values = (T[]) Array.newInstance(type, 0);
+                @SuppressWarnings("unchecked")
+                T[] values = (T[]) Array.newInstance(type, 0);
+                this.values = values;
                 return;
             }
             values = values(valuesExpression(), type, valueParser, valueChecker);
@@ -251,6 +253,7 @@ class DistributionCustomizations {
                                                                 Supplier<String> namePrefix,
                                                                 Supplier<Boolean> hasTrailingWildcard) {
             String[] valueStrings = valuesString.split(",");
+            @SuppressWarnings("unchecked")
             T[] result = (T[]) Array.newInstance(type, valueStrings.length);
             int next = 0;
             T prev = null;

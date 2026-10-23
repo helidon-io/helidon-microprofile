@@ -39,7 +39,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.NativeImageHelper;
 import io.helidon.config.ConfigException;
 
 import jakarta.annotation.Priority;
@@ -447,13 +446,6 @@ public class ConfigCdiExtension implements Extension {
         String fullPath = ip.getMember().getDeclaringClass().getName()
                 + "." + injectedName;
         String configKey = configKey(annotation, fullPath);
-
-        if (NativeImageHelper.isBuildTime()) {
-            // this is build-time of native-image - e.g. run from command line or maven
-            // logging may not be working/configured to deliver this message as it should
-            System.err.println("You are accessing configuration key '" + configKey + "' during"
-                                       + " container initialization. This will not work nicely with Graal native-image");
-        }
 
         return produce(configKey, ip, defaultValue(annotation), configKey.equals(fullPath.replace('$', '.')));
     }

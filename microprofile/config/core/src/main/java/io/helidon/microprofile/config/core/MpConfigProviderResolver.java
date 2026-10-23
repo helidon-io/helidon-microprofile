@@ -19,7 +19,6 @@ package io.helidon.microprofile.config.core;
 import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,35 +48,24 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     private static final System.Logger LOGGER = System.getLogger(MpConfigProviderResolver.class.getName());
     private static final Map<ClassLoader, ConfigDelegate> CONFIGS = new IdentityHashMap<>();
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
-    // specific for native image - we want to replace config provided during build with runtime configuration
-    private static final List<ConfigDelegate> BUILD_CONFIG = new LinkedList<>();
 
     /**
-     * This method should only be called when running within native image, as soon as runtime configuration
-     * is available.
+     * This method does nothing and is slated for removal.
      *
      * @param config configuration to use
+     * @deprecated This method does nothing and is slated for removal.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static void runtimeStart(Config config) {
-        if (BUILD_CONFIG.isEmpty()) {
-            return;
-        }
-        BUILD_CONFIG.forEach(it -> it.set(config));
-        BUILD_CONFIG.clear();
     }
 
     /**
-     * This method should only be called when generating native image, as late in the process as possible.
+     * This method does nothing and is slated for removal.
+     *
+     * @deprecated This method does nothing and is slated for removal.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     public static void buildTimeEnd() {
-        Lock lock = RW_LOCK.writeLock();
-        try {
-            lock.lock();
-            CONFIGS.forEach((key, value) -> BUILD_CONFIG.add(value));
-            CONFIGS.clear();
-        } finally {
-            lock.unlock();
-        }
     }
 
     @Override
@@ -231,8 +219,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     }
 
     /**
-     * A delegate used to allow replacing configuration at runtime for components
-     * that hold a reference to configuration obtained at build time.
+     * A delegate that allows configuration replacement while preserving existing references.
      */
     static final class ConfigDelegate implements io.helidon.config.Config, Config {
         private final AtomicReference<Config> delegate = new AtomicReference<>();

@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 @AddBean(TestResource.class)
 @AddBean(TestSupportProducer.class)
 
-// Acts as runtime config, overriding the build-time setting in microprofile-config.properties
+// Overrides the setting in microprofile-config.properties for this test.
 @AddConfig(key = "test.importance", value = "3")
 
 public class TestConfigTiming {

@@ -122,10 +122,8 @@
             <licenseName>Eclipse Public License 2.0 + GPL v.2 with CPE</licenseName>
             <consumers>
                 <consumer>helidon-dbclient-jsonp</consumer>
-                <consumer>helidon-graal-native-image-extension</consumer>
                 <consumer>helidon-http-media-jsonp</consumer>
                 <consumer>helidon-microprofile-server</consumer>
-                <consumer>helidon-mp-graal-native-image-extension</consumer>
                 <consumer>helidon-security-jwt</consumer>
             </consumers>
             <attribution>Eclipse Parsson (org.eclipse.parsson:parsson) Copyright (c) 2011, 2023 Oracle and/or its affiliates. All

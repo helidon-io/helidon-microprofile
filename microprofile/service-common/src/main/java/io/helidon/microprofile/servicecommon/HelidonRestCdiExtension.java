@@ -113,7 +113,6 @@ public abstract class HelidonRestCdiExtension implements Extension {
      *
      * @param adv the {@code AfterDeploymentValidation} event
      */
-    // method needs to be public so it is registered for reflection (native image)
     public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.DEBUG)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
@@ -134,7 +133,6 @@ public abstract class HelidonRestCdiExtension implements Extension {
      *
      * @param pmb event describing the managed bean being processed
      */
-    // method needs to be public so it is registered for reflection (native image)
     public void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
@@ -152,10 +150,14 @@ public abstract class HelidonRestCdiExtension implements Extension {
     /**
      * Configure with runtime config.
      *
+     * <p>This method is superfluous and is slated for removal.</p>
+     *
      * @param config config to use
+     * @deprecated This method is superfluous and is slated for removal.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
+    @SuppressWarnings("exports")
     public void prepareRuntime(@Observes @RuntimeStart Config config) {
-        // this method must be public, so it is registered for reflection by Helidon GraalVM feature
         this.rootConfig = config;
     }
 

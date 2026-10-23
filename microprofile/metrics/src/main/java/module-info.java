@@ -36,7 +36,7 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.service.registry;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires microprofile.metrics.api;
+    requires transitive microprofile.metrics.api;
 
     requires static io.helidon.common.features.api;
     requires static micrometer.core;

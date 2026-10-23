@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class JaxRsApplicationTest {
 
+    @SuppressWarnings("exports")
     @Test
     public void testContextRootNormalization() {
         JaxRsApplication app1 = JaxRsApplication.builder().contextRoot("/").build();
