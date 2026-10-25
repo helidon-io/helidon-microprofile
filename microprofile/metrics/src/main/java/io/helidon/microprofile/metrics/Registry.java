@@ -135,15 +135,17 @@ class Registry implements MetricRegistry {
                                              () -> createCounter(metadata, tags));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+        return Objects.requireNonNullElseGet((Gauge<R>) getGauge(new MetricID(name, tags)),
                                              () -> createGauge(metadata(name), object, func, tags));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
-        return Objects.requireNonNullElseGet(getGauge(metricID),
+        return Objects.requireNonNullElseGet((Gauge<R>) getGauge(metricID),
                                              () -> createGauge(
                                                      metadata(metricID),
                                                      object,
@@ -151,29 +153,33 @@ class Registry implements MetricRegistry {
                                                      metricID.getTagsAsArray()));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+        return Objects.requireNonNullElseGet((Gauge<R>) getGauge(metricID(metadata, tags)),
                                              () -> createGauge(metadata, object, func, tags));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+        return Objects.requireNonNullElseGet((Gauge<T>) getGauge(new MetricID(name, tags)),
                                              () -> createGauge(metadata(name), supplier, tags));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
-        return Objects.requireNonNullElseGet(getGauge(metricID),
+        return Objects.requireNonNullElseGet((Gauge<T>) getGauge(metricID),
                                              () -> createGauge(metadata(metricID),
                                                                supplier,
                                                                metricID.getTagsAsArray()));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
-        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+        return Objects.requireNonNullElseGet((Gauge<T>) getGauge(metricID(metadata, tags)),
                                              () -> createGauge(metadata, supplier, tags));
     }
 
@@ -239,7 +245,7 @@ class Registry implements MetricRegistry {
 
     @Override
     public Metric getMetric(MetricID metricID) {
-        return metricsById.get(metricID);
+        return access(() -> metricsById.get(metricID));
     }
 
     @Override
@@ -253,7 +259,7 @@ class Registry implements MetricRegistry {
     }
 
     @Override
-    public Gauge getGauge(MetricID metricID) {
+    public Gauge<?> getGauge(MetricID metricID) {
         return getMetric(metricID, Gauge.class);
     }
 
@@ -275,7 +281,7 @@ class Registry implements MetricRegistry {
 
     @Override
     public boolean remove(String name) {
-        return removeMatchingWithResult((id, metric) -> id.getName().equals(name));
+        return removeMatchingWithResult((id, _) -> id.getName().equals(name));
     }
 
     @Override
@@ -303,11 +309,13 @@ class Registry implements MetricRegistry {
         return new TreeSet<>(metricsById.keySet());
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public SortedMap<MetricID, Gauge> getGauges() {
         return getMetrics(Gauge.class, MetricFilter.ALL);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
         return getMetrics(Gauge.class, filter);
@@ -345,25 +353,23 @@ class Registry implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet().stream().filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), TreeMap::putAll);
-        } finally {
-            lock.unlock();
-        }
+        // Filters can access another registry, so invoke them after releasing the snapshot's lock.
+        return getMetrics().entrySet()
+                .stream()
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .collect(TreeMap::new,
+                         (map, entry) -> map.put(entry.getKey(), entry.getValue()), TreeMap::putAll);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet().stream().filter(entry -> ofType.isInstance(entry.getValue()))
-                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
-        } finally {
-            lock.unlock();
-        }
+        return getMetrics().entrySet()
+                .stream()
+                .filter(entry -> ofType.isInstance(entry.getValue()))
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .collect(TreeMap::new,
+                         (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
     }
 
     @Override
@@ -385,7 +391,7 @@ class Registry implements MetricRegistry {
         return scope;
     }
 
-    HelidonMetric<?> onMeterAdded(Meter meter) {
+    void onMeterAdded(Meter meter) {
 
         String name = meter.id().name();
 
@@ -431,7 +437,7 @@ class Registry implements MetricRegistry {
             // Now update the data structures if the meter is enabled.
             if (isMeterEnabled(meter.id().name())) {
                 InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
-                                                              n -> InfoPerName.create(newMetadata, newMetricID));
+                                                              _ -> InfoPerName.create(newMetadata, newMetricID));
 
                 // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
                 info.add(newMetricID);
@@ -440,8 +446,6 @@ class Registry implements MetricRegistry {
             }
 
             collector.collect().log(LOGGER);
-
-            return newMetric;
         } finally {
             lock.unlock();
         }
@@ -465,8 +469,7 @@ class Registry implements MetricRegistry {
                 if (info == null) {
                     collector.warn(String.format("Unable to locate info for name %s", metricName));
                 } else {
-                    info.remove(metricID);
-                    if (info.metricIDs.isEmpty()) {
+                    if (info.remove(metricID)) {
                         infoByName.remove(metricName);
                     }
                 }
@@ -624,7 +627,6 @@ class Registry implements MetricRegistry {
 
     }
 
-    @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
         return createMeter(gBuilder, HelidonGauge::create);
     }
@@ -658,13 +660,14 @@ class Registry implements MetricRegistry {
                                                            delegate));
     }
 
+    @SuppressWarnings("unchecked")
     private <HM extends HelidonMetric<M>,
             M extends Meter,
             B extends Meter.Builder<B, M>> HM createMeter(B builder,
                                                           Function<M, HM> factory) {
         M delegate = MpScope.getOrCreate(meterRegistry, metricsFactory, scope, builder);
         // Disabled metrics are not in the data structures supporting our registry, so we cannot find those via metricsByDelegate.
-        // Instead just create a new wrapper around the delegate.
+        // Instead, just create a new wrapper around the delegate.
         return isMeterEnabled(delegate)
                 ? (HM) metricsByDelegate.get(delegate)
                 : factory.apply(delegate);
@@ -684,18 +687,14 @@ class Registry implements MetricRegistry {
     }
 
     private List<MetricID> matchingMetricIDs(MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet()
-                    .stream()
-                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .map(Map.Entry::getKey)
-                    .toList();
-        } finally {
-            lock.unlock();
-        }
+        return getMetrics().entrySet()
+                .stream()
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private HelidonMetric<?> metric(Errors.Collector collector, Metadata metadata, Meter meter) {
         if (meter instanceof io.helidon.metrics.api.Counter counter) {
             return HelidonCounter.create(scope, metadata, counter);

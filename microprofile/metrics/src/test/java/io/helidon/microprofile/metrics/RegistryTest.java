@@ -17,6 +17,8 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.reflect.Proxy;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -32,15 +34,19 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -272,6 +278,59 @@ class RegistryTest {
         throwIfNeeded(failure);
     }
 
+    @Test
+    void metricFiltersCanReadAnotherRegistry(@TempDir Path directory) throws Exception {
+        runCrossRegistryFilterProbe("metrics", directory);
+    }
+
+    @Test
+    void typedMetricFiltersCanReadAnotherRegistry(@TempDir Path directory) throws Exception {
+        runCrossRegistryFilterProbe("counters", directory);
+    }
+
+    @Test
+    void removalFiltersCanReadAnotherRegistry(@TempDir Path directory) throws Exception {
+        runCrossRegistryFilterProbe("removal", directory);
+    }
+
+    private static void runCrossRegistryFilterProbe(String operation, Path directory) throws Exception {
+        String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
+        Path java = Path.of(System.getProperty("java.home"), "bin", executable);
+        Path output = directory.resolve(operation + ".log");
+        String classPath = System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
+        Process process = new ProcessBuilder(java.toString(),
+                                             "--enable-native-access=ALL-UNNAMED",
+                                             "-cp", classPath,
+                                             CrossRegistryFilterProbe.class.getName(),
+                                             operation)
+                .redirectErrorStream(true)
+                .redirectOutput(output.toFile())
+                .start();
+        Throwable failure = null;
+        try {
+            assertThat(operation + " cross-registry probe did not complete within 30 seconds; output: " + output,
+                       process.waitFor(30, TimeUnit.SECONDS),
+                       is(true));
+            assertThat(operation + " cross-registry probe failed:\n" + Files.readString(output),
+                       process.exitValue(),
+                       is(0));
+        } catch (Throwable t) {
+            failure = t;
+        } finally {
+            try {
+                if (process.isAlive()) {
+                    process.destroyForcibly();
+                }
+                assertThat(operation + " cross-registry probe process did not terminate",
+                           process.waitFor(10, TimeUnit.SECONDS),
+                           is(true));
+            } catch (Throwable t) {
+                failure = collectFailure(failure, t);
+            }
+        }
+        throwIfNeeded(failure);
+    }
+
     private static void awaitUnderlyingRemove(CountDownLatch removeEntered, Future<Boolean> removeFuture) throws Exception {
         if (removeEntered.await(5, TimeUnit.SECONDS)) {
             return;
@@ -345,6 +404,88 @@ class RegistryTest {
         case Exception exception -> throw exception;
         case Error error -> throw error;
         default -> throw new RuntimeException(failure);
+        }
+    }
+
+    private static final class CrossRegistryFilterProbe {
+
+        public static void main(String[] args) throws Exception {
+            ServiceRegistryManager manager = ServiceRegistryManager.create();
+            MeterRegistry meterRegistry = null;
+            RegistryFactory registryFactory = null;
+            ExecutorService executor = Executors.newFixedThreadPool(2, Thread.ofPlatform().daemon(true).factory());
+            Throwable failure = null;
+            try {
+                MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+                meterRegistry = metricsFactory.createMeterRegistry(metricsFactory.metricsConfig());
+                registryFactory = RegistryFactory.create(meterRegistry);
+                Registry application = registryFactory.registry(MetricRegistry.APPLICATION_SCOPE);
+                Registry vendor = registryFactory.registry(MetricRegistry.VENDOR_SCOPE);
+                MetricID applicationId = new MetricID("cross.registry.application");
+                MetricID vendorId = new MetricID("cross.registry.vendor");
+                application.counter(applicationId).inc();
+                vendor.counter(vendorId).inc();
+                CountDownLatch callbacksEntered = new CountDownLatch(2);
+
+                Future<?> applicationResult = executor.submit(() -> filter(args[0], application, applicationId,
+                                                                            vendor, vendorId, callbacksEntered));
+                Future<?> vendorResult = executor.submit(() -> filter(args[0], vendor, vendorId,
+                                                                       application, applicationId, callbacksEntered));
+                applicationResult.get(10, TimeUnit.SECONDS);
+                vendorResult.get(10, TimeUnit.SECONDS);
+            } catch (Throwable t) {
+                failure = t;
+            } finally {
+                executor.shutdownNow();
+                Throwable terminationFailure = awaitTerminationFailure(executor, "cross-registry callbacks");
+                failure = collectFailure(failure, terminationFailure);
+                // A deadlocked callback also prevents registry cleanup; the parent owns process termination.
+                if (terminationFailure == null) {
+                    if (registryFactory != null) {
+                        failure = collectFailure(failure, closeFailure(registryFactory::close, "registry factory"));
+                    }
+                    if (meterRegistry != null) {
+                        failure = collectFailure(failure, closeFailure(meterRegistry::close, "meter registry"));
+                    }
+                    failure = collectFailure(failure, closeFailure(manager::shutdown, "service registry"));
+                }
+            }
+            throwIfNeeded(failure);
+        }
+
+        private static void filter(String operation,
+                                   Registry registry,
+                                   MetricID metricId,
+                                   Registry otherRegistry,
+                                   MetricID otherMetricId,
+                                   CountDownLatch callbacksEntered) {
+            var expected = Map.of(metricId, registry.getCounter(metricId));
+            MetricFilter filter = (_, _) -> {
+                callbacksEntered.countDown();
+                try {
+                    assertThat("Both cross-registry callbacks entered before the reciprocal lookup",
+                               callbacksEntered.await(5, TimeUnit.SECONDS),
+                               is(true));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError("Interrupted while waiting for reciprocal callback", e);
+                }
+                assertThat("The other registry's counter remains accessible",
+                           otherRegistry.getCounter(otherMetricId).getCount(),
+                           is(1L));
+                return !operation.equals("removal");
+            };
+            switch (operation) {
+            case "metrics" -> assertThat("Filtered metrics retain their registered IDs and values",
+                                          registry.getMetrics(filter), is(expected));
+            case "counters" -> assertThat("Filtered counters retain their registered IDs and values",
+                                           registry.getCounters(filter), is(expected));
+            case "removal" -> {
+                registry.removeMatching(filter);
+                assertThat("A non-matching removal filter retains the counter", registry.getCounters(), is(expected));
+            }
+            default -> throw new IllegalArgumentException("Unknown filter operation " + operation);
+            }
         }
     }
 

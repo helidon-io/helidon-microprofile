@@ -203,7 +203,7 @@ final class FaultToleranceMetrics {
 
         protected Counter getCounter(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Counter) this.mr.getMetrics().get(metricID);
+            return this.mr.getCounter(metricID);
         }
 
         protected Counter registerCounter(Tag... tags) {
@@ -227,7 +227,7 @@ final class FaultToleranceMetrics {
 
         protected Histogram getHistogram(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Histogram) this.mr.getMetrics().get(metricID);
+            return this.mr.getHistogram(metricID);
         }
 
         protected Histogram registerHistogram(Tag... tags) {
@@ -252,7 +252,7 @@ final class FaultToleranceMetrics {
         @SuppressWarnings("unchecked")
         protected <T extends Number> Gauge<T> getGauge(Tag... tags) {
             MetricID metricID = new MetricID(name(), tags);
-            return (Gauge<T>) this.mr.getMetrics().get(metricID);
+            return (Gauge<T>) this.mr.getGauge(metricID);
         }
 
         protected <T extends Number> Gauge<T> registerGauge(Gauge<T> newGauge, Tag... tags) {
