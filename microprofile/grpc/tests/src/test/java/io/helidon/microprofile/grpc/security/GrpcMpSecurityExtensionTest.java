@@ -17,15 +17,22 @@
 package io.helidon.microprofile.grpc.security;
 
 import java.lang.reflect.Proxy;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
+import io.helidon.microprofile.grpc.tests.test.Services;
+import io.helidon.microprofile.grpc.tests.test.UnaryServiceGrpc;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.security.GrpcSecurity;
 
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
+import io.grpc.ServerCall;
+import io.grpc.Status;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import org.junit.jupiter.api.Test;
@@ -167,36 +174,72 @@ class GrpcMpSecurityExtensionTest {
 
     @Test
     void shouldUseTopLevelConfigWhenServerProtocolSecurityIsDisabled() {
-        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
-                .addObject("security", ConfigNode.ObjectNode.empty())
-                .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
-                        .addValue("enabled", "false")
-                        .build())
-                .addObject("grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
-                        .addValue("services.0.name", "UnaryService")
-                        .build())
-                .build()));
+        Config config = Config.just("""
+                security:
+                  providers:
+                    - http-basic-auth:
+                        realm: "helidon"
+                server:
+                  protocols:
+                    grpc:
+                      grpc-services:
+                        security:
+                          enabled: false
+                grpc:
+                  grpc-services:
+                    security:
+                      defaults:
+                        authenticate: true
+                """, MediaTypes.APPLICATION_YAML);
 
-        assertThat(countGrpcSecurityInterceptors(config), is(1L));
-        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
-                   is("grpc.grpc-services.security"));
+        assertAuthenticationRequired(config);
     }
 
     @Test
     void shouldUseTopLevelConfigWhenServerProtocolNameIsCustomProvider() {
-        Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
-                .addObject("security", ConfigNode.ObjectNode.empty())
-                .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
-                        .addValue("type", "custom-security")
-                        .build())
-                .addObject("grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
-                        .addValue("services.0.name", "UnaryService")
-                        .build())
-                .build()));
+        Config config = Config.just("""
+                security:
+                  providers:
+                    - http-basic-auth:
+                        realm: "helidon"
+                server:
+                  protocols:
+                    grpc:
+                      grpc-services:
+                        security:
+                          type: "custom-security"
+                grpc:
+                  grpc-services:
+                    security:
+                      defaults:
+                        authenticate: true
+                """, MediaTypes.APPLICATION_YAML);
 
-        assertThat(countGrpcSecurityInterceptors(config), is(1L));
-        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
-                   is("grpc.grpc-services.security"));
+        assertAuthenticationRequired(config);
+    }
+
+    private static void assertAuthenticationRequired(Config config) {
+        GrpcRouting.Builder routing = GrpcRouting.builder()
+                .config(Config.empty());
+        new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
+        var securityInterceptors = routing.build()
+                .interceptors()
+                .stream()
+                .filter(GrpcSecurity.class::isInstance)
+                .map(GrpcSecurity.class::cast)
+                .toList();
+        assertThat(securityInterceptors.size(), is(1));
+
+        TestServerCall call = new TestServerCall();
+        AtomicBoolean invoked = new AtomicBoolean();
+        securityInterceptors.getFirst().interceptCall(call, new Metadata(), (_, _) -> {
+            invoked.set(true);
+            return new ServerCall.Listener<>() {
+            };
+        });
+
+        assertThat(call.status.getCode(), is(Status.Code.UNAUTHENTICATED));
+        assertThat(invoked.get(), is(false));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -245,6 +288,37 @@ class GrpcMpSecurityExtensionTest {
                 .stream()
                 .filter(GrpcSecurity.class::isInstance)
                 .count();
+    }
+
+    private static final class TestServerCall extends ServerCall<Services.TestRequest, Services.TestResponse> {
+        private Status status = Status.OK;
+
+        @Override
+        public void request(int numMessages) {
+        }
+
+        @Override
+        public void sendHeaders(Metadata headers) {
+        }
+
+        @Override
+        public void sendMessage(Services.TestResponse message) {
+        }
+
+        @Override
+        public void close(Status status, Metadata trailers) {
+            this.status = status;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public MethodDescriptor<Services.TestRequest, Services.TestResponse> getMethodDescriptor() {
+            return UnaryServiceGrpc.getRequestResponseMethod();
+        }
     }
 
     private record TestGrpcMpContext(Config config, GrpcRouting.Builder routing, BeanManager beanManager)

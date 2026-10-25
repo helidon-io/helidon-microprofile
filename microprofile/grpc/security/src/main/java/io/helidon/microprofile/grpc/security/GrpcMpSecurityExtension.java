@@ -42,23 +42,6 @@ public class GrpcMpSecurityExtension implements GrpcMpExtension {
     public GrpcMpSecurityExtension() {
     }
 
-    static Config grpcSecurityServiceConfig(Config config) {
-        Config topLevelConfig = config.get(TOP_LEVEL_CONFIG_KEY);
-        if (isGrpcSecurityServiceConfig(topLevelConfig)) {
-            return topLevelConfig;
-        }
-        Config servicesConfig = config.get(TOP_LEVEL_SERVICES_CONFIG_KEY);
-        if (servicesConfig.isList()) {
-            for (Config serviceConfig : servicesConfig.asNodeList().orElseGet(List::of)) {
-                Config grpcSecurityListConfig = grpcSecurityListServiceConfig(serviceConfig);
-                if (grpcSecurityListConfig.exists()) {
-                    return grpcSecurityListConfig;
-                }
-            }
-        }
-        return Config.empty();
-    }
-
     @Override
     public void configure(GrpcMpContext context) {
         Config config = context.config();
@@ -85,6 +68,23 @@ public class GrpcMpSecurityExtension implements GrpcMpExtension {
 
         context.routing()
                 .intercept(GrpcSecurity.create(security, grpcSecurityConfig));
+    }
+
+    private static Config grpcSecurityServiceConfig(Config config) {
+        Config topLevelConfig = config.get(TOP_LEVEL_CONFIG_KEY);
+        if (isGrpcSecurityServiceConfig(topLevelConfig)) {
+            return topLevelConfig;
+        }
+        Config servicesConfig = config.get(TOP_LEVEL_SERVICES_CONFIG_KEY);
+        if (servicesConfig.isList()) {
+            for (Config serviceConfig : servicesConfig.asNodeList().orElseGet(List::of)) {
+                Config grpcSecurityListConfig = grpcSecurityListServiceConfig(serviceConfig);
+                if (grpcSecurityListConfig.exists()) {
+                    return grpcSecurityListConfig;
+                }
+            }
+        }
+        return Config.empty();
     }
 
     private static Config grpcSecurityListServiceConfig(Config serviceConfig) {
