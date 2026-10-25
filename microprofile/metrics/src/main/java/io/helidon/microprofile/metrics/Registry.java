@@ -345,25 +345,16 @@ class Registry implements MetricRegistry {
 
     @Override
     public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet().stream().filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), TreeMap::putAll);
-        } finally {
-            lock.unlock();
-        }
+        // Filters can access another registry, so invoke them after releasing the snapshot's lock.
+        return getMetrics().entrySet().stream().filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), TreeMap::putAll);
     }
 
     @Override
     public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet().stream().filter(entry -> ofType.isInstance(entry.getValue()))
-                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
-        } finally {
-            lock.unlock();
-        }
+        return getMetrics().entrySet().stream().filter(entry -> ofType.isInstance(entry.getValue()))
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
     }
 
     @Override
@@ -684,16 +675,11 @@ class Registry implements MetricRegistry {
     }
 
     private List<MetricID> matchingMetricIDs(MetricFilter filter) {
-        lock.lock();
-        try {
-            return metricsById.entrySet()
-                    .stream()
-                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .map(Map.Entry::getKey)
-                    .toList();
-        } finally {
-            lock.unlock();
-        }
+        return getMetrics().entrySet()
+                .stream()
+                .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private HelidonMetric<?> metric(Errors.Collector collector, Metadata metadata, Meter meter) {
