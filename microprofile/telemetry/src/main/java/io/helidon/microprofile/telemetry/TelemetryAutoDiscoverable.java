@@ -50,7 +50,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
 
         try {
             Instance<Tracer> tracers = CDI.current().select(Tracer.class);
-            if (!tracers.isResolvable()) {
+            if (tracers.isUnsatisfied()) {
                 LOGGER.log(System.Logger.Level.TRACE,
                            "Skipping Jersey client telemetry because CDI cannot resolve a Helidon tracer");
                 return;
