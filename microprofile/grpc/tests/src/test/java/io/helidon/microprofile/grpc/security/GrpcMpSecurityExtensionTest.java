@@ -219,8 +219,7 @@ class GrpcMpSecurityExtensionTest {
     }
 
     private static boolean containsGrpcSecurityInterceptor(Config config) {
-        GrpcRouting.Builder routing = GrpcRouting.builder()
-                .config(config);
+        GrpcRouting.Builder routing = GrpcRouting.builder();
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, null));
         return routing.build()
                 .interceptors()
@@ -229,8 +228,7 @@ class GrpcMpSecurityExtensionTest {
     }
 
     private static long countGrpcSecurityInterceptors(Config config) {
-        GrpcRouting.Builder routing = GrpcRouting.builder()
-                .config(config);
+        GrpcRouting.Builder routing = GrpcRouting.builder();
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
         return countGrpcSecurityInterceptors(routing);
     }
