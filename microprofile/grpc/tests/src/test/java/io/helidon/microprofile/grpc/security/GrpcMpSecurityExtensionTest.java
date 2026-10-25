@@ -38,21 +38,23 @@ class GrpcMpSecurityExtensionTest {
     @Test
     void shouldRecognizeDefaultGrpcSecurityServiceConfig() {
         Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addObject("security", ConfigNode.ObjectNode.empty())
                 .addObject("grpc.grpc-services.security", ConfigNode.ObjectNode.empty())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(true));
+        assertThat(countGrpcSecurityInterceptors(config), is(1L));
     }
 
     @Test
     void shouldRecognizeExplicitGrpcSecurityServiceConfig() {
         Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addObject("security", ConfigNode.ObjectNode.empty())
                 .addObject("grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
                         .addValue("type", "security")
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(true));
+        assertThat(countGrpcSecurityInterceptors(config), is(1L));
     }
 
     @Test
@@ -71,7 +73,6 @@ class GrpcMpSecurityExtensionTest {
         GrpcRouting.Builder routing = GrpcRouting.builder()
                 .config(config);
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(true));
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
         assertThat(countGrpcSecurityInterceptors(routing), is(1L));
     }
@@ -92,7 +93,6 @@ class GrpcMpSecurityExtensionTest {
         GrpcRouting.Builder routing = GrpcRouting.builder()
                 .config(config);
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(true));
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
         assertThat(countGrpcSecurityInterceptors(routing), is(1L));
     }
@@ -114,7 +114,6 @@ class GrpcMpSecurityExtensionTest {
         GrpcRouting.Builder routing = GrpcRouting.builder()
                 .config(config);
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(false));
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, null));
         assertThat(countGrpcSecurityInterceptors(routing), is(1L));
     }
@@ -127,7 +126,7 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(false));
+        assertThat(containsGrpcSecurityInterceptor(config), is(false));
     }
 
     @Test
@@ -138,7 +137,7 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(false));
+        assertThat(containsGrpcSecurityInterceptor(config), is(false));
     }
 
     @Test
@@ -149,7 +148,6 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(false));
         assertThat(containsGrpcSecurityInterceptor(config), is(false));
     }
 
@@ -164,13 +162,13 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(false));
         assertThat(containsGrpcSecurityInterceptor(config), is(false));
     }
 
     @Test
     void shouldUseTopLevelConfigWhenServerProtocolSecurityIsDisabled() {
         Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addObject("security", ConfigNode.ObjectNode.empty())
                 .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
                         .addValue("enabled", "false")
                         .build())
@@ -179,14 +177,13 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.isGrpcSecurityServiceConfigured(config), is(true));
-        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
-                   is("grpc.grpc-services.security"));
+        assertThat(countGrpcSecurityInterceptors(config), is(1L));
     }
 
     @Test
     void shouldUseTopLevelConfigWhenServerProtocolNameIsCustomProvider() {
         Config config = Config.just(ConfigSources.create(ConfigNode.ObjectNode.builder()
+                .addObject("security", ConfigNode.ObjectNode.empty())
                 .addObject("server.protocols.grpc.grpc-services.security", ConfigNode.ObjectNode.builder()
                         .addValue("type", "custom-security")
                         .build())
@@ -195,8 +192,7 @@ class GrpcMpSecurityExtensionTest {
                         .build())
                 .build()));
 
-        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
-                   is("grpc.grpc-services.security"));
+        assertThat(countGrpcSecurityInterceptors(config), is(1L));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -230,6 +226,13 @@ class GrpcMpSecurityExtensionTest {
                 .interceptors()
                 .stream()
                 .anyMatch(GrpcSecurity.class::isInstance);
+    }
+
+    private static long countGrpcSecurityInterceptors(Config config) {
+        GrpcRouting.Builder routing = GrpcRouting.builder()
+                .config(config);
+        new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
+        return countGrpcSecurityInterceptors(routing);
     }
 
     private static long countGrpcSecurityInterceptors(GrpcRouting.Builder routing) {

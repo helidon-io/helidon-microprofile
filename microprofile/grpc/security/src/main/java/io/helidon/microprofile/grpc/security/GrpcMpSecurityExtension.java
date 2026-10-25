@@ -42,11 +42,6 @@ public class GrpcMpSecurityExtension implements GrpcMpExtension {
     public GrpcMpSecurityExtension() {
     }
 
-    // Package-private test seams for the MP bootstrap decision.
-    static boolean isGrpcSecurityServiceConfigured(Config config) {
-        return isGrpcSecurityServiceEnabled(grpcSecurityServiceConfig(config));
-    }
-
     static Config grpcSecurityServiceConfig(Config config) {
         Config topLevelConfig = config.get(TOP_LEVEL_CONFIG_KEY);
         if (isGrpcSecurityServiceConfig(topLevelConfig)) {
