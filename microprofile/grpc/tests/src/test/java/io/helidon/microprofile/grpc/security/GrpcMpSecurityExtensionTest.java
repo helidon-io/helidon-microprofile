@@ -178,6 +178,8 @@ class GrpcMpSecurityExtensionTest {
                 .build()));
 
         assertThat(countGrpcSecurityInterceptors(config), is(1L));
+        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
+                   is("grpc.grpc-services.security"));
     }
 
     @Test
@@ -193,6 +195,8 @@ class GrpcMpSecurityExtensionTest {
                 .build()));
 
         assertThat(countGrpcSecurityInterceptors(config), is(1L));
+        assertThat(GrpcMpSecurityExtension.grpcSecurityServiceConfig(config).key().toString(),
+                   is("grpc.grpc-services.security"));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -219,7 +223,8 @@ class GrpcMpSecurityExtensionTest {
     }
 
     private static boolean containsGrpcSecurityInterceptor(Config config) {
-        GrpcRouting.Builder routing = GrpcRouting.builder();
+        GrpcRouting.Builder routing = GrpcRouting.builder()
+                .config(Config.empty());
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, null));
         return routing.build()
                 .interceptors()
@@ -228,7 +233,8 @@ class GrpcMpSecurityExtensionTest {
     }
 
     private static long countGrpcSecurityInterceptors(Config config) {
-        GrpcRouting.Builder routing = GrpcRouting.builder();
+        GrpcRouting.Builder routing = GrpcRouting.builder()
+                .config(Config.empty());
         new GrpcMpSecurityExtension().configure(new TestGrpcMpContext(config, routing, emptyBeanManager()));
         return countGrpcSecurityInterceptors(routing);
     }
