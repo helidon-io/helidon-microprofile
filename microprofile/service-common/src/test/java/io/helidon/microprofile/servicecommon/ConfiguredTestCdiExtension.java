@@ -25,8 +25,7 @@ import jakarta.enterprise.event.Observes;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * Test MP extension that relies on the test SE service which itself reads a value from config, to make sure the config used
- * is runtime not build-time config.
+ * Test MP extension that relies on the test SE service to verify that its configuration includes test overrides.
  */
 public class ConfiguredTestCdiExtension extends HelidonRestCdiExtension {
     /**

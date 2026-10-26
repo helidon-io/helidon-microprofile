@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Name("Server")
 @Features.Description("Server for Helidon MP")
 @Features.Flavor(HelidonFlavor.MP)
+@SuppressWarnings("requires-automatic")
 module io.helidon.microprofile.server {
 
     requires io.helidon.microprofile.config.core;

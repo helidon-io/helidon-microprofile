@@ -94,7 +94,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <!-- this is to include JSON-P native image configuration -->
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-jsonp</artifactId>
             <scope>runtime</scope>

@@ -113,7 +113,6 @@ public abstract class HelidonRestCdiExtension implements Extension {
      *
      * @param adv the {@code AfterDeploymentValidation} event
      */
-    // method needs to be public so it is registered for reflection (native image)
     public void clearAnnotationInfo(@Observes AfterDeploymentValidation adv) {
         if (logger.isLoggable(Level.DEBUG)) {
             Set<Class<?>> annotatedClassesIgnored = new HashSet<>(annotatedClasses);
@@ -134,7 +133,6 @@ public abstract class HelidonRestCdiExtension implements Extension {
      *
      * @param pmb event describing the managed bean being processed
      */
-    // method needs to be public so it is registered for reflection (native image)
     public void observeManagedBeans(@Observes ProcessManagedBean<?> pmb) {
         AnnotatedType<?> type = pmb.getAnnotatedBeanClass();
         Class<?> clazz = type.getJavaClass();
@@ -150,12 +148,21 @@ public abstract class HelidonRestCdiExtension implements Extension {
     }
 
     /**
-     * Configure with runtime config.
+     * Sets the root configuration for this extension.
      *
-     * @param config config to use
+     * <p>This method is retained for compatibility with direct callers and legacy {@link RuntimeStart} events.
+     * The supplied configuration takes precedence over the fallback obtained from {@link ConfigProvider#getConfig()}.
+     * It is used when component configuration is first resolved; component configuration that has already been resolved
+     * is unchanged.</p>
+     *
+     * @param config root configuration to use
+     * @deprecated This method supports the deprecated {@link RuntimeStart} lifecycle event and is slated for removal.
+     * New integrations should obtain configuration through MicroProfile Config. Existing callers that supply a different
+     * configuration must preserve that override when migrating; omitting this call may change the effective configuration.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
+    @SuppressWarnings("exports")
     public void prepareRuntime(@Observes @RuntimeStart Config config) {
-        // this method must be public, so it is registered for reflection by Helidon GraalVM feature
         this.rootConfig = config;
     }
 

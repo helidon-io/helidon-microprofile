@@ -44,6 +44,7 @@ class HelidonRestCdiExtensionTest {
         this.secondConfig = Config.just(ConfigSources.create(Map.of("test.importance", "2")));
     }
 
+    @SuppressWarnings("removal")
     @Test
     void directCallerCanSupplyConfiguration() {
         var extension = new TestExtension();
@@ -53,6 +54,7 @@ class HelidonRestCdiExtensionTest {
         assertThat(extension.componentConfig().get("importance").asInt().get(), is(1));
     }
 
+    @SuppressWarnings("removal")
     @Test
     void componentConfigurationUsesLatestSuppliedRootBeforeFirstAccess() {
         var extension = new TestExtension();
@@ -63,6 +65,7 @@ class HelidonRestCdiExtensionTest {
         assertThat(extension.componentConfig().get("importance").asInt().get(), is(2));
     }
 
+    @SuppressWarnings("removal")
     @Test
     void previouslySelectedComponentKeepsItsConfiguration() {
         var extension = new TestExtension();
@@ -87,6 +90,7 @@ class HelidonRestCdiExtensionTest {
 
     static class NonObservingExtension extends TestExtension {
         @Override
+        @SuppressWarnings("removal")
         public void prepareRuntime(Config config) {
             super.prepareRuntime(config);
         }

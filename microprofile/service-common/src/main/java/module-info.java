@@ -18,10 +18,13 @@
  * General-purpose reusable artifacts to help write CDI extensions, annotation processing, and interceptors for Helidon
  * services.
  */
+@SuppressWarnings("requires-automatic")
 module io.helidon.microprofile.servicecommon {
 
+    requires transitive io.helidon.config;
     requires io.helidon.microprofile.config.core;
-    requires io.helidon.microprofile.server;
+    requires transitive io.helidon.microprofile.server;
+    requires transitive io.helidon.webserver;
     requires jakarta.inject;
     requires microprofile.config.api;
 
