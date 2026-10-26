@@ -200,6 +200,27 @@ class SecurityFilterTest {
     }
 
     @Test
+    void testOriginalUriHeaderUsesRawPathAndQuery() {
+        SecurityContext securityContext = security.createContext("testOriginalUriHeaderUsesRawPathAndQuery");
+        SecurityFilterCommon filter = new TestSecurityFilter(security);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        URI requestUri = URI.create("http://example.org/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest");
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Host", List.of("example.org"));
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+
+        assertThat(securityContext.env().headers().get(Security.HEADER_ORIG_URI),
+                   is(List.of("/raw%2Fresource?return=https%3A%2F%2Fexample.com%2Ftest")));
+    }
+
+    @Test
     void testExistingBoundaryRequestTargetUriIsPreserved() {
         SecurityContext securityContext = security.createContext("testExistingBoundaryRequestTargetUri");
         URI discoveredUri = URI.create("https://frontend.example:8443/raw%2Fresource?");
