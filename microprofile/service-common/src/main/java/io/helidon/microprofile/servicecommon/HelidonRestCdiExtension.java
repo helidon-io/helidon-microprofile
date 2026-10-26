@@ -148,12 +148,17 @@ public abstract class HelidonRestCdiExtension implements Extension {
     }
 
     /**
-     * Configure with runtime config.
+     * Sets the root configuration for this extension.
      *
-     * <p>This method is superfluous and is slated for removal.</p>
+     * <p>This method is retained for compatibility with direct callers and legacy {@link RuntimeStart} events.
+     * The supplied configuration takes precedence over the fallback obtained from {@link ConfigProvider#getConfig()}.
+     * It is used when component configuration is first resolved; component configuration that has already been resolved
+     * is unchanged.</p>
      *
-     * @param config config to use
-     * @deprecated This method is superfluous and is slated for removal.
+     * @param config root configuration to use
+     * @deprecated This method supports the deprecated {@link RuntimeStart} lifecycle event and is slated for removal.
+     * New integrations should obtain configuration through MicroProfile Config. Existing callers that supply a different
+     * configuration must preserve that override when migrating; omitting this call may change the effective configuration.
      */
     @Deprecated(forRemoval = true, since = "28.0.0")
     @SuppressWarnings("exports")
