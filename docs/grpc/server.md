@@ -31,6 +31,15 @@ Dependencies](../dependency-management.md)).
 Additional dependencies may be required depending on your application needs. See
 the [gRPC MP Example][grpc-mp-example] for a complete example.
 
+To secure MP gRPC services, add the gRPC MP security dependency:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.grpc</groupId>
+  <artifactId>helidon-microprofile-grpc-security</artifactId>
+</dependency>
+```
+
 ## API
 
 All Helidon gRPC MP annotations are defined in the `Grpc` interface. The
@@ -161,6 +170,61 @@ public class StringMarshaller<String>
 Annotating the supplier with `@Dependent` ensures discoverability provided CDI
 is configured to find all annotated beans in the corresponding `beans.xml` file.
 
+### Securing Services
+
+HTTP routing security protects HTTP routes only. gRPC requests are dispatched by
+the gRPC protocol, so add `helidon-microprofile-grpc-security` to secure MP gRPC
+services.
+
+MP gRPC security in this Helidon version is configuration-based. Security
+annotations on gRPC service classes or methods, such as `@RolesAllowed`, are not
+interpreted by the MP gRPC integration. Use `grpc.grpc-services.security`
+configuration to select the secured services and methods.
+
+The `security` root config defines the Helidon security providers. The
+`grpc.grpc-services.security` config defines the gRPC service and method rules.
+For MP gRPC security, use only this top-level `grpc.grpc-services.security`
+configuration path. The `server.protocols.grpc` tree configures protocol setup;
+it does not configure MP gRPC services or their security rules.
+The example below uses HTTP Basic authentication, so it also needs the
+`helidon-security-providers-http-auth` dependency:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-http-auth</artifactId>
+</dependency>
+```
+
+```yaml
+security:
+  providers:
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "jack"
+            password: "changeit"
+            roles: ["user"]
+
+grpc:
+  grpc-services:
+    security:
+      defaults:
+        authenticate: true
+      services:
+        - name: StringService
+          methods:
+            - name: Upper
+              roles-allowed: ["user"]
+```
+
+Service names may use the full gRPC service name or the final service name
+segment. Method names use the bare gRPC method name, such as `Upper`, not the
+full `StringService/Upper` method path.
+
+The gRPC security configuration reference is available at
+[GrpcSecurityConfig][grpc-security-config].
+
 ## Implementing a gRPC Extension
 
 When unable to annotate a service class —for example when the code is built by a
@@ -247,8 +311,9 @@ any clients that support the protocol.
 
 ## Configuration
 
-At the time of writing, there is no configuration that is specific to Helidon
-MP. For more information about gRPC configuration in SE, see [gRPC Server
+MP gRPC security is configured under `grpc.grpc-services.security`. Other gRPC
+server options use the same configuration as Helidon SE. For more information
+about gRPC configuration in SE, see [gRPC Server
 Configuration][grpc-server-conf].
 
 ## Examples
@@ -259,3 +324,4 @@ Please refer to the [Helidon gRPC MP Example][grpc-mp-example].
 [pom-xml]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/grpc/pom.xml
 [grpc-server-rout]: https://helidon.io/docs/latest/se/grpc/server#grpc-server-routing
 [grpc-server-conf]: https://helidon.io/docs/latest/se/grpc/server#configuration
+[grpc-security-config]: https://helidon.io/docs/latest/config/io.helidon.webserver.grpc.security.GrpcSecurityConfig

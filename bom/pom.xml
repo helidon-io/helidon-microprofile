@@ -64,6 +64,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-security</artifactId>
+                <version>${helidon.mp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
                 <artifactId>helidon-microprofile-grpc-tracing</artifactId>
                 <version>${helidon.mp.version}</version>
             </dependency>
