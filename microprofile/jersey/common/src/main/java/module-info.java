@@ -22,8 +22,8 @@ module io.helidon.jersey.common {
     requires io.helidon.common;
     requires jakarta.annotation;
     requires jakarta.ws.rs;
-    requires jersey.common;
-    requires jersey.server;
+    requires org.glassfish.jersey.core.common;
+    requires org.glassfish.jersey.core.server;
 
     exports io.helidon.jersey.common;
 

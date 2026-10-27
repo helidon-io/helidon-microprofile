@@ -26,7 +26,6 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes;
-import org.glassfish.jersey.weld.se.WeldRequestScope;
 
 /**
  * Add JAX-RS (Jersey) support.
@@ -40,6 +39,5 @@ import org.glassfish.jersey.weld.se.WeldRequestScope;
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
-@AddBean(WeldRequestScope.class)
 public @interface AddJaxRs {
 }

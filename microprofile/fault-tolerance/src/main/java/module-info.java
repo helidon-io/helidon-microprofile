@@ -37,7 +37,7 @@ module io.helidon.microprofile.faulttolerance {
     requires io.helidon.faulttolerance;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires jersey.weld2.se;
+    requires transitive org.glassfish.jersey.ext.cdi1x;
     requires microprofile.config.api;
     requires microprofile.fault.tolerance.api;
     requires microprofile.metrics.api;
@@ -50,8 +50,13 @@ module io.helidon.microprofile.faulttolerance {
 
     exports io.helidon.microprofile.faulttolerance;
 
+    uses org.glassfish.jersey.ext.cdi1x.internal.spi.InjectionManagerStore;
+
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.faulttolerance.FaultToleranceExtension;
+
+    provides org.glassfish.jersey.ext.cdi1x.internal.spi.InjectionManagerStore
+            with io.helidon.microprofile.faulttolerance.JerseyInjectionManagerStore;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.faulttolerance to weld.core.impl, io.helidon.microprofile.cdi;

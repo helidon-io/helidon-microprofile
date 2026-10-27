@@ -29,7 +29,7 @@ module io.helidon.jersey.media.json.binding {
     requires io.helidon.json.binding;
     requires jakarta.annotation;
     requires transitive jakarta.ws.rs;
-    requires jersey.common;
+    requires org.glassfish.jersey.core.common;
 
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
             with io.helidon.jersey.media.json.binding.JsonBindingAutoDiscoverable;

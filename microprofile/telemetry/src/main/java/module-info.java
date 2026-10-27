@@ -52,7 +52,7 @@ module io.helidon.microprofile.telemetry {
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
-    requires transitive jersey.common;
+    requires transitive org.glassfish.jersey.core.common;
 
     exports io.helidon.microprofile.telemetry;
     exports io.helidon.microprofile.telemetry.spi;

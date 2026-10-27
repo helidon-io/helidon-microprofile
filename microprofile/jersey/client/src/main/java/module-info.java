@@ -26,8 +26,8 @@ module io.helidon.jersey.client {
     requires jakarta.inject;
 
     requires transitive jakarta.ws.rs;
-    requires transitive jersey.client;
-    requires transitive jersey.common;
+    requires transitive org.glassfish.jersey.core.client;
+    requires transitive org.glassfish.jersey.core.common;
 
     exports io.helidon.jersey.client;
 
