@@ -18,7 +18,10 @@ package io.helidon.microprofile.security;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
@@ -197,6 +200,11 @@ class SecurityFilterTest {
         filter.doFilter(request, securityContext);
 
         assertThat(securityContext.env().targetUri(), is(requestUri));
+        SecurityEnvironment env = securityContext.env();
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
+        assertThat(env.requestedQuery().isPresent(), is(true));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 
     @Test
@@ -228,6 +236,9 @@ class SecurityFilterTest {
                                     .targetUri(discoveredUri)
                                     .method("POST")
                                     .path("/raw/resource")
+                                    .requestedMethod("POST")
+                                    .requestedPath(UriPath.create("/raw%2Fresource"))
+                                    .requestedQuery(Optional.of(UriQuery.empty()))
                                     .build());
         SecurityFilterCommon filter = new TestSecurityFilter(security);
         ContainerRequest request = mock(ContainerRequest.class);
@@ -248,6 +259,10 @@ class SecurityFilterTest {
         assertThat(env.method(), is("PUT"));
         assertThat(env.path().orElseThrow(), is("/rerouted"));
         assertThat(env.queryParams().rawValue(), is("changed=true"));
+        assertThat(env.requestedMethod(), is("POST"));
+        assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
+        assertThat(env.requestedQuery().isPresent(), is(true));
+        assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 
     private static final class TestSecurityFilter extends SecurityFilterCommon {
