@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 
 package io.helidon.microprofile.restful.tck;
 
+import org.jboss.arquillian.container.test.impl.enricher.resource.URIResourceProvider;
 import org.jboss.arquillian.container.test.impl.enricher.resource.URLResourceProvider;
 import org.jboss.arquillian.core.spi.LoadableExtension;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 
 /**
- * LoadableExtension tht will load UrlResourceProvider.
+ * Registers the URL and URI providers used by REST TCK clients.
  */
 public class UrlLoaderExtension implements LoadableExtension {
     @Override
     public void register(ExtensionBuilder extensionBuilder) {
         extensionBuilder.override(ResourceProvider.class, URLResourceProvider.class, UrlResourceProvider.class);
+        extensionBuilder.override(ResourceProvider.class, URIResourceProvider.class, UriResourceProvider.class);
     }
 }

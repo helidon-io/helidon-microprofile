@@ -84,9 +84,10 @@
         <version.lib.immutables-exceptions>1.9</version.lib.immutables-exceptions>
         <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
+        <version.lib.jakarta.sigtest>2.7</version.lib.jakarta.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.1.0</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
+        <version.lib.microprofile-restful-tck>4.0.0</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
@@ -1012,6 +1013,11 @@
                 <groupId>org.netbeans.tools</groupId>
                 <artifactId>sigtest-maven-plugin</artifactId>
                 <version>${version.lib.sigtest}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.tck</groupId>
+                <artifactId>sigtest-maven-plugin</artifactId>
+                <version>${version.lib.jakarta.sigtest}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.enterprise</groupId>
