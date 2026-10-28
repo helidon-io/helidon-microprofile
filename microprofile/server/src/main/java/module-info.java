@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.server {
 
     requires io.helidon.microprofile.config.core;
+    requires org.glassfish.hk2.api;
     requires io.helidon.common.resumable;
     requires io.helidon.jersey.media.jsonp;
     requires io.helidon.jersey.webserver;

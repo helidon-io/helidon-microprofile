@@ -65,7 +65,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         } else if (parent instanceof InjectionManagerWrapper) {             // multiple JAX-RS apps
             InjectionManagerWrapper wrapper = (InjectionManagerWrapper) parent;
             InjectionManager forApplication = super.create(null);
-            result = new HelidonInjectionManager(forApplication, wrapper.injectionManager, wrapper.application);
+            result = HelidonInjectionManager.create(forApplication, wrapper.injectionManager, wrapper.application);
             LOGGER.log(Level.TRACE, () -> "Creating injection manager for multi app case " + forApplication
                     + " with shared " + wrapper.injectionManager);
         } else if (parent instanceof HelidonInjectionManager) {
@@ -107,11 +107,13 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         @Override
+        @SuppressWarnings("rawtypes") // Required by InjectionManager signature
         public void register(Binding binding) {
             throw new UnsupportedOperationException("Not supported");
         }
 
         @Override
+        @SuppressWarnings("rawtypes") // Required by InjectionManager signature
         public void register(Iterable<Binding> descriptors) {
             throw new UnsupportedOperationException("Not supported");
         }
@@ -172,6 +174,7 @@ public class HelidonHK2InjectionManagerFactory extends Hk2InjectionManagerFactor
         }
 
         @Override
+        @SuppressWarnings("rawtypes") // Required by InjectionManager signature
         public ForeignDescriptor createForeignDescriptor(Binding binding) {
             throw new UnsupportedOperationException("Not supported");
         }
