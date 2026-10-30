@@ -29,10 +29,11 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.glassfish.jersey.inject.hk2.Bindings.serviceAsContract;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class HelidonInjectionManagerTest {
     @Test
@@ -55,10 +56,10 @@ class HelidonInjectionManagerTest {
             manager.register(serviceAsContract(applicationSingleton));
             manager.register(serviceAsContract(sharedSingleton));
 
-            assertSame(applicationSingleton, application.getInstance(Object.class));
-            assertSame(sharedSingleton, shared.getInstance(Object.class));
-            assertSame(sharedSingleton, otherManager.getInstance(Object.class));
-            assertNull(otherApplication.getInstance(Object.class));
+            assertThat(application.getInstance(Object.class), sameInstance(applicationSingleton));
+            assertThat(shared.getInstance(Object.class), sameInstance(sharedSingleton));
+            assertThat(otherManager.getInstance(Object.class), sameInstance(sharedSingleton));
+            assertThat(otherApplication.getInstance(Object.class), nullValue());
         } finally {
             otherApplication.shutdown();
             application.shutdown();
@@ -78,10 +79,10 @@ class HelidonInjectionManagerTest {
         try {
             manager.register(serviceAsContract(LifecycleSingleton.class).in(Singleton.class));
 
-            assertEquals(initialConstructions, LifecycleSingleton.CONSTRUCTIONS.get());
-            assertNull(application.getInstance(LifecycleSingleton.class));
-            assertNotSame(singleton, shared.getInstance(LifecycleSingleton.class));
-            assertEquals(initialConstructions + 1, LifecycleSingleton.CONSTRUCTIONS.get());
+            assertThat(LifecycleSingleton.CONSTRUCTIONS.get(), is(initialConstructions));
+            assertThat(application.getInstance(LifecycleSingleton.class), nullValue());
+            assertThat(shared.getInstance(LifecycleSingleton.class), not(sameInstance(singleton)));
+            assertThat(LifecycleSingleton.CONSTRUCTIONS.get(), is(initialConstructions + 1));
         } finally {
             application.shutdown();
             shared.shutdown();
@@ -100,16 +101,16 @@ class HelidonInjectionManagerTest {
         try {
             manager.register(serviceAsContract(singleton));
 
-            assertSame(singleton, application.getInstance(LifecycleSingleton.class));
-            assertNull(shared.getInstance(LifecycleSingleton.class));
-            assertEquals(initialConstructions, LifecycleSingleton.CONSTRUCTIONS.get());
-            assertEquals(0, singleton.initializations);
-            assertEquals(0, singleton.destructions);
+            assertThat(application.getInstance(LifecycleSingleton.class), sameInstance(singleton));
+            assertThat(shared.getInstance(LifecycleSingleton.class), nullValue());
+            assertThat(LifecycleSingleton.CONSTRUCTIONS.get(), is(initialConstructions));
+            assertThat(singleton.initializations, is(0));
+            assertThat(singleton.destructions, is(0));
         } finally {
             application.shutdown();
             shared.shutdown();
         }
-        assertEquals(0, singleton.destructions);
+        assertThat(singleton.destructions, is(0));
     }
 
     public static class LifecycleSingleton {
