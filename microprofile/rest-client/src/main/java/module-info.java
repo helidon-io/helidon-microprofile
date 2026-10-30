@@ -31,12 +31,12 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.restclient {
 
     requires io.helidon.common.context;
-    requires jersey.mp.rest.client;
+    requires org.glassfish.jersey.ext.mp.rest.client;
 
     requires static io.helidon.common.features.api;
 
     requires transitive jakarta.ws.rs;
-    requires transitive jersey.common;
+    requires transitive org.glassfish.jersey.core.common;
     requires transitive microprofile.rest.client.api;
 
     exports io.helidon.microprofile.restclient;

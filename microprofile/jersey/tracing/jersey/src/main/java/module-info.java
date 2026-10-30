@@ -32,7 +32,7 @@ module io.helidon.tracing.jersey {
     requires io.helidon.service.registry;
     requires io.helidon.tracing.config;
     requires jakarta.annotation;
-    requires jersey.server;
+    requires org.glassfish.jersey.core.server;
 
     requires static io.helidon.common.features.api;
 

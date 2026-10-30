@@ -33,7 +33,7 @@ module io.helidon.microprofile.restclient.metrics {
 
     requires transitive jakarta.ws.rs;
     requires jakarta.inject;
-    requires transitive jersey.common;
+    requires transitive org.glassfish.jersey.core.common;
     requires microprofile.metrics.api;
     requires jakarta.cdi;
     requires io.helidon.metrics.api;

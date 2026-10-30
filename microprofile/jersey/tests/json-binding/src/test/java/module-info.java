@@ -30,9 +30,9 @@ open module io.helidon.jersey.tests.media.json.binding {
     requires jakarta.json.bind;
     requires jakarta.validation;
     requires jakarta.ws.rs;
-    requires jersey.client;
-    requires jersey.hk2;
-    requires jersey.media.json.binding;
-    requires jersey.server;
+    requires org.glassfish.jersey.core.client;
+    requires org.glassfish.jersey.inject.hk2;
+    requires org.glassfish.jersey.media.jsonb;
+    requires org.glassfish.jersey.core.server;
     requires org.junit.jupiter.api;
 }
