@@ -86,7 +86,7 @@ import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.glassfish.jersey.internal.inject.Bindings;
+import org.glassfish.jersey.inject.hk2.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.internal.inject.Injections;
 

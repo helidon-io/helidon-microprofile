@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ public class GreetApplication2 extends Application {
 
     private static final Filter2 filter2 = new Filter2();
 
+    private final ApplicationFilter applicationFilter = new ApplicationFilter("app2");
+
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(GreetResource2.class, SharedFilter.class, MyFeature.class);
@@ -37,6 +39,6 @@ public class GreetApplication2 extends Application {
 
     @Override
     public Set<Object> getSingletons() {
-        return Set.of(filter2);
+        return Set.of(filter2, applicationFilter);
     }
 }

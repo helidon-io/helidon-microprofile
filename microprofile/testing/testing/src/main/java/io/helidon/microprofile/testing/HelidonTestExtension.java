@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -54,6 +55,7 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
+import org.glassfish.jersey.server.spi.ExternalRequestScope;
 
 import static io.helidon.microprofile.testing.ReflectionHelper.annotationHierarchy;
 import static io.helidon.microprofile.testing.ReflectionHelper.invoke;
@@ -371,6 +373,14 @@ public abstract class HelidonTestExtension implements Extension {
         // add the test class
         event.addAnnotatedType(testInfo.testClass(), "HelidonTest")
                 .add(HelidonTestScoped.Literal.INSTANCE);
+
+        if (testInfo.addJaxRs()) {
+            // Use JDK ServiceLoader to discover provider types without constructing them; CDI must create and inject the beans.
+            // HelidonServiceLoader eagerly constructs providers.
+            ServiceLoader.load(ExternalRequestScope.class).stream()
+                    .map(ServiceLoader.Provider::type)
+                    .forEach(type -> event.addAnnotatedType(type, type.getName()));
+        }
 
         for (AddBean addBean : testInfo.addBeans()) {
             Class<?> beanClass = addBean.value();

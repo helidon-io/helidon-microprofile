@@ -30,12 +30,14 @@ module io.helidon.microprofile.testing {
     requires transitive jakarta.ws.rs;
 
     requires static transitive io.helidon.microprofile.server;
-    requires static transitive jersey.cdi1x;
-    requires static transitive jersey.weld2.se;
+    requires static transitive org.glassfish.jersey.ext.cdi1x;
+    requires static transitive org.glassfish.jersey.ext.weld2.se;
 
-    requires jersey.client;
+    requires org.glassfish.jersey.core.client;
     requires net.bytebuddy;
     requires jdk.unsupported;
 
     exports io.helidon.microprofile.testing;
+
+    uses org.glassfish.jersey.server.spi.ExternalRequestScope;
 }

@@ -22,6 +22,6 @@ module io.helidon.jersey.media.jsonp {
 
     requires org.eclipse.parsson.media;
 
-    requires transitive jersey.media.json.processing;
+    requires transitive org.glassfish.jersey.media.json.processing;
 
 }

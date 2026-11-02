@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.tests.functional.multipleapps;
+
+import java.util.List;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -46,6 +48,7 @@ class MainTest {
         assertThat(response.getHeaders(), hasKey("sharedfilter"));
         assertThat(response.getHeaders(), hasKey("filter1"));
         assertThat(response.getHeaders(), not(hasKey("filter2")));
+        assertThat(response.getStringHeaders().get("application"), is(List.of("app1")));
         JsonObject jsonObject = response.readEntity(JsonObject.class);
         assertThat("default message", jsonObject.getString("message"),
                    is("Hello World 1!"));
@@ -63,6 +66,7 @@ class MainTest {
         assertThat(response.getHeaders(), hasKey("filter2"));
         assertThat(response.getHeaders(), hasKey("filter3"));       // MyFeature
         assertThat(response.getHeaders(), not(hasKey("filter1")));
+        assertThat(response.getStringHeaders().get("application"), is(List.of("app2")));
         JsonObject jsonObject = response.readEntity(JsonObject.class);
         assertThat("default message", jsonObject.getString("message"),
                    is("Hello World 2!"));

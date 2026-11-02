@@ -25,10 +25,10 @@ import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.process.internal.RequestContext;
 import org.glassfish.jersey.process.internal.RequestScope;
-import org.glassfish.jersey.weld.se.WeldRequestScope;
 import org.jboss.weld.context.WeldAlterableContext;
 import org.jboss.weld.context.api.ContextualInstance;
 import org.jboss.weld.context.bound.BoundLiteral;
@@ -91,7 +91,6 @@ class RequestScopeHelper {
         }
 
         // Jersey scope
-        this.injectionManager = WeldRequestScope.actualInjectorManager.get();        // thread local
         try {
             this.requestScope = this.requestScopeProvider.get();
             this.jerseyRequestContext = this.requestScope.referenceCurrent();
@@ -99,6 +98,9 @@ class RequestScopeHelper {
             // Ignored, Jersey request scope not active
         } finally {
             this.state = State.STORED;
+        }
+        if (this.jerseyRequestContext != null) {
+            this.injectionManager = this.weldManager.getExtension(CdiComponentProvider.class).getEffectiveInjectionManager();
         }
     }
 
@@ -127,14 +129,12 @@ class RequestScopeHelper {
                 }
             };
         } else {
-            return () -> this.requestScope
+            return () -> JerseyInjectionManagerStore.with(this.injectionManager).call(() -> this.requestScope
                 .runInScope(this.jerseyRequestContext,
                             (Callable<?>) (() -> {
-                                    InjectionManager old = WeldRequestScope.actualInjectorManager.get();
                                     Runnable migrationCleaner = null;
                                     try {
                                         migrationCleaner = this.migrateRequestContext();
-                                        WeldRequestScope.actualInjectorManager.set(this.injectionManager);
                                         return supplier.get();
                                     } catch (Throwable t) {
                                         throw t instanceof Exception
@@ -144,9 +144,8 @@ class RequestScopeHelper {
                                         if (migrationCleaner != null) {
                                             migrationCleaner.run();
                                         }
-                                        WeldRequestScope.actualInjectorManager.set(old);
                                     }
-                                }));
+                                })));
         }
     }
 

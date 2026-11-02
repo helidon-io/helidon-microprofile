@@ -33,12 +33,12 @@ module io.helidon.tracing.jersey.client {
     requires io.helidon.tracing.config;
     requires io.helidon.tracing;
     requires jakarta.annotation;
-    requires jersey.common;
+    requires org.glassfish.jersey.core.common;
 
     requires static io.helidon.common.features.api;
 
     requires transitive jakarta.ws.rs;
-    requires transitive jersey.client;
+    requires transitive org.glassfish.jersey.core.client;
 
     exports io.helidon.tracing.jersey.client;
 

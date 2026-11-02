@@ -375,7 +375,7 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     ApplicationPath path = app.getDeclaredAnnotation(ApplicationPath.class);
                     String value = "/" + context.rootContext;
                     if (path != null && !"/".equals(path.value()) && !"".equals(path.value())) {
-                        value = value + "/" + path.value();
+                        value = value + (path.value().startsWith("/") ? "" : "/") + path.value();
                     }
                     properties.put(key, value);
                 }
