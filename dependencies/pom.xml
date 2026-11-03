@@ -51,10 +51,9 @@
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
-        <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
+        <version.lib.hibernate-validator>9.1.6.Final</version.lib.hibernate-validator>
         <!-- Match the HK2 version used by Jersey. -->
         <version.lib.hk2>${version.lib.jersey}</version.lib.hk2>
-        <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
@@ -353,11 +352,6 @@
 
 
             <!-- Integrations related -->
-            <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${version.lib.jakarta.validation-api}</version>
-            </dependency>
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator-cdi</artifactId>

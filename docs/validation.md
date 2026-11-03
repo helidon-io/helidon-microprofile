@@ -392,6 +392,6 @@ general bean validation.
 
 - [Bean Validation Specification][bv-spec]
 
-[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
-[hbv-docs]: https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration
+[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.1/
+[hbv-docs]: https://docs.hibernate.org/validator/9.1/reference/en-US/html_single/#chapter-xml-configuration
 [bv-example]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/bean-validation
