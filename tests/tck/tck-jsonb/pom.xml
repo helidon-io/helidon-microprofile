@@ -31,6 +31,7 @@
     <name>Helidon MicroProfile Tests TCK JSONB</name>
 
     <properties>
+        <version.lib.jakarta.jsonb-tck>3.0.0</version.lib.jakarta.jsonb-tck>
         <tck.filename>jakarta-jsonb-tck-${version.lib.jakarta.jsonb-tck}</tck.filename>
         <tck.url>https://download.eclipse.org/jakartaee/jsonb/3.0/${tck.filename}.zip</tck.url>
         <tck.artifact>jakarta.json.bind-tck-${version.lib.jakarta.jsonb-tck}</tck.artifact>

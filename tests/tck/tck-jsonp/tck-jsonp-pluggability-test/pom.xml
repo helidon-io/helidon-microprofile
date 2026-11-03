@@ -36,8 +36,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.netbeans.tools</groupId>
+            <groupId>jakarta.tck</groupId>
             <artifactId>sigtest-maven-plugin</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- Dependencies coming from below maven-antrun-plugin -->
         <dependency>
@@ -62,11 +63,8 @@
                     <execution>
                         <phase>compile</phase>
                         <goals>
-                            <goal>copy-dependencies</goal>
+                            <goal>properties</goal>
                         </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -83,7 +81,7 @@
                     <systemPropertyVariables>
                         <jimage.dir>${project.build.directory}/jdk11-bundle</jimage.dir>
                         <signature.sigTestClasspath>
-                            ${project.build.directory}/lib/jakarta.json-api-${version.lib.jakarta.jsonp-api}.jar:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming
+                            ${jakarta.json:jakarta.json-api:jar}:${project.build.directory}/jdk11-bundle/java.base:${project.build.directory}/jdk11-bundle/java.rmi:${project.build.directory}/jdk11-bundle/java.sql:${project.build.directory}/jdk11-bundle/java.naming
                         </signature.sigTestClasspath>
                     </systemPropertyVariables>
                 </configuration>

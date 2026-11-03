@@ -28,7 +28,6 @@ open module io.helidon.jersey.tests.media.json.binding {
     requires io.helidon.webserver;
     requires jakarta.inject;
     requires jakarta.json.bind;
-    requires jakarta.validation;
     requires jakarta.ws.rs;
     requires org.glassfish.jersey.core.client;
     requires org.glassfish.jersey.inject.hk2;

@@ -29,10 +29,27 @@
     <artifactId>tck-annotations</artifactId>
     <name>Helidon MicroProfile Tests TCK Annotations</name>
 
+    <properties>
+        <tck.filename>jakarta-annotations-tck-${version.lib.jakarta-annotations-tck}</tck.filename>
+        <tck.url>https://download.eclipse.org/jakartaee/annotations/3.0/${tck.filename}.zip</tck.url>
+        <stage.dir>${project.build.directory}/tck</stage.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.tck</groupId>
+            <artifactId>sigtest-maven-plugin</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -45,11 +62,8 @@
                     <execution>
                         <phase>compile</phase>
                         <goals>
-                            <goal>copy-dependencies</goal>
+                            <goal>properties</goal>
                         </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -58,31 +72,56 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>
                     <execution>
-                        <phase>test</phase>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true"
-                                        src="https://download.eclipse.org/jakartaee/annotations/2.1/jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip"
-                                        dest="jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip"/>
-                                <unzip src="jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip" dest="./target"/>
-                                <exec executable="java">
-                                    <arg line="-cp ${project.build.directory}/annotations-tck/lib/sigtest.jar:${project.build.directory}/lib/jakarta.annotation-api-${version.lib.jakarta.annotation-api}.jar"/>
-                                    <arg line="com.sun.tdk.signaturetest.SignatureTest"/>
-                                    <arg line="-FileName ${project.build.directory}/annotations-tck/src/com/sun/ts/tests/signaturetest/signature-repository/jakarta.annotation.sig"/>
-                                    <arg line="-Package jakarta.annotation"/>
-                                    <arg line="-Package jakarta.annotation.security"/>
-                                    <arg line="-Package jakarta.annotation.sql"/>
-                                    <arg line="-IgnoreJDKClass java.lang.Enum"/>
-                                    <arg line="-IgnoreJDKClass java.lang.annotation.Repeatable"/>
-                                </exec>
+                                <get skipexisting="true" src="${tck.url}" dest="${project.build.directory}/${tck.filename}.zip"/>
+                                <unzip src="${project.build.directory}/${tck.filename}.zip" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="**/${tck.filename}.jar"/>
+                                    </patternset>
+                                </unzip>
+                                <!-- Run the upstream tests directly without installing a TCK dependency. -->
+                                <unzip src="${stage.dir}/annotations-tck/artifacts/${tck.filename}.jar"
+                                        dest="${project.build.testOutputDirectory}"/>
                             </target>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <failIfNoTests>true</failIfNoTests>
+                    <includes>
+                        <include>**/*IT.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <jimage.dir>${project.build.directory}/jdk-bundle</jimage.dir>
+                        <sigTestClasspath>
+                            ${jakarta.annotation:jakarta.annotation-api:jar}:${project.build.directory}/jdk-bundle/java.base:${project.build.directory}/jdk-bundle/java.rmi:${project.build.directory}/jdk-bundle/java.sql:${project.build.directory}/jdk-bundle/java.naming
+                        </sigTestClasspath>
+                        <!-- Each annotation's signature check is disabled unless explicitly enabled. -->
+                        <ca.sig.generated>true</ca.sig.generated>
+                        <ca.sig.postconstruct>true</ca.sig.postconstruct>
+                        <ca.sig.priority>true</ca.sig.priority>
+                        <ca.sig.predestroy>true</ca.sig.predestroy>
+                        <ca.sig.resource>true</ca.sig.resource>
+                        <ca.sig.resources>true</ca.sig.resources>
+                        <ca.sig.securitydeclareroles>true</ca.sig.securitydeclareroles>
+                        <ca.sig.securitydenyall>true</ca.sig.securitydenyall>
+                        <ca.sig.securitypermitall>true</ca.sig.securitypermitall>
+                        <ca.sig.securityrolesallowed>true</ca.sig.securityrolesallowed>
+                        <ca.sig.securityrunas>true</ca.sig.securityrunas>
+                        <ca.sig.sqldatasourcedefinition>true</ca.sig.sqldatasourcedefinition>
+                        <ca.sig.sqldatasourcedefinitions>true</ca.sig.sqldatasourcedefinitions>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>
