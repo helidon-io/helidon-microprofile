@@ -106,9 +106,9 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.netbeans.tools</groupId>
+                <groupId>jakarta.tck</groupId>
                 <artifactId>sigtest-maven-plugin</artifactId>
-                <version>${version.lib.sigtest}</version>
+                <version>${version.lib.jakarta.sigtest}</version>
                 <executions>
                     <execution>
                         <id>sigtest</id>

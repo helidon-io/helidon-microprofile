@@ -31,13 +31,13 @@ and supports the following Core Profile specifications.
 
 | Specification                                      | Version                       | Description                                                 |
 |----------------------------------------------------|-------------------------------|-------------------------------------------------------------|
-| Jakarta Annotations                                | [2.1][annotations-spec]       | Common annotations used by Jakarta EE technologies          |
+| Jakarta Annotations                                | [3.0][annotations-spec]       | Common annotations used by Jakarta EE technologies          |
 | Jakarta Context and Dependency Injection (CDI)     | [4.0][cdi-spec]               | Declarative dependency injection and supporting services    |
 | Jakarta Dependency Injection                       | [2.0][inject-spec]            | Standard annotations for dependency injection               |
 | Jakarta Interceptors                               | [2.1][interceptors-spec]      | Interceptors for method invocations and lifecycle events    |
-| Jakarta JSON Processing (JSON-P)                   | [2.1][jsonp-spec]             | API to parse, generate, transform, and query JSON docs       |
-| Jakarta JSON Binding (JSON-B)                      | [3.0][jsonb-spec]             | Binding framework for converting POJOs to/from JSON docs     |
-| [Jakarta RESTful Web Services (JAX-RS)][mp-server] | [3.1][jaxrs-spec]             | API to develop web services following the REST pattern       |
+| Jakarta JSON Processing (JSON-P)                   | [2.1][jsonp-spec]             | API to parse, generate, transform, and query JSON docs      |
+| Jakarta JSON Binding (JSON-B)                      | [3.0][jsonb-spec]             | Binding framework for converting POJOs to/from JSON docs    |
+| [Jakarta RESTful Web Services (JAX-RS)][mp-server] | [3.1][jaxrs-spec]             | API to develop web services following the REST pattern      |
 
 Helidon MP also supports the following Jakarta specifications beyond the Core
 Profile.
@@ -49,7 +49,7 @@ Profile.
 
 [validation]: validation.md
 [bv-spec]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
-[annotations-spec]: https://jakarta.ee/specifications/annotations/2.1/annotations-spec-2.1.html
+[annotations-spec]: https://jakarta.ee/specifications/annotations/3.0/annotations-spec-3.0.html
 [cdi-spec]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
 [inject-spec]: https://jakarta.ee/specifications/dependency-injection/2.0/jakarta-injection-spec-2.0.html
 [interceptors-spec]: https://jakarta.ee/specifications/interceptors/2.1/interceptors-spec-2.1.html
