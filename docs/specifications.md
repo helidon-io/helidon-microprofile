@@ -44,11 +44,11 @@ Profile.
 
 | Specification                         | Version                       | Description                                                 |
 |---------------------------------------|-------------------------------|-------------------------------------------------------------|
-| [Jakarta Bean Validation][validation] | [3.0][bv-spec]                | Object level constraint declaration and validation facility |
+| [Jakarta Bean Validation][validation] | [3.1][bv-spec] | Object level constraint declaration and validation facility |
 | [Jakarta WebSocket][jakarta-websocke] | [2.1][jakarta-websocket-spec] | API for Server and Client Endpoints for WebSocket protocol  |
 
 [validation]: validation.md
-[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
+[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.1/
 [annotations-spec]: https://jakarta.ee/specifications/annotations/3.0/annotations-spec-3.0.html
 [cdi-spec]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
 [inject-spec]: https://jakarta.ee/specifications/dependency-injection/2.0/jakarta-injection-spec-2.0.html
