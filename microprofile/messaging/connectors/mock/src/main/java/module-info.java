@@ -20,7 +20,7 @@
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.messaging.connectors.mock {
 
-    requires hamcrest.all;
+    requires org.hamcrest;
     requires microprofile.config.api;
     requires org.reactivestreams;
 
