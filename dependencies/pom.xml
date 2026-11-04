@@ -54,7 +54,6 @@
         <version.lib.hibernate-validator>9.1.6.Final</version.lib.hibernate-validator>
         <!-- Match the HK2 version used by Jersey. -->
         <version.lib.hk2>${version.lib.jersey}</version.lib.hk2>
-        <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.3.0</version.lib.jandex>
@@ -78,7 +77,7 @@
         <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
-        <version.lib.tyrus>2.1.5</version.lib.tyrus>
+        <version.lib.tyrus>2.2.2</version.lib.tyrus>
         <version.lib.weld-api>6.0.Final</version.lib.weld-api>
         <version.lib.weld>6.0.4.Final</version.lib.weld>
         <version.lib.crac>1.5.0</version.lib.crac>
@@ -171,16 +170,6 @@
                 <groupId>org.eclipse.parsson</groupId>
                 <artifactId>parsson-media</artifactId>
                 <version>${version.lib.parsson}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.websocket</groupId>
-                <artifactId>jakarta.websocket-api</artifactId>
-                <version>${version.lib.jakarta.websockets-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.websocket</groupId>
-                <artifactId>jakarta.websocket-client-api</artifactId>
-                <version>${version.lib.jakarta.websockets-api}</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.tyrus</groupId>

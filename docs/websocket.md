@@ -224,7 +224,7 @@ This example assumes that port 8888 is reserved for admin users and binds the
 - [Helidon MicroProfile Tyrus Javadoc][helidon-micropro]
 
 [tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
-[jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
+[jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.2/jakarta-websocket-spec-2.2.html
 [example]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/webserver/websocket
 [eclipse-tyrus]: https://projects.eclipse.org/proposals/eclipse-tyrus
 [websocket-rfc-64]: https://datatracker.ietf.org/doc/html/rfc6455
