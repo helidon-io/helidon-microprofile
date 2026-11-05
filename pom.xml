@@ -565,12 +565,6 @@
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
                             <version>${version.lib.checkstyle}</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>com.sun</groupId>
-                                    <artifactId>tools</artifactId>
-                                </exclusion>
-                            </exclusions>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -968,36 +962,23 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>
                 <version>${version.lib.kafka}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-library</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang</groupId>
-                        <artifactId>scala-reflect</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.salesforce.kafka.test</groupId>
                 <artifactId>kafka-junit5</artifactId>
                 <version>${version.lib.kafka-junit5}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${version.lib.zookeeper}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Kafka-related tests use slf4j-jdk14, not log4j -->
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -1104,12 +1085,6 @@
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${version.lib.weld}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.weld</groupId>
@@ -1161,12 +1136,6 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jboss.arquillian.junit</groupId>
@@ -1223,16 +1192,6 @@
                 <groupId>org.eclipse.microprofile.config</groupId>
                 <artifactId>microprofile-config-tck</artifactId>
                 <version>${version.lib.microprofile-config}</version>
-                <exclusions>
-                    <exclusion>
-                        <!--
-                        There is a security issue in this dependency.
-                        If needed, add a dependency management for version >= 2.0b6
-                        -->
-                        <groupId>org.beanshell</groupId>
-                        <artifactId>bsh</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
@@ -1253,12 +1212,6 @@
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock</artifactId>
                 <version>${version.lib.wiremock}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- Used for OIDC integration tests -->
             <dependency>

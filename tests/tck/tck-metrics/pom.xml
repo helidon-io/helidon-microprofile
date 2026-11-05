@@ -68,6 +68,12 @@
             <artifactId>microprofile-metrics-api-tck</artifactId>
             <exclusions>
                 <exclusion>
+                    <!--
+                        The Metrics TCK uses a version of Hamcrest prior to 3.0. We use a version of Hamcrest of 3.0 (as
+                        of this writing). Hamcrest 3.0 does not supply the hamcrest-all artifact (it supplies simply
+                        hamcrest instead). Therefore we need to exclude hamcrest-all to converge on our version of
+                        Hamcrest.
+                    -->
                     <groupId>org.hamcrest</groupId>
                     <artifactId>hamcrest-all</artifactId>
                 </exclusion>

@@ -75,6 +75,10 @@
             <groupId>io.smallrye</groupId>
             <artifactId>smallrye-open-api-core</artifactId>
             <exclusions>
+                <!--
+                    Helidon uses SnakeYAML to read and write JSON and YAML documents, and JSON-P to parse annotation
+                    values, so SmallRye's Jackson dependencies are unnecessary.
+                -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
