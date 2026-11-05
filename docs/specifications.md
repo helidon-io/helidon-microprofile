@@ -45,7 +45,7 @@ Profile.
 | Specification                         | Version                       | Description                                                 |
 |---------------------------------------|-------------------------------|-------------------------------------------------------------|
 | [Jakarta Bean Validation][validation] | [3.1][bv-spec] | Object level constraint declaration and validation facility |
-| [Jakarta WebSocket][jakarta-websocke] | [2.1][jakarta-websocket-spec] | API for Server and Client Endpoints for WebSocket protocol  |
+| [Jakarta WebSocket][jakarta-websocke] | [2.2][jakarta-websocket-spec] | API for Server and Client Endpoints for WebSocket protocol  |
 
 [validation]: validation.md
 [bv-spec]: https://jakarta.ee/specifications/bean-validation/3.1/
@@ -58,7 +58,7 @@ Profile.
 [mp-server]: server.md
 [jaxrs-spec]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html
 [jakarta-websocke]: websocket.md
-[jakarta-websocket-spec]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
+[jakarta-websocket-spec]: https://jakarta.ee/specifications/websocket/2.2/jakarta-websocket-spec-2.2.html
 [mp-config]: config/config.md
 [mp-config-spec]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
 [mp-ft]: fault-tolerance.md
