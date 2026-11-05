@@ -276,6 +276,11 @@ public class TyrusUpgrader extends WsUpgrader {
                 public WebSocketEngine getWebSocketEngine() {
                     return engine;
                 }
+
+                @Override
+                public Map<String, Object> getProperties() {
+                    return Map.of();
+                }
             };
 
             // Register classes with context path "/"
