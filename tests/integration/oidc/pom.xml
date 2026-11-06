@@ -73,12 +73,12 @@
             <scope>test</scope>
             <exclusions>
                 <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.resteasy</groupId>
-                    <artifactId>resteasy-jaxrs</artifactId>
+                    <!--
+                        Tests configure Keycloak through realm imports and do not use its admin client. This also
+                        conveniently excludes unused RESTEasy dependencies.
+                    -->
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-client</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
