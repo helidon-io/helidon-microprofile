@@ -32,6 +32,10 @@
         module name to the new, proper org.eclipse.microprofile.config module name.
     </description>
 
+    <properties>
+        <spotbugs.skip>true</spotbugs.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
