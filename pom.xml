@@ -113,7 +113,7 @@
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
-        <version.lib.wiremock>2.26.3</version.lib.wiremock>
+        <version.lib.wiremock>3.0.1</version.lib.wiremock>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.commons-lang3>3.18.0</version.lib.commons-lang3>
