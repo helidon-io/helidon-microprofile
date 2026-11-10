@@ -32,7 +32,7 @@ module io.helidon.microprofile.openapi {
     requires io.helidon.microprofile.server;
     requires java.desktop; // for java.beans package
     requires java.logging; // logging required for SnakeYAML logging workaround
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires org.jboss.jandex;
     requires smallrye.open.api.core;
 

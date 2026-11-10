@@ -34,7 +34,7 @@ module io.helidon.microprofile.messaging.connectors.kafka {
     requires io.helidon.microprofile.messaging;
     requires java.security.jgss; // To allow KerberosLoginSubstitution
     requires java.security.sasl;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires org.reactivestreams;
 
     requires static io.helidon.common.features.api;

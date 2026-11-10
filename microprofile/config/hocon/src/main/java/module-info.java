@@ -20,7 +20,7 @@
 module io.helidon.config.hocon.mp {
 
     requires io.helidon.microprofile.config.core;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires typesafe.config;
 
     requires transitive io.helidon.config;

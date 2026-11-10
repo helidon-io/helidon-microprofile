@@ -79,6 +79,10 @@
             <artifactId>helidon-microprofile-config-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config-shim</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-fault-tolerance</artifactId>
         </dependency>

@@ -38,7 +38,7 @@ module io.helidon.microprofile.faulttolerance {
     requires jakarta.annotation;
     requires jakarta.inject;
     requires transitive org.glassfish.jersey.ext.cdi1x;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires microprofile.fault.tolerance.api;
     requires microprofile.metrics.api;
     requires weld.api;

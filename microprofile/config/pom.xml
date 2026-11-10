@@ -39,6 +39,7 @@
     <modules>
         <module>core</module>
         <module>config</module>
+        <module>shim</module>
         <module>yaml</module>
         <module>hocon</module>
     </modules>

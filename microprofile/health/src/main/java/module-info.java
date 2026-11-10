@@ -36,7 +36,7 @@ module io.helidon.microprofile.health {
     requires jakarta.json;
     requires jakarta.ws.rs;
     requires java.management;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires microprofile.health.api;
 
     requires static io.helidon.common.features.api;

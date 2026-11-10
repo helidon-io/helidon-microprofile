@@ -21,7 +21,7 @@
 module io.helidon.microprofile.messaging.connectors.mock {
 
     requires org.hamcrest;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires org.reactivestreams;
 
     requires static jakarta.cdi;

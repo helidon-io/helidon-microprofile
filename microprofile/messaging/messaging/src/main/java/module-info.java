@@ -43,7 +43,7 @@ module io.helidon.microprofile.messaging {
     requires transitive jakarta.cdi;
     requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
-    requires transitive microprofile.config.api;
+    requires transitive org.eclipse.microprofile.config;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
     requires transitive org.reactivestreams;

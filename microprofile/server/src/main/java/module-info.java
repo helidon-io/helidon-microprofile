@@ -35,7 +35,7 @@ module io.helidon.microprofile.server {
     requires io.helidon.microprofile.config;
     requires io.helidon.webserver.staticcontent;
     requires java.management; // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

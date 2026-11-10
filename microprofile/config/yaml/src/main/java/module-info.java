@@ -21,7 +21,7 @@ module io.helidon.config.yaml.mp {
 
     requires io.helidon.microprofile.config.core;
     requires io.helidon.config.yaml;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires org.yaml.snakeyaml;
 
     requires transitive io.helidon.config;
