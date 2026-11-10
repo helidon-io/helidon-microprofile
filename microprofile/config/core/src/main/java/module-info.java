@@ -28,7 +28,7 @@ module io.helidon.microprofile.config.core {
 
     requires static io.helidon.config.metadata;
 
-    requires transitive microprofile.config.api;
+    requires transitive org.eclipse.microprofile.config;
 
     exports io.helidon.microprofile.config.core;
     exports io.helidon.microprofile.config.core.spi;

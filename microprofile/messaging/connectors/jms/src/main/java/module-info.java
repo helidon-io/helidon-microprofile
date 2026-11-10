@@ -36,7 +36,7 @@ module io.helidon.microprofile.messaging.connectors.jms {
     requires jakarta.messaging;
     requires java.naming;
     requires javax.jms.api;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires org.reactivestreams;
 
     requires static io.helidon.common.features.api;

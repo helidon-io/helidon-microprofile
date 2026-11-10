@@ -26,7 +26,7 @@ module io.helidon.microprofile.servicecommon {
     requires transitive io.helidon.microprofile.server;
     requires transitive io.helidon.webserver;
     requires jakarta.inject;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.interceptor;

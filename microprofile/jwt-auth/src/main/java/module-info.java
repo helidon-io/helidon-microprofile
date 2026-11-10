@@ -39,7 +39,7 @@ module io.helidon.microprofile.jwt.auth {
     requires jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires microprofile.jwt.auth.api;
 
     requires static io.helidon.common.features.api;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ module io.helidon.tests.integration.packaging.mp.one {
     requires jakarta.json.bind;
     requires jakarta.json;
     requires jakarta.ws.rs;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires microprofile.fault.tolerance.api;
     requires microprofile.health.api;
     requires microprofile.jwt.auth.api;

@@ -44,7 +44,7 @@ module io.helidon.microprofile.metrics {
     requires transitive io.helidon.microprofile.servicecommon;
     requires transitive io.helidon.webserver.observe.metrics;
     requires transitive jakarta.cdi;
-    requires transitive microprofile.config.api;
+    requires transitive org.eclipse.microprofile.config;
 
     exports io.helidon.microprofile.metrics;
     exports io.helidon.microprofile.metrics.spi;

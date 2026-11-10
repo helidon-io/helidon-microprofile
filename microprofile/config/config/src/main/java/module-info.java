@@ -39,7 +39,7 @@ module io.helidon.microprofile.config {
 
     requires static io.helidon.common.features.api;
 
-    requires transitive microprofile.config.api;
+    requires transitive org.eclipse.microprofile.config;
 
     exports io.helidon.microprofile.config;
 

@@ -28,7 +28,7 @@ module io.helidon.microprofile.messaging.connectors.wls.jms {
     requires static jakarta.inject;
 
     requires transitive io.helidon.microprofile.config.core;
-    requires transitive microprofile.config.api;
+    requires transitive org.eclipse.microprofile.config;
 
 
     exports io.helidon.microprofile.messaging.connectors.wls.jms;

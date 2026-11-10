@@ -44,7 +44,7 @@ module io.helidon.microprofile.telemetry {
     requires io.opentelemetry.sdk;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires microprofile.config.api;
+    requires org.eclipse.microprofile.config;
     requires io.opentelemetry.instrumentation_annotations;
     requires io.opentelemetry.semconv;
 
