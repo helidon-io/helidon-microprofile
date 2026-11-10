@@ -15,6 +15,8 @@ transmitting information between parties as a JSON object. With JWT Auth you can
 integrate security features such as single sign on into your Helidon MP
 applications.
 
+Helidon MP implements [MicroProfile JWT Authentication 2.2][microprofile-jwt].
+
 ## Maven Coordinates
 
 To enable JWT Authentication, either add a dependency on the
@@ -54,6 +56,11 @@ MP:
   injection to obtain individual claims from the caller’s JWT.
 - `ClaimValue` - a proxy interface used with `@Claim` annotation to obtain the
   value of a claim by calling `getValue()`.
+
+`JsonWebToken.getName()` checks the `upn`, `preferred_username`, and `sub`
+claims in that order. Since `preferred_username` is not guaranteed to be
+unique, use `JsonWebToken.getSubject()` when a unique subject identifier is
+required.
 
 ## Configuration options
 
@@ -223,6 +230,14 @@ mp.jwt.verify.issuer=https://{PublicIssuerDomain}/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ```
 
+### Signature verification
+
+Helidon MP accepts both `RS256` and `ES256` signatures by default, with no
+signature algorithm configuration required. Supply the corresponding RSA or
+EC public keys using `mp.jwt.verify.publickey` or
+`mp.jwt.verify.publickey.location`. A JSON Web Key Set (JWKS) can contain
+verification keys for both algorithms.
+
 ### Key Algorithm
 
 Allowed values for `mp.jwt.decrypt.key.algorithm`:
@@ -295,7 +310,7 @@ Which means that the request successfully passed authentication.
 
 Learn more about JWT authentication at:
 
-[Eclipse MicroProfile Interoperable JWT RBAC][eclipse-micropro]
+[Eclipse MicroProfile Interoperable JWT RBAC][microprofile-jwt]
 
 ## Reference
 
@@ -303,6 +318,6 @@ Learn more about JWT authentication at:
 - [MicroProfile JWT Auth GitHub Repository][microprofile-jwt-2]
 
 [rfc-7519]: https://datatracker.ietf.org/doc/html/rfc7519
-[eclipse-micropro]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html#_introduction
-[microprofile-jwt]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
+[microprofile-jwt]:
+  https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.2.1/microprofile-jwt-auth-spec-2.2.1.html
 [microprofile-jwt-2]: https://github.com/eclipse/microprofile-jwt-auth

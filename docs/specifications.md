@@ -16,7 +16,7 @@ the following specifications for standardized microservice APIs.
 | [MicroProfile Fault Tolerance][mp-ft]                      | [4.0.2][mp-ft-spec]               | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.                 |
 | [MicroProfile GraphQL][mp-graphql]                         | [2.0][mp-graphql-spec]            | API for working with GraphQL                                                                                    |
 | [MicroProfile Health][mp-health]                           | [4.0.1][mp-health-spec]           | Health checks for automatic service restart/shutdown                                                            |
-| [MicroProfile JWT Auth][mp-jwt]                            | [2.1][mp-jwt-spec]                | Defines a compact and self-contained way for securely transmitting information between parties as a JSON object |
+| [MicroProfile JWT Auth][mp-jwt] | [2.2][mp-jwt-spec] | JWT authentication and role-based access control |
 | [MicroProfile Metrics][mp-metrics]                         | [5.1.2][mp-metrics-spec]          | Defining and exposing telemetry data in Prometheus and JSON formats                                             |
 | [MicroProfile Open API][mp-openapi]                        | [3.1.2][mp-openapi-spec]          | Annotations for documenting your application endpoints                                                          |
 | [MicroProfile Reactive Messaging][mp-reactive-messaging]   | [3.0.1][mp-reactive-messaging-spec] | Standard API for sending and receiving messages/events using streams                                          |
@@ -68,7 +68,8 @@ Profile.
 [mp-health]: health.md
 [mp-health-spec]: https://download.eclipse.org/microprofile/microprofile-health-4.0.1/microprofile-health-spec-4.0.1.html
 [mp-jwt]: jwt.md
-[mp-jwt-spec]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
+[mp-jwt-spec]:
+  https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.2.1/microprofile-jwt-auth-spec-2.2.1.html
 [mp-metrics]: metrics/metrics.md
 [mp-metrics-spec]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.2/microprofile-metrics-spec-5.1.2.html
 [mp-openapi]: openapi/openapi.md
