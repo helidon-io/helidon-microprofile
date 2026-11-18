@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import io.smallrye.openapi.api.models.media.SchemaImpl;
 import org.eclipse.microprofile.openapi.models.Extensible;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.yaml.snakeyaml.TypeDescription;
@@ -34,7 +34,6 @@ import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
-import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -97,6 +96,8 @@ public class ExpandedTypeDescription extends TypeDescription {
      * @return resulting TypeDescription
      */
     public static ExpandedTypeDescription create(Class<?> clazz, Class<?> impl) {
+        Objects.requireNonNull(clazz, "clazz");
+        Objects.requireNonNull(impl, "impl");
 
         ExpandedTypeDescription result;
         if (clazz.equals(Schema.class)) {
@@ -282,22 +283,23 @@ public class ExpandedTypeDescription extends TypeDescription {
 
         @Override
         public Object newInstance(Node node) {
-            // Schemas specified in config often have a name, and in SmallRye we need to provide the name to the constructor.
-            // So find the name if it's there.
-            String name = "";
-            if (node instanceof MappingNode mappingNode) {
-                for (NodeTuple nodeTuple : mappingNode.getValue()) {
-                    if (nodeTuple.getKeyNode() instanceof ScalarNode scalarKeyNode) {
-                        if (scalarKeyNode.getValue().equals("name")) {
-                            if (nodeTuple.getValueNode() instanceof ScalarNode scalarValueNode) {
-                                name = scalarValueNode.getValue();
-                                break;
-                            }
+            try {
+                Schema schema = (Schema) impl().getConstructor().newInstance();
+                String name = "";
+                if (node instanceof MappingNode mapping) {
+                    for (var entry : mapping.getValue()) {
+                        if (entry.getKeyNode() instanceof ScalarNode key && key.getValue().equals("name")
+                                && entry.getValueNode() instanceof ScalarNode value) {
+                            name = value.getValue();
+                            break;
                         }
                     }
                 }
+                OpenApiEngine.create().schemaName(schema, name);
+                return schema;
+            } catch (ReflectiveOperationException _) {
+                throw new IllegalStateException("Schema implementation must expose a public no-argument constructor");
             }
-            return new SchemaImpl(name);
         }
 
         @Override
@@ -340,7 +342,7 @@ public class ExpandedTypeDescription extends TypeDescription {
                                               Schema.class.getMethod("getAdditionalPropertiesSchema"),
                                               Schema.class.getMethod("setAdditionalPropertiesSchema", Schema.class));
             } catch (IntrospectionException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
+                throw new IllegalStateException("Cannot inspect Schema.additionalProperties accessors", e);
             }
         }
     }

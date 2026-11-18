@@ -12,7 +12,7 @@ The [MicroProfile OpenAPI spec][microprofile-ope] explains how MicroProfile
 embraces OpenAPI, adding annotations, configuration, and a service provider
 interface (SPI).
 
-Helidon MP implements the MicroProfile OpenAPI specification.
+Helidon MP implements MicroProfile OpenAPI 4.2 and generates OpenAPI 3.1 documents.
 
 The OpenAPI support in Helidon MP performs two main tasks:
 
@@ -33,6 +33,32 @@ whichever of these sources are present in the application:
 
   The SPI defines an interface you can implement in your application which can
   mask parts of the model.
+
+## Migrating from MicroProfile OpenAPI 3.1
+
+Applications using the earlier model API must adapt to the OpenAPI 3.1 schema model:
+
+- `Schema.getType()` returns a list of schema types. Use `SchemaType.NULL` in that
+  list instead of the removed `nullable` property.
+- `exclusiveMinimum` and `exclusiveMaximum` are numeric bounds, rather than boolean
+  modifiers of `minimum` and `maximum`.
+- `@RequestBody.required` defaults to `true`. Set it to `false` when a request body
+  is optional.
+- The model supports boolean schemas, custom schema keywords, webhooks, reusable
+  path items, and `jsonSchemaDialect`.
+
+Existing OpenAPI 3.0 static documents remain accepted. Helidon converts their schema
+forms to the newer model and serves the combined document as OpenAPI 3.1. Update
+consumers that expect the earlier document format.
+
+MicroProfile OpenAPI 4.2 also supports header examples and derives schema constraints
+from Jakarta Bean Validation `@Digits`. Explicit schema constraints take precedence
+and validation groups follow the specification rules.
+
+Helidon continues to use SnakeYAML and JSON-P for document and annotation values.
+SmallRye OpenAPI supplies model implementations and annotation scanning behind a
+Helidon adapter; applications should use the standard MP interfaces and `OASFactory`
+instead of SmallRye model classes.
 
 ## Maven Coordinates
 
@@ -435,14 +461,14 @@ information and a complete project that indexes a dependency.
 - [MicroProfile OpenAPI GitHub Repository][microprofile-ope-3]
 - [MicroProfile OpenAPI Specification][microprofile-ope]
 
-[openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html
+[openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.1.0.md
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/microprofile-openapi-spec-4.2.html
 [helidon-mp-opena]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi/basic
-[org-eclipse-micr]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs/org/eclipse/microprofile/openapi/OASModelReader.html
-[org-eclipse-micr-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs/org/eclipse/microprofile/openapi/OASFilter.html
-[configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html#configuration
-[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/apidocs
-[the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.2/microprofile-openapi-spec-3.1.2.html#_configuration
+[org-eclipse-micr]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/apidocs/org.eclipse.microprofile.openapi/org/eclipse/microprofile/openapi/OASModelReader.html
+[org-eclipse-micr-2]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/apidocs/org.eclipse.microprofile.openapi/org/eclipse/microprofile/openapi/OASFilter.html
+[configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/microprofile-openapi-spec-4.2.html#configuration
+[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/apidocs
+[the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-4.2/microprofile-openapi-spec-4.2.html#_configuration
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi
 [jandex-maven-plu]: https://github.com/smallrye/jandex/tree/3.3.0/maven-plugin
 [helidon-mp-opena-2]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/openapi/expanded-jandex

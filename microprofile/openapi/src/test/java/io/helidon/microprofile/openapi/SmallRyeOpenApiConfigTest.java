@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.is;
 /**
  * Tests {@link io.smallrye.openapi.api.OpenApiConfig}.
  */
-class OpenApiConfigTest {
+class SmallRyeOpenApiConfigTest {
 
     private static final Map<String, String> SCHEMA_OVERRIDE_VALUES = Map.of(
             "name", "EpochMillis",

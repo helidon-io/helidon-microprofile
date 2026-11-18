@@ -46,7 +46,7 @@ class AdditionalPropertiesTest {
         Schema additionalPropertiesSchema = itemSchema.getAdditionalPropertiesSchema();
         Boolean additionalPropertiesBoolean = itemSchema.getAdditionalPropertiesBoolean();
 
-        assertThat(additionalPropertiesSchema, is(nullValue()));
+        assertThat(additionalPropertiesSchema.getBooleanSchema(), is(false));
         assertThat(additionalPropertiesBoolean, is(notNullValue()));
         assertThat(additionalPropertiesBoolean, is(false));
     }

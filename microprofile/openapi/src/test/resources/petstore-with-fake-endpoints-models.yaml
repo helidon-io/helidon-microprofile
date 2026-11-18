@@ -1211,13 +1211,11 @@ paths:
         - name: query_1
           in: query
           description: query parameter
-          required: optional
           schema:
             type: string
         - name: header_1
           in: header
           description: header parameter
-          required: optional
           schema:
             type: string
       security:

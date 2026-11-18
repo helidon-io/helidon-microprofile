@@ -18,50 +18,34 @@ package io.helidon.microprofile.openapi;
 import java.io.Reader;
 import java.util.Map;
 
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.TypeDescription;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
+import org.eclipse.microprofile.openapi.models.Constructible;
 import org.yaml.snakeyaml.representer.Representer;
 
 /**
- * Abstraction for SnakeYAML parsing of JSON and YAML.
+ * Compatibility entry points for parsing with caller-selected model implementations.
+ * The normal processing path uses {@link OpenApiCodec} directly.
  */
 final class OpenApiParser {
-
     private OpenApiParser() {
     }
 
-    /**
-     * Parse YAML or JSON using the specified types, returning the specified type with input taken from the indicated reader.
-     *
-     * @param types  type descriptions
-     * @param tClass POJO type to be parsed
-     * @param reader {@code Reader} containing the JSON or YAML input
-     * @param <T>    the type to be returned
-     * @return the parsed object
-     */
-    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> tClass, Reader reader) {
-        return parse(types, tClass, reader, new Representer(new DumperOptions()));
+    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> type, Reader reader) {
+        return OpenApiModelMapper.read(type, OpenApiCodec.readTree(reader), modelType -> {
+            var standard = OpenApiModelRegistry.create(modelType);
+            ExpandedTypeDescription description = types.get(modelType);
+            if (description == null || description.impl().equals(standard.getClass())) {
+                return standard;
+            }
+            try {
+                return description.impl().asSubclass(Constructible.class)
+                        .getConstructor().newInstance();
+            } catch (ReflectiveOperationException _) {
+                throw new IllegalStateException("OpenAPI model implementation must expose a public no-argument constructor");
+            }
+        });
     }
 
-    /**
-     * Parse YAML or JSON using the specified types, returning the indicated type with input from the specified reader.
-     *
-     * @param types       type descriptions
-     * @param tClass      POJO type to be parsed
-     * @param reader      {@code Reader} containing the JSON or YAML input
-     * @param representer the {@code Representer} to use during parsing
-     * @param <T>         the type to be returned
-     * @return the parsed object
-     */
-    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> tClass, Reader reader, Representer representer) {
-        TypeDescription td = types.get(tClass);
-        Constructor topConstructor = new CustomConstructor(td);
-        types.values()
-                .forEach(topConstructor::addTypeDescription);
-
-        Yaml yaml = new Yaml(topConstructor, representer);
-        return yaml.loadAs(reader, tClass);
+    static <T> T parse(Map<Class<?>, ExpandedTypeDescription> types, Class<T> type, Reader reader, Representer representer) {
+        return parse(types, type, reader);
     }
 }
