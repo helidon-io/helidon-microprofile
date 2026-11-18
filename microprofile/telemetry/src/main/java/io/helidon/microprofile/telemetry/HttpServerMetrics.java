@@ -46,7 +46,8 @@ final class HttpServerMetrics {
                 return;
             }
             try {
-                var attributes = HttpSemantics.serverDurationAttributes(method, scheme, observed.status(), observed.route());
+                var attributes = HttpSemantics.serverDurationAttributes(method, scheme, observed.status(),
+                                                                         observed.route(), observed.failure());
                 duration.record((System.nanoTime() - started) / 1_000_000_000.0, attributes.build());
             } catch (RuntimeException e) {
                 LOGGER.log(System.Logger.Level.WARNING, "Failed to record HTTP request duration", e);

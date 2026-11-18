@@ -102,7 +102,14 @@ final class HttpServerTelemetry implements RequestEventListener {
         }
         var ownerObservation = HttpServerObservation.from(request.getProperty(HttpServerObservation.PROPERTY));
         telemetryRequest.initialize(resourceInfo.getResourceMethod(), ownerObservation);
-        if (!tracing.shouldStartSpan(request)) {
+        boolean startSpan = tracing.shouldStartSpan(request);
+        // Helpers may mutate properties; retain the original owner, but resolve the route recipient again.
+        var observation = HttpServerObservation.from(request.getProperty(HttpServerObservation.PROPERTY));
+        String route = startSpan || observation != null ? route(request) : null;
+        if (observation != null) {
+            observation.route(route);
+        }
+        if (!startSpan) {
             return;
         }
         var lease = sdk.acquire();
@@ -113,12 +120,6 @@ final class HttpServerTelemetry implements RequestEventListener {
         HttpServerSpan lifecycle = null;
         Throwable failure = null;
         try {
-            String route = route(request);
-            // Helpers may mutate properties; retain the original owner, but resolve the route recipient again.
-            var observation = HttpServerObservation.from(request.getProperty(HttpServerObservation.PROPERTY));
-            if (observation != null) {
-                observation.route(route);
-            }
             span = tracing.start(request, route);
             lifecycle = new HttpServerSpan(span, lease, ownerObservation);
             request.setProperty(HttpServerSpan.PROPERTY, lifecycle);

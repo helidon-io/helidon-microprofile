@@ -40,6 +40,7 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import jakarta.interceptor.Interceptor;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Priorities;
@@ -292,7 +293,7 @@ class AsyncWithSpanTest {
 
     @Provider
     @PreMatching
-    @Priority(Priorities.AUTHENTICATION)
+    @Priority(Interceptor.Priority.PLATFORM_BEFORE - 1)
     public static class SendProbe implements ContainerRequestFilter {
         @Inject
         Control control;
@@ -301,7 +302,7 @@ class AsyncWithSpanTest {
 
         @Override
         public void filter(ContainerRequestContext request) {
-            // Register before telemetry's pre-matching filter, so this runs immediately before span completion.
+            // Observe the send boundary before telemetry's platform-priority completion callback ends the span.
             response.whenSent(() -> control.recordingAtSend = control.span.isRecording());
         }
     }

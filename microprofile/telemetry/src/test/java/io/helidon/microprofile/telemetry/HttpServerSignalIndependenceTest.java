@@ -76,9 +76,11 @@ class HttpServerSignalIndependenceTest {
                 .filter(metric -> metric.getName().equals("http.server.request.duration")).reduce((_, latest) -> latest)
                 .orElseThrow();
         var points = duration.getHistogramData().getPoints();
+        assertThat(points.stream().filter(point -> "/telemetry-independent/vetoed".equals(
+                point.getAttributes().get(HttpAttributes.HTTP_ROUTE))).count(), is(1L));
         assertThat(points.size(), is(4));
         assertThat(points.stream().mapToLong(point -> point.getCount()).sum(), is(4L));
-        assertThat(points.stream().filter(point -> point.getAttributes().get(HttpAttributes.HTTP_ROUTE) != null).count(), is(1L));
+        assertThat(points.stream().filter(point -> point.getAttributes().get(HttpAttributes.HTTP_ROUTE) != null).count(), is(2L));
     }
 
     private void check(String path, int status) {

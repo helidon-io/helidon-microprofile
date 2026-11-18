@@ -49,6 +49,17 @@ Update dashboards, alerts, and queries that depend on the older span names or
 exclude response-writing time. See [Automatic REST spans](#automatic-rest-spans)
 for the response completion boundary.
 
+Outgoing client span names also change: for example, `HTTP GET` becomes `GET`.
+Update dashboards, collector rules, and alerts that select the previous client
+names. For unrecognized HTTP methods, the span-name method component is `HTTP`;
+the `http.request.method` attribute remains `_OTHER`.
+
+Enabling telemetry now uses OpenTelemetry's default OTLP exporters for metrics
+and logs when their exporter settings are omitted, including JUL records that
+reach the root logger. To retain tracing-only export, explicitly configure
+`otel.logs.exporter=none` and `otel.metrics.exporter=none` in the configuration
+scope that enables telemetry.
+
 The stable HTTP semantic conventions also change exported attribute names:
 
 | Earlier attribute | Telemetry 2.2 attribute |

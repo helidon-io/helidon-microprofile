@@ -17,7 +17,9 @@ package io.helidon.microprofile.telemetry;
 
 import io.helidon.webserver.http.ServerResponse;
 
+import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
+import jakarta.interceptor.Interceptor;
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -32,10 +34,11 @@ import org.glassfish.jersey.server.monitoring.RequestEventListener;
 
 /**
  * Adapts pre-matching requests and Jersey monitoring to shared server telemetry coordination.
- * Measurement begins here so unmatched requests are included.
+ * Measurement begins before authentication so rejected and unmatched requests are included.
  */
 @Provider
 @PreMatching
+@Priority(Interceptor.Priority.PLATFORM_BEFORE)
 @ConstrainedTo(RuntimeType.SERVER)
 class HttpServerTelemetryPreMatchingFilter implements ContainerRequestFilter, ApplicationEventListener {
     private final HttpServerTelemetry telemetry;

@@ -51,11 +51,11 @@ final class HttpSemantics {
     }
 
     static String clientSpanName(String method) {
-        return method;
+        return spanMethod(method);
     }
 
     static String serverSpanName(String method, String route) {
-        return method + " " + route;
+        return spanMethod(method) + " " + route;
     }
 
     static void clientRequest(Span.Builder<?> builder, String method, URI uri) {
@@ -104,7 +104,8 @@ final class HttpSemantics {
         }
     }
 
-    static AttributesBuilder serverDurationAttributes(String method, String scheme, int status, String route) {
+    static AttributesBuilder serverDurationAttributes(String method, String scheme, int status,
+                                                      String route, Throwable failure) {
         var attributes = Attributes.builder()
                 .put(HttpAttributes.HTTP_REQUEST_METHOD, method)
                 .put(UrlAttributes.URL_SCHEME, scheme)
@@ -112,10 +113,16 @@ final class HttpSemantics {
         if (route != null) {
             attributes.put(HttpAttributes.HTTP_ROUTE, route);
         }
-        // Preserve the metric's current rule, independently of server span status-family classification.
-        if (status >= 500) {
+        // A transport failure can occur even after a successful response status has been selected.
+        if (failure != null) {
+            attributes.put(ErrorAttributes.ERROR_TYPE, failure.getClass().getName());
+        } else if (status >= 500) {
             attributes.put(ErrorAttributes.ERROR_TYPE, Integer.toString(status));
         }
         return attributes;
+    }
+
+    private static String spanMethod(String method) {
+        return method.equals("_OTHER") ? "HTTP" : method;
     }
 }

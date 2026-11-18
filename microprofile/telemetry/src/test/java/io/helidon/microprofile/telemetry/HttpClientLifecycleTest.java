@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.SpanListener;
@@ -309,25 +310,36 @@ class HttpClientLifecycleTest {
     @Test
     void canceledClientFutureDoesNotReleaseWorkBeforeConnectorActuallyCompletes() throws Exception {
         connector.deferred = true;
-        var closed = new CountDownLatch(1);
-        Thread closer = null;
+        var closed = new CompletableFuture<Void>();
+        Thread closer = Thread.ofVirtual().unstarted(() -> {
+            try {
+                owner.close();
+                closed.complete(null);
+            } catch (Throwable failure) {
+                closed.completeExceptionally(failure);
+            }
+        });
         try (var client = client()) {
             try {
                 var result = client.target("http://example.invalid/test").request().async().get();
                 assertThat(connector.entered.await(5, TimeUnit.SECONDS), is(true));
                 assertThat(result.cancel(false), is(true));
-                closer = Thread.ofVirtual().start(() -> {
-                    owner.close();
-                    closed.countDown();
-                });
-                assertThat("Pending connector work retains the SDK", closed.await(100, TimeUnit.MILLISECONDS), is(false));
+                closer.start();
+                MatcherWithRetry.assertThatWithRetry("SDK shutdown closes admission", owner::instrumentationEnabled,
+                                                     is(false), 50, 100);
+                MatcherWithRetry.assertThatWithRetry("SDK shutdown reaches its drain wait", () -> {
+                    if (closed.isCompletedExceptionally()) {
+                        closed.join();
+                    }
+                    return closer.getState();
+                }, is(Thread.State.WAITING), 50, 100);
+                assertThat("Pending connector work retains the SDK", closed.isDone(), is(false));
             } finally {
                 connector.respond();
-                if (closer != null) {
-                    closer.join(TimeUnit.SECONDS.toMillis(5));
-                    assertThat(closer.isAlive(), is(false));
-                }
+                closer.join(TimeUnit.SECONDS.toMillis(5));
+                assertThat(closer.isAlive(), is(false));
             }
+            closed.get(5, TimeUnit.SECONDS);
         }
         assertThat(exporter.spanData(1).size(), is(1));
         // Canceling the consumer future did not stop this connector's eventual successful HTTP operation.

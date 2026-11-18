@@ -69,7 +69,7 @@ class HttpPolicyBaselineTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"BREW", "get", "QUERY"})
-    void preservesUnknownMethodNamesAndOriginalAttribute(String original) {
+    void unknownMethodsUseHttpSpanNamesAndPreserveOriginalAttribute(String original) {
         String method = HttpSemantics.method(original);
         var builder = tracer.spanBuilder(HttpSemantics.clientSpanName(method)).kind(Span.Kind.CLIENT);
         HttpSemantics.clientRequest(builder, method, URI.create("https://example.test/"));
@@ -81,8 +81,8 @@ class HttpPolicyBaselineTest {
         HttpSemantics.originalMethod(server, method, original);
         server.start().end();
         var spans = exporter.spanData(2);
-        assertThat(spans.getFirst().getName(), is("_OTHER"));
-        assertThat(spans.getLast().getName(), is("_OTHER /route"));
+        assertThat(spans.getFirst().getName(), is("HTTP"));
+        assertThat(spans.getLast().getName(), is("HTTP /route"));
         for (var span : spans) {
             assertThat(span.getAttributes().get(HttpAttributes.HTTP_REQUEST_METHOD), is("_OTHER"));
             assertThat(span.getAttributes().get(HttpAttributes.HTTP_REQUEST_METHOD_ORIGINAL), is(original));
@@ -154,7 +154,7 @@ class HttpPolicyBaselineTest {
                    is(serverError ? Integer.toString(status) : null));
         assertThat(spans.getFirst().getAttributes().get(HttpAttributes.HTTP_RESPONSE_STATUS_CODE), is((long) status));
         assertThat(spans.getLast().getAttributes().get(HttpAttributes.HTTP_RESPONSE_STATUS_CODE), is((long) status));
-        var metric = HttpSemantics.serverDurationAttributes("GET", "http", status, null).build();
+        var metric = HttpSemantics.serverDurationAttributes("GET", "http", status, null, null).build();
         assertThat(metric.get(ErrorAttributes.ERROR_TYPE), is(status >= 500 ? Integer.toString(status) : null));
         assertThat(metric.get(HttpAttributes.HTTP_ROUTE), nullValue());
     }
