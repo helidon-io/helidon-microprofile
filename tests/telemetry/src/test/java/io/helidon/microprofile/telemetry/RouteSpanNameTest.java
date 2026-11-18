@@ -16,7 +16,6 @@
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfigBlock;
@@ -34,14 +33,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
 /**
- * Test Span Hierarchy with Tracer Mock
+ * Verifies that automatic span names include the HTTP method and use the matched route template.
  */
 @HelidonTest
-@AddBean(TestFullUrlName.SpanResource.class)
+@AddBean(RouteSpanNameTest.SpanResource.class)
 @AddBean(InMemorySpanExporter.class)
 @AddBean(InMemorySpanExporterProvider.class)
 @AddExtension(TelemetryCdiExtension.class)
@@ -49,9 +48,8 @@ import static org.hamcrest.Matchers.is;
         otel.service.name=helidon-mp-telemetry
         otel.sdk.disabled=false
         otel.traces.exporter=in-memory
-        telemetry.span.full.url=true
         """)
-public class TestFullUrlName {
+public class RouteSpanNameTest {
 
     @Inject
     WebTarget webTarget;
@@ -61,24 +59,23 @@ public class TestFullUrlName {
 
     @BeforeEach
     void setup() {
-        if (spanExporter != null) {
-            spanExporter.reset();
-        }
-
+        spanExporter.reset();
     }
 
     @Test
-    void spanNaming() {
-        assertThat(webTarget.path("named").request().get().getStatus(), is(Response.Status.OK.getStatusCode()));
+    void spanNamesUseMethodAndRouteTemplate() {
+        for (String name : List.of("first", "second")) {
+            try (Response response = webTarget.path("named/" + name).request().get()) {
+                assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
+            }
+        }
 
-        List<String> names = spanExporter.getFinishedSpanItems(2)
+        List<String> names = spanExporter.getFinishedSpanItems(4)
                 .stream()
                 .map(SpanData::getName)
-                .collect(Collectors.toList());
+                .toList();
 
-        assertThat(names.size(), is(2));
-        assertThat(names, hasItem("GET http://localhost:" + webTarget.getUri().getPort() + "/named"));
-        assertThat(names, hasItem("HTTP GET"));
+        assertThat(names, containsInAnyOrder("GET /named/{name}", "GET /named/{name}", "GET", "GET"));
     }
 
     @Path("/")
@@ -86,7 +83,7 @@ public class TestFullUrlName {
     public static class SpanResource {
 
         @GET
-        @Path("named")
+        @Path("named/{name}")
         public Response mixedSpan() {
             return Response.ok().build();
         }

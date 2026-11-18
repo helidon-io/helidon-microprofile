@@ -5,9 +5,12 @@ navigation:
 -->
 # Telemetry
 
-Helidon implements MicroProfile Telemetry using OpenTelemetry. It creates and
-propagates traces for Jakarta RESTful Web Services and MicroProfile REST Client
-requests, and it provides the OpenTelemetry APIs for manual instrumentation.
+Helidon implements MicroProfile Telemetry 2.2,
+supporting tracing, metrics, and log export. It creates and propagates traces for
+Jakarta RESTful Web Services and MicroProfile REST Client requests, and it provides
+the OpenTelemetry APIs for manual instrumentation. It also measures incoming REST
+request durations, collects JVM metrics when runtime telemetry is enabled, and
+exports Java Util Logging (JUL) records with the current trace context.
 
 ## Maven Coordinates
 
@@ -23,32 +26,43 @@ Dependencies](dependency-management.md)).
 </dependency>
 ```
 
-### OTLP Exporter Dependency
-
-Add the OpenTelemetry OTLP exporter to send traces to an OTLP-compatible
-collector or observability backend.
-
-```xml [pom.xml]
-<dependency>
-  <groupId>io.opentelemetry</groupId>
-  <artifactId>opentelemetry-exporter-otlp</artifactId>
-</dependency>
-```
+The telemetry module includes the OpenTelemetry OTLP exporter for traces,
+metrics, and logs.
 
 ## Compatibility
 
-MicroProfile Telemetry 1.1 uses the current REST span naming convention, which
-includes the HTTP method. Helidon uses that convention by default. To
-temporarily retain the older convention, add the following configuration:
+Helidon uses the core-managed OpenTelemetry 1.67.0. MicroProfile Telemetry 2.2
+specifies a 1.66.x baseline; this remains a documented version exception.
 
-```properties [microprofile-config.properties]
-telemetry.span.name-includes-method=false
-```
+Automatic incoming REST span names always include the HTTP method and matched
+route, for example `GET /greet/{name}`. The previously deprecated compatibility
+settings have been removed in this release:
 
-Helidon then uses the MicroProfile Telemetry 1.0 naming convention and logs a
-warning. Support for the older format is deprecated. See
-[Helidon automatic span compatibility](#helidon-automatic-span-compatibility)
-for details about this setting and the response-writing compatibility setting.
+| Removed property | Behavior in this release |
+|------------------|--------------------------|
+| `telemetry.span.name-includes-method` | Span names always include the HTTP method. |
+| `telemetry.span.full.url` | Span names always use the matched route rather than the full URL. |
+| `telemetry.span.includes-response-write` | Spans always include response serialization and writing. |
+
+Remove these properties from your configuration; they no longer affect telemetry.
+Update dashboards, alerts, and queries that depend on the older span names or
+exclude response-writing time. See [Automatic REST spans](#automatic-rest-spans)
+for the response completion boundary.
+
+The stable HTTP semantic conventions also change exported attribute names:
+
+| Earlier attribute | Telemetry 2.2 attribute |
+|-------------------|-------------------------|
+| `http.method` | `http.request.method` |
+| `http.status_code` | `http.response.status_code` |
+| `http.scheme` | `url.scheme` |
+| `http.target` | `url.path` and `url.query` |
+| `http.url` | `url.full` |
+
+Update collector rules and queries that use the earlier names. `@WithSpan` spans
+include `code.function.name` and honor the annotation's span kind and context inheritance.
+`mp.telemetry.tracing.name` selects the tracing instrumentation scope name;
+`otel.exporter.name` remains a Helidon compatibility fallback.
 
 ## Usage
 
@@ -68,6 +82,10 @@ Helidon supports both automatic and manual instrumentation:
 
 - Automatic instrumentation creates spans for incoming Jakarta REST requests,
   outgoing Jakarta REST client requests, and MicroProfile REST Client requests.
+  It also records `http.server.request.duration` for incoming REST requests through
+  response completion and collects JVM metrics when runtime telemetry is enabled.
+- Logging integration exports JUL records, including `System.Logger` records
+  routed through JUL, preserving severity, exceptions, and trace correlation.
 - Manual instrumentation uses OpenTelemetry annotations and APIs from your
   application code.
 
@@ -97,6 +115,25 @@ class GreetingService {
 2. Create a span with an explicit name.
 3. Add the method argument to the span as an attribute.
 <!--@mdc :: -->
+
+For a method returning `CompletionStage` (including `CompletableFuture`), the
+span remains open until the stage completes. Exceptional completion and
+cancellation mark the span as failed. The original stage is returned unchanged.
+
+For an asynchronous Jakarta REST resource method, the span instead remains open
+until the response has finished writing or a terminal response failure occurs.
+This applies both to resource methods returning `CompletionStage` and to methods
+using `@Suspended AsyncResponse`. The method span is current during response
+serialization, so spans created by response writers are its children. This is
+Helidon behavior beyond the explicit requirements of MicroProfile Telemetry
+2.2. Response completion uses the server's send boundary; it does not imply
+that the client has acknowledged receipt.
+
+An open span is not automatically current on every application thread. The
+interceptor restores the calling thread's context when the method returns.
+Application-created asynchronous tasks must propagate context using an
+OpenTelemetry context-aware executor or `Context.current().wrap(task)`, capturing
+the context inside the annotated method before submitting the task.
 
 ### Working With Tracers
 
@@ -282,9 +319,40 @@ public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClie
 > `otel.sdk.disabled=false` in a MicroProfile Config source to enable it.
 
 Helidon passes `otel.*` MicroProfile Config properties to the OpenTelemetry SDK
-autoconfiguration support. MicroProfile Telemetry configures tracing; Helidon
-disables the OpenTelemetry metrics and logs exporters unless your application
-overrides those settings.
+autoconfiguration support, including ServiceLoader exporters, propagators,
+samplers, resources, and customizers. When enabled, all three signals default
+to OTLP export. To disable an individual exporter, set `otel.traces.exporter`,
+`otel.metrics.exporter`, or `otel.logs.exporter` to `none`.
+
+Setting `OTEL_SDK_DISABLED=false` in the environment or `otel.sdk.disabled=false`
+as a Java system property enables runtime telemetry. Runtime configuration then
+controls the SDK used by both the runtime and the application; application
+configuration does not reconfigure that SDK. Setting `otel.sdk.disabled=false`
+only in application configuration enables application telemetry without enabling
+runtime JVM metrics. Configuration is read at initialization and requires a
+restart to change.
+
+For application-only telemetry, `mp.application.name` supplies a default
+`service.name`. Explicit `otel.service.name`, `service.name` in
+`otel.resource.attributes`, and resource providers take precedence over that
+fallback. The application name does not name a shared runtime SDK.
+
+OpenTelemetry resource providers detect host, operating system, process, and JVM
+metadata, plus container and JAR/manifest metadata when available. Configure
+`otel.java.enabled.resource.providers` or `otel.java.disabled.resource.providers`
+with provider class names to control discovery, and `otel.resource.disabled.keys`
+to remove individual attributes. Explicit `otel.resource.attributes` override
+detected values. The SDK supplies `service.instance.id` unless another provider
+or explicit configuration supplies it.
+
+Inject `io.opentelemetry.api.metrics.Meter` to create application instruments.
+HTTP requests record `http.server.request.duration` in seconds. Runtime telemetry
+also registers the required OpenTelemetry JVM memory, GC, thread, class, and CPU
+instruments. Telemetry does not require MicroProfile Metrics.
+
+JUL records are bridged to OpenTelemetry logs with severity, exception details,
+and current trace context. The existing JUL backend also handles `System.Logger`.
+OpenTelemetry exporter diagnostics are not forwarded into the log pipeline.
 
 The following configuration enables tracing and exports spans using OTLP over
 HTTP/protobuf:
@@ -292,9 +360,7 @@ HTTP/protobuf:
 ```properties [microprofile-config.properties]
 otel.sdk.disabled=false
 otel.service.name=greeting-service
-otel.traces.exporter=otlp
 otel.exporter.otlp.protocol=http/protobuf
-otel.exporter.otlp.endpoint=http://localhost:4318
 ```
 
 This configuration sets the service name recorded with exported spans, selects
@@ -305,39 +371,15 @@ You can configure batching, sampling, resource attributes, headers, TLS, and
 other exporter settings using the standard [OpenTelemetry Java SDK
 configuration][opentelemetry-config].
 
-### Helidon Automatic Span Compatibility
+### Automatic REST Spans
 
-Helidon supports the following deprecated vendor-specific compatibility
-settings for automatic incoming REST request spans:
+Automatic incoming REST span names use the HTTP method followed by the matched
+route, such as `GET /greet/{name}`. Using the route template keeps span names
+independent of individual path parameter values.
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `telemetry.span.name-includes-method` | `Boolean` | `true` | **Deprecated.** Whether the span name includes the HTTP request method. |
-| `telemetry.span.full.url` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the absolute request URL instead of the matched route. |
-| `telemetry.span.includes-response-write` | `Boolean` | `true` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
-
-Earlier Helidon 4 releases used OpenTelemetry semantic conventions which did
-not include the HTTP method in automatic incoming REST span names. Setting
-`telemetry.span.name-includes-method` to `false` selects the older convention
-and causes Helidon to log a warning. Leaving it unset or setting it to `true`
-uses the current convention, which includes the method. The setting is
-deprecated because a future major release will use the current span naming
-convention unconditionally.
-
-By default, automatic incoming REST span names use the matched route.
-Setting `telemetry.span.full.url` to `true` uses the absolute request URL instead.
-This setting is deprecated for removal in a future major release, and Helidon
-logs a warning if it is present in the configuration.
-
-By default, Helidon ends the incoming REST span after response serialization
-and encoding, when the last byte has been buffered for writing to the socket.
-Setting `telemetry.span.includes-response-write` to `false` ends the span before
-serializing the response entity, preserving the behavior of earlier Helidon 4
-releases. This setting is also deprecated for removal in a future major release.
-Helidon logs a warning if the setting is present in the configuration.
-
-For `telemetry.span.includes-response-write`, `true` measures the
-server-side work of preparing the response. It does not measure network delivery
+Helidon ends the incoming REST span after response serialization and encoding,
+when the last byte has been buffered for writing to the socket. This includes
+server-side work preparing the response; it does not measure network delivery
 or wait for the client to receive or acknowledge the response.
 
 ### OpenTelemetry Java Agent
@@ -470,7 +512,7 @@ repository][helidon-example].
 
 ## Reference
 
-- [MicroProfile Telemetry 1.1 specification][microprofile-telemetry]
+- [MicroProfile Telemetry 2.2 specification][microprofile-telemetry]
 - [OpenTelemetry documentation](https://opentelemetry.io/docs/)
 - [OpenTelemetry Java manual instrumentation][opentelemetry-manual]
 
@@ -484,4 +526,4 @@ repository][helidon-example].
 [opentelemetry-manual]: https://opentelemetry.io/docs/languages/java/api/
 [jaeger-getting-started]: https://www.jaegertracing.io/docs/latest/getting-started/
 [helidon-example]: https://github.com/helidon-io/helidon-examples/tree/dev-27.x/examples/microprofile/telemetry
-[microprofile-telemetry]: https://download.eclipse.org/microprofile/microprofile-telemetry-1.1/tracing/microprofile-telemetry-tracing-spec-1.1.pdf
+[microprofile-telemetry]: https://download.eclipse.org/microprofile/microprofile-telemetry-2.2/microprofile-telemetry-spec-2.2.html

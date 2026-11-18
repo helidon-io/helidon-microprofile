@@ -16,12 +16,10 @@
 package io.helidon.microprofile.telemetry;
 
 import io.helidon.microprofile.testing.AddBean;
-import io.helidon.microprofile.testing.AddConfig;
 
 import org.junit.jupiter.api.Test;
 
 @AddBean(AutoSpanIncludesWriteTestBase.EntireRequestSpanFilter.class)
-@AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
 class AutoSpanIncludesWriteNestingTest extends AutoSpanIncludesWriteTestBase {
 
     @Test

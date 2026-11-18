@@ -16,18 +16,21 @@
 package io.helidon.microprofile.telemetry;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
-import io.helidon.config.Config;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.Tracing;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.semconv.CodeAttributes;
 import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ContextNotActiveException;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Intercepted;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
@@ -43,12 +46,20 @@ class WithSpanInterceptor {
     private static final System.Logger LOGGER = System.getLogger(WithSpanInterceptor.class.getName());
 
     private final Tracer tracer;
-    private final boolean isAgentPresent;
+    private final Map<Method, SpanMethod> methods;
+    private final TelemetrySdk sdk;
+    private final Instance<TelemetryRequest> requests;
 
     @Inject
-    WithSpanInterceptor(Tracer tracer, Config config) {
+    WithSpanInterceptor(Tracer tracer,
+                        TelemetryCdiExtension extension,
+                        TelemetrySdk sdk,
+                        Instance<TelemetryRequest> requests,
+                        @Intercepted Bean<?> bean) {
         this.tracer = tracer;
-        this.isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
+        this.methods = extension.methods(bean);
+        this.sdk = sdk;
+        this.requests = requests;
     }
 
     /**
@@ -61,7 +72,8 @@ class WithSpanInterceptor {
     @AroundInvoke
     public Object interceptSpan(InvocationContext context) throws Exception {
 
-        if (isAgentPresent) {
+        var lease = sdk.acquire();
+        if (lease == null) {
             return context.proceed();
         }
 
@@ -69,86 +81,75 @@ class WithSpanInterceptor {
             LOGGER.log(System.Logger.Level.TRACE, "Starting new Span on WithSpan annotated method");
         }
 
-        Method method = context.getMethod();
-
-        WithSpan annotation = method.getAnnotation(WithSpan.class);
-
-        String spanName;
-
-        if (annotation == null) {
-            Tracing.Traced traced = method.getAnnotation(Tracing.Traced.class);
-            if (traced != null) {
-                spanName = String.format(traced.value(), method.getDeclaringClass().getName(), method.getName());
+        boolean transferred = false;
+        try {
+            Method method = context.getMethod();
+            SpanMethod metadata = SpanMethod.lookup(methods, method);
+            var helidonSpanBuilder = tracer.spanBuilder(metadata.name())
+                    .kind(metadata.kind())
+                    .tag(CodeAttributes.CODE_FUNCTION_NAME.getKey(), metadata.function());
+            if (!metadata.inheritContext()) {
+                helidonSpanBuilder.parent(HelidonOpenTelemetry.create(Context.root()));
             } else {
-                spanName = "";
+                Span.current().map(Span::context).ifPresent(helidonSpanBuilder::parent);
             }
-        } else {
-            spanName = annotation.value();
-        }
-
-        //Process span name. Should be class name, as well as inner classes.
-        if (spanName.isEmpty()) {
-            String className = method.getDeclaringClass().getName();
-            if (className.contains("$")) {
-                className = className.substring(className.lastIndexOf("$") + 1);
-            }
-            spanName = className + "." + method.getName();
-        }
-
-        io.helidon.tracing.Span.Builder<?> helidonSpanBuilder = tracer.spanBuilder(spanName)
-                .kind(Span.Kind.INTERNAL);
-        Span.current().map(Span::context).ifPresent(helidonSpanBuilder::parent);
-
-        for (int i = 0; i < method.getParameters().length; i++) {
-            Parameter p = method.getParameters()[i];
-            if (p.isAnnotationPresent(SpanAttribute.class)) {
-                SpanAttribute spanAttribute = p.getAnnotation(SpanAttribute.class);
-                var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
-                Class<?> paramType = p.getType();
-                Object pValue = context.getParameters()[i];
-
-                if (String.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (String) pValue);
-                } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Long) pValue);
-                } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Double) pValue);
-                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Boolean) pValue);
-                } else {
-                    helidonSpanBuilder.tag(attrName, pValue.toString());
+            Object[] arguments = context.getParameters();
+            metadata.attributes(helidonSpanBuilder, arguments);
+            boolean asyncResource = metadata.asynchronous(arguments);
+            HttpServerObservation observation = asyncResource ? observation(method) : null;
+            Span helidonSpan = helidonSpanBuilder.start();
+            if (!asyncResource) {
+                // Preserve synchronous callback ordering and avoid allocating asynchronous lifecycle state.
+                try (Scope _ = helidonSpan.activate()) {
+                    Object result;
+                    try {
+                        result = context.proceed();
+                    } catch (Exception | Error e) {
+                        try {
+                            helidonSpan.end(e);
+                        } catch (RuntimeException | Error cleanup) {
+                            if (cleanup != e) {
+                                e.addSuppressed(cleanup);
+                            }
+                        }
+                        throw e;
+                    }
+                    helidonSpan.end();
+                    return result;
                 }
             }
-            if (p.isAnnotationPresent(Tracing.ParamTag.class)) {
-                Tracing.ParamTag spanAttribute = p.getAnnotation(Tracing.ParamTag.class);
-                var attrName = spanAttribute.value().isBlank() ? p.getName() : spanAttribute.value();
-                Class<?> paramType = p.getType();
-                Object pValue = context.getParameters()[i];
-
-                if (String.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (String) pValue);
-                } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Long) pValue);
-                } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Double) pValue);
-                } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
-                    helidonSpanBuilder.tag(attrName, (Boolean) pValue);
-                } else {
-                    helidonSpanBuilder.tag(attrName, pValue.toString());
+            var completion = observation == null ? new SpanLifecycle(helidonSpan, lease, false)
+                    : observation.startMethodSpan(helidonSpan, lease);
+            transferred = true;
+            boolean asynchronous = false;
+            Throwable failure = null;
+            try (Scope _ = completion.activate()) {
+                Object result = context.proceed();
+                if (result instanceof CompletionStage<?> stage) {
+                    // Observe the original stage without replacing its identity, type, or cancellation semantics.
+                    stage.whenComplete((_, thrown) -> completion.completed(thrown));
+                    asynchronous = true;
                 }
+                return result;
+            } catch (Exception | Error e) {
+                failure = e;
+                throw e;
+            } finally {
+                completion.returned(asynchronous, failure);
+            }
+        } finally {
+            if (!transferred) {
+                lease.close();
             }
         }
+    }
 
-        // Start new Span
-        io.helidon.tracing.Span helidonSpan = helidonSpanBuilder.start();
-
-        try (Scope ignored = helidonSpan.activate()) {
-            Object result = context.proceed();
-            helidonSpan.end();
-            return result;
-        } catch (Exception e) {
-            helidonSpan.end(e);
-            throw e;
+    private HttpServerObservation observation(Method method) {
+        try {
+            return requests.get().observation(method);
+        } catch (ContextNotActiveException _) {
+            // A standalone CDI invocation has no HTTP response to await.
+            return null;
         }
     }
 

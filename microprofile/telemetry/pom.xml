@@ -57,12 +57,29 @@
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.telemetry</groupId>
-            <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+            <groupId>org.eclipse.microprofile.telemetry</groupId>
+            <artifactId>microprofile-telemetry-api</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-extension-autoconfigure-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-resources</artifactId>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
@@ -89,6 +106,14 @@
             <artifactId>helidon-jersey-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>
@@ -103,6 +128,26 @@
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-runtime-telemetry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-logs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-logging</artifactId>
+        </dependency>
         <!-- testing -->
         <dependency>
             <groupId>io.helidon.logging</groupId>
@@ -112,11 +157,6 @@
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -210,13 +250,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <io.opentelemetry.context.enableStrictContext>true</io.opentelemetry.context.enableStrictContext>
+                    </systemPropertyVariables>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-test</id>
                         <configuration>
                             <systemPropertyVariables>
                                 <otel.bsp.schedule.delay>${otel.bsp.schedule.delay}</otel.bsp.schedule.delay>
-                                <otel.sdk.disabled>false</otel.sdk.disabled>
+                                <otel.metrics.exporter>none</otel.metrics.exporter>
+                                <otel.logs.exporter>none</otel.logs.exporter>
                             </systemPropertyVariables>
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>

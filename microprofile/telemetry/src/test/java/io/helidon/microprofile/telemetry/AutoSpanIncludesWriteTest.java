@@ -17,10 +17,15 @@ package io.helidon.microprofile.telemetry;
 
 import org.junit.jupiter.api.Test;
 
-class AutoSpanIncludesWriteDefaultTest extends AutoSpanIncludesWriteTestBase {
+class AutoSpanIncludesWriteTest extends AutoSpanIncludesWriteTestBase {
 
     @Test
-    void testDefaultEndsSpanAfterWrite() {
-        checkSpanAtWrite(false);
+    void testEndsSpanAfterWrite() {
+        checkSpanAtWrite();
+    }
+
+    @Test
+    void testPreservesErrorStatus() {
+        checkErrorStatus();
     }
 }

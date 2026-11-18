@@ -16,6 +16,9 @@
 package io.helidon.microprofile.telemetry;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.Api;
 import io.helidon.tracing.Span;
@@ -29,9 +32,12 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
+import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedParameterConfigurator;
@@ -43,6 +49,8 @@ import jakarta.interceptor.Interceptor;
 public class TelemetryCdiExtension implements Extension {
 
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
+
+    private final Map<Bean<?>, Map<Method, SpanMethod>> methods = new ConcurrentHashMap<>();
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -63,6 +71,12 @@ public class TelemetryCdiExtension implements Extension {
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
         discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
         discovery.addAnnotatedType(OpenTelemetryProducer.class, OpenTelemetryProducer.class.getName());
+        discovery.addAnnotatedType(TelemetrySdk.class, TelemetrySdk.class.getName());
+        discovery.addAnnotatedType(TelemetryRequest.class, TelemetryRequest.class.getName());
+        discovery.addAnnotatedType(HttpServerTelemetry.class, HttpServerTelemetry.class.getName());
+        discovery.addAnnotatedType(HttpServerTracing.class, HttpServerTracing.class.getName());
+        discovery.addAnnotatedType(HttpServerMetrics.class, HttpServerMetrics.class.getName());
+        discovery.addAnnotatedType(HttpClientTracing.class, HttpClientTracing.class.getName());
     }
 
     void processSeAnnotations(@Observes @WithAnnotations(Tracing.Traced.class) ProcessAnnotatedType<?> pat) {
@@ -85,17 +99,10 @@ public class TelemetryCdiExtension implements Extension {
             if (methodLevel == null && !trace) {
                 continue;
             }
-            if (methodLevel != null) {
-                String value = methodLevel.value();
-                if (!value.equals("%1$s.%2$s")) {
-                    template = value;
-                }
-                if (methodLevel.kind() != Span.Kind.INTERNAL) {
-                    kind = methodLevel.kind();
-                }
-            }
-            var finalTemplate = template;
-            var finalKind = kind;
+            var finalTemplate = methodLevel != null && !methodLevel.value().equals("%1$s.%2$s")
+                    ? methodLevel.value() : template;
+            var finalKind = methodLevel != null && methodLevel.kind() != Span.Kind.INTERNAL
+                    ? methodLevel.kind() : kind;
 
             method.remove(it -> it.annotationType().equals(Tracing.Traced.class));
             method.add(new WithSpan() {
@@ -163,7 +170,7 @@ public class TelemetryCdiExtension implements Extension {
      *
      * @param pat ProcessAnnotatedType
      */
-    void processAnnotations(@Observes @WithAnnotations(WithSpan.class) ProcessAnnotatedType<?> pat) {
+    void processAnnotations(@Observes @Priority(Integer.MAX_VALUE) ProcessAnnotatedType<?> pat) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Process WithSpan annotation and add binding" + pat);
 
         var configurator = pat.configureAnnotatedType();
@@ -175,6 +182,22 @@ public class TelemetryCdiExtension implements Extension {
                 method.add(HelidonWithSpan.Literal.INSTANCE);
             }
         }
+    }
+
+    void captureMethods(@Observes ProcessManagedBean<?> event) {
+        Map<Method, SpanMethod> compiled = new ConcurrentHashMap<>();
+        for (AnnotatedMethod<?> method : event.getAnnotatedBeanClass().getMethods()) {
+            if (method.isAnnotationPresent(WithSpan.class) || method.isAnnotationPresent(HelidonWithSpan.class)) {
+                compiled.put(method.getJavaMember(), SpanMethod.create(method.getJavaMember(), method));
+            }
+        }
+        if (!compiled.isEmpty()) {
+            methods.put(event.getBean(), compiled);
+        }
+    }
+
+    Map<Method, SpanMethod> methods(Bean<?> bean) {
+        return methods.computeIfAbsent(bean, _ -> new ConcurrentHashMap<>());
     }
 
     void finish(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE) @Initialized(ApplicationScoped.class) Object startup,

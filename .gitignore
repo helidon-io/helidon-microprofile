@@ -85,3 +85,6 @@ docs/se/config/images
 
 # Baseline results for regression tests
 jmh-baseline.json
+
+# Local AI design notes
+*.ai
