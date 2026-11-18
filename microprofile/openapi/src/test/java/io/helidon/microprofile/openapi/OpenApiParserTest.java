@@ -16,6 +16,7 @@
 package io.helidon.microprofile.openapi;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -54,9 +55,7 @@ class OpenApiParserTest {
         Map<?, ?> map = (Map<?, ?>) xMyPersonalMap;
         Object owner = map.get("owner");
         Object value1 = map.get("value-1");
-        assertThat(value1, is(instanceOf(Double.class)));
-        Double d = (Double) value1;
-        assertThat(d, equalTo(2.3));
+        assertThat(value1, is(new BigDecimal("2.3")));
 
         assertThat(owner, is(instanceOf(Map.class)));
         map = (Map<?, ?>) owner;

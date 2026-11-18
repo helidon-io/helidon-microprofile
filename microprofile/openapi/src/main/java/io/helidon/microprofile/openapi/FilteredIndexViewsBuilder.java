@@ -35,8 +35,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.microprofile.server.JaxRsApplication;
 
-import io.smallrye.openapi.api.OpenApiConfigImpl;
-import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Feature;
@@ -61,7 +59,7 @@ class FilteredIndexViewsBuilder {
     private static final System.Logger LOGGER = System.getLogger(FilteredIndexViewsBuilder.class.getName());
 
     private final Config config;
-    private final FilteredIndexView view;
+    private final IndexView view;
     private final List<JaxRsApplication> apps;
     private final Set<String> requiredClasses;
     private final boolean useJaxRsSemantics;
@@ -73,18 +71,18 @@ class FilteredIndexViewsBuilder {
                               boolean useJaxRsSemantics) {
 
         this.config = config;
-        this.view = new FilteredIndexView(indexView(indexPaths, apps, types), new OpenApiConfigImpl(config));
+        this.view = OpenApiEngine.create().filter(indexView(indexPaths, apps, types), config);
         this.apps = apps;
         this.requiredClasses = requiredClassNames(view);
         this.useJaxRsSemantics = useJaxRsSemantics;
     }
 
     /**
-     * Creates a {@link FilteredIndexView} tailored to each JAX-RS application.
+     * Creates a {@link IndexView} tailored to each JAX-RS application.
      *
      * @return the list of filtered index views
      */
-    List<FilteredIndexView> buildViews() {
+    List<IndexView> buildViews() {
         return apps.stream()
                 .filter(app -> app.applicationClass().isPresent())
                 .sorted(Comparator.comparing(app -> app.applicationClass().get().getName()))
@@ -126,7 +124,7 @@ class FilteredIndexViewsBuilder {
                 .anyMatch(info -> !Modifier.isAbstract(info.flags()));
     }
 
-    private static List<String> knownClassNames(FilteredIndexView filteredIndexView) {
+    private static List<String> knownClassNames(IndexView filteredIndexView) {
         return filteredIndexView
                 .getKnownClasses()
                 .stream()
@@ -224,13 +222,13 @@ class FilteredIndexViewsBuilder {
                     result.add(urls.nextElement());
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new UncheckedIOException("Cannot locate configured OpenAPI index resources", e);
             }
         }
         return result;
     }
 
-    private FilteredIndexView map(JaxRsApplication app) {
+    private IndexView map(JaxRsApplication app) {
 
         Application application = app.resourceConfig().getApplication();
 
@@ -278,15 +276,14 @@ class FilteredIndexViewsBuilder {
         }
 
         Set<String> excludedClasses = excludedClasses(app, explicitClassNames);
-        FilteringOpenApiConfigImpl filteringOpenApiConfig = new FilteringOpenApiConfigImpl(config, excludedClasses);
 
         // Create a new filtered index view for this application which excludes the irrelevant classes we just identified.
         // Its delegate is the previously-created view based only on the MP configuration.
-        FilteredIndexView result = new FilteredIndexView(view, filteringOpenApiConfig);
+        IndexView result = OpenApiEngine.create().exclude(view, config, excludedClasses);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, String.format(
-                    "FilteredIndexView for %n"
+                    "IndexView for %n"
                             + "  application class %s%n"
                             + "  with explicitly-referenced classes %s%n"
                             + "  yields exclude list: %s%n  and known classes: %n  %s",
@@ -319,18 +316,4 @@ class FilteredIndexViewsBuilder {
         return result;
     }
 
-    private static class FilteringOpenApiConfigImpl extends OpenApiConfigImpl {
-
-        private final Set<String> classesToExclude;
-
-        FilteringOpenApiConfigImpl(org.eclipse.microprofile.config.Config config, Set<String> classesToExclude) {
-            super(config);
-            this.classesToExclude = classesToExclude;
-        }
-
-        @Override
-        public Set<String> scanExcludeClasses() {
-            return classesToExclude;
-        }
-    }
 }

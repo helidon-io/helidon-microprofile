@@ -21,7 +21,7 @@ import java.util.Set;
 import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.microprofile.server.JaxRsApplication;
 
-import io.smallrye.openapi.runtime.scanner.FilteredIndexView;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class FilteredIndexViewsBuilderTest {
                 JaxRsApplication.create(new TestApp()),
                 JaxRsApplication.create(new TestApp2()));
 
-        List<FilteredIndexView> indexViews = new FilteredIndexViewsBuilder(
+        List<IndexView> indexViews = new FilteredIndexViewsBuilder(
                 config(), apps, Set.of(), indexPaths, false).buildViews();
 
         List<ClassInfo> filteredIndexViews = indexViews.stream()

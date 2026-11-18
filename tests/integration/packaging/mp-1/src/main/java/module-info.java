@@ -34,7 +34,7 @@ module io.helidon.tests.integration.packaging.mp.one {
     requires microprofile.health.api;
     requires microprofile.jwt.auth.api;
     requires microprofile.metrics.api;
-    requires microprofile.openapi.api;
+    requires org.eclipse.microprofile.openapi;
     requires microprofile.rest.client.api;
     // this is required, as otherwise the beans from this module
     // never reach health check CDI extension

@@ -35,13 +35,14 @@ module io.helidon.microprofile.openapi {
     requires microprofile.config.api;
     requires org.jboss.jandex;
     requires smallrye.open.api.core;
+    requires smallrye.open.api.model;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.microprofile.servicecommon;
     requires transitive io.helidon.openapi;
-    requires transitive microprofile.openapi.api;
+    requires transitive org.eclipse.microprofile.openapi;
     requires transitive org.yaml.snakeyaml;
 
     exports io.helidon.microprofile.openapi;

@@ -1,3 +1,4 @@
+module:org.eclipse.microprofile.openapi
 org.eclipse.microprofile.openapi
 org.eclipse.microprofile.openapi.annotations
 org.eclipse.microprofile.openapi.annotations.callbacks
