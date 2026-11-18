@@ -19,20 +19,23 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.BiConsumer;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.tracing.SpanListener;
 import io.helidon.webserver.http.ServerResponse;
 
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -63,6 +66,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -127,8 +132,15 @@ class AsyncWithSpanTest {
             SpanData serialization = spans.stream().filter(span -> span.getName().equals("serialization")).findFirst().orElseThrow();
             assertThat(serialization.getParentSpanId(), is(method.getSpanId()));
             assertThat(method.getParentSpanId(), is(server.getSpanId()));
-            assertThat(method.getEndEpochNanos() >= serialization.getEndEpochNanos(), is(true));
-            assertThat(server.getEndEpochNanos() >= method.getEndEpochNanos(), is(true));
+            // Successful and exceptional endings use different clocks in the Helidon adapter.
+            // Synchronous notifications establish lifetime ordering without comparing those timestamps.
+            var ended = MatcherWithRetry.assertThatWithRetry("Span completion notifications",
+                    () -> List.copyOf(control.ended),
+                    hasItems(serialization.getSpanId(), method.getSpanId(), server.getSpanId()), 50, 100);
+            assertThat("Method span ends after serialization", ended.indexOf(method.getSpanId()),
+                       greaterThan(ended.indexOf(serialization.getSpanId())));
+            assertThat("Server span ends after method span", ended.indexOf(server.getSpanId()),
+                       greaterThan(ended.indexOf(method.getSpanId())));
             assertThat("Method events: " + method.getEvents(), method.getStatus().getStatusCode(),
                        is(path.equals("failed") ? StatusCode.ERROR : StatusCode.UNSET));
             assertThat("Span remains open at the response-sent boundary", control.recordingAtSend, is(true));
@@ -181,7 +193,8 @@ class AsyncWithSpanTest {
     }
 
     @Singleton
-    public static class Control {
+    public static class Control implements SpanListener {
+        private final List<String> ended = new CopyOnWriteArrayList<>();
         CompletableFuture<String> stage;
         CountDownLatch entered;
         CountDownLatch writing;
@@ -192,7 +205,23 @@ class AsyncWithSpanTest {
         volatile String writerSpanId;
         volatile boolean recordingAtSend;
 
+        @Inject
+        Control(io.helidon.tracing.Tracer tracer) {
+            tracer.register(this);
+        }
+
+        @Override
+        public void ended(io.helidon.tracing.Span span) {
+            ended.add(span.context().spanId());
+        }
+
+        @Override
+        public void ended(io.helidon.tracing.Span span, Throwable failure) {
+            ended(span);
+        }
+
         void reset() {
+            ended.clear();
             stage = new CompletableFuture<>();
             entered = new CountDownLatch(1);
             writing = new CountDownLatch(1);
@@ -313,7 +342,8 @@ class AsyncWithSpanTest {
         @Inject
         Control control;
         @Inject
-        OpenTelemetry telemetry;
+        @CallbackEnabled
+        Tracer tracer;
 
         @Override
         public void aroundWriteTo(WriterInterceptorContext context) throws IOException {
@@ -327,7 +357,7 @@ class AsyncWithSpanTest {
                 Thread.currentThread().interrupt();
                 throw new IOException("Response writer interrupted", e);
             }
-            var child = telemetry.getTracer("test").spanBuilder("serialization").startSpan();
+            var child = tracer.spanBuilder("serialization").startSpan();
             try (var _ = child.makeCurrent()) {
                 context.proceed();
             } finally {
