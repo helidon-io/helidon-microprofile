@@ -67,7 +67,8 @@ public class TelemetryCdiExtension implements Extension {
     void before(@Observes BeforeBeanDiscovery discovery) {
         LOGGER.log(System.Logger.Level.TRACE, () -> "Before Telemetry bean discovery " + discovery);
 
-        // Register annotations, interceptors and producers.
+        // Register annotations, interceptors and producers. Explicitly added types participate in CDI discovery,
+        // including the @Singleton processors, which do not have an implicit bean-defining annotation.
         discovery.addAnnotatedType(HelidonWithSpan.class, HelidonWithSpan.class.getName());
         discovery.addAnnotatedType(WithSpanInterceptor.class, WithSpanInterceptor.class.getName());
         discovery.addAnnotatedType(OpenTelemetryProducer.class, OpenTelemetryProducer.class.getName());

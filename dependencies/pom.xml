@@ -72,7 +72,7 @@
         <version.lib.microprofile-reactive-streams-operators-api>3.0.1</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0.1</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>4.0</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-telemetry-tck>2.2</version.lib.microprofile-telemetry-tck>
+        <version.lib.microprofile-telemetry>2.2</version.lib.microprofile-telemetry>
         <version.lib.opentelemetry.api-incubator>1.67.0-alpha</version.lib.opentelemetry.api-incubator>
         <version.lib.opentelemetry.instrumentation.annotations>2.31.1</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.parsson>1.1.9</version.lib.parsson>
@@ -142,6 +142,11 @@
             <dependency>
                 <groupId>io.opentelemetry.instrumentation</groupId>
                 <artifactId>opentelemetry-resources</artifactId>
+                <version>${version.lib.opentelemetry.instrumentation.annotations}-alpha</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-runtime-telemetry</artifactId>
                 <version>${version.lib.opentelemetry.instrumentation.annotations}-alpha</version>
             </dependency>
             <dependency>
@@ -228,6 +233,12 @@
                 <groupId>org.eclipse.microprofile.metrics</groupId>
                 <artifactId>microprofile-metrics-api</artifactId>
                 <version>${version.lib.microprofile-metrics-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-api</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.microprofile.reactive-streams-operators</groupId>
@@ -405,32 +416,6 @@
                 <groupId>org.eclipse.microprofile.metrics</groupId>
                 <artifactId>microprofile-metrics-api-tck</artifactId>
                 <version>${version.lib.microprofile-metrics-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.telemetry</groupId>
-                <artifactId>microprofile-telemetry-api</artifactId>
-                <version>${version.lib.microprofile-telemetry-tck}</version>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.telemetry</groupId>
-                <artifactId>microprofile-telemetry-metrics-tck</artifactId>
-                <version>${version.lib.microprofile-telemetry-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.telemetry</groupId>
-                <artifactId>microprofile-telemetry-logs-tck</artifactId>
-                <version>${version.lib.microprofile-telemetry-tck}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.opentelemetry.instrumentation</groupId>
-                <artifactId>opentelemetry-runtime-telemetry</artifactId>
-                <version>${version.lib.opentelemetry.instrumentation.annotations}-alpha</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.microprofile.telemetry</groupId>
-                <artifactId>microprofile-telemetry-tracing-tck</artifactId>
-                <version>${version.lib.microprofile-telemetry-tck}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.messaging</groupId>

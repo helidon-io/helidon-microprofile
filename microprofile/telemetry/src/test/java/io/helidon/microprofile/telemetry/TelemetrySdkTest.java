@@ -539,6 +539,30 @@ class TelemetrySdkTest {
         }
     }
 
+    @Test
+    void logFormattingFailureDoesNotSuppressLaterRecordsOrRetainSdkWork() {
+        var owner = TelemetryTestSupport.owner(Map.of("otel.logs.exporter", "sdk-test"));
+        owner.initialize();
+        SdkTestExporters.LOGS.clear();
+        try {
+            var handler = new TelemetryLogHandler(owner);
+            var failure = new IllegalStateException("Synthetic log record failure");
+            var broken = new LogRecord(Level.INFO, "broken") {
+                @Override
+                public Instant getInstant() {
+                    throw failure;
+                }
+            };
+            assertThrows(IllegalStateException.class, () -> handler.publish(broken));
+            handler.publish(new LogRecord(Level.INFO, "after-failure"));
+            ((OpenTelemetrySdk) owner.telemetry()).getSdkLoggerProvider().forceFlush().join(5, TimeUnit.SECONDS);
+            assertThat(SdkTestExporters.LOGS.size(), is(1));
+            assertThat(SdkTestExporters.LOGS.getFirst().getBodyValue().asString(), is("after-failure"));
+        } finally {
+            owner.close();
+        }
+    }
+
     private static Resource resource(Map<String, String> properties) {
         var settings = new HashMap<>(Map.of("otel.sdk.disabled", "false", "otel.traces.exporter", "logging",
                                            "otel.metrics.exporter", "none", "otel.logs.exporter", "none"));

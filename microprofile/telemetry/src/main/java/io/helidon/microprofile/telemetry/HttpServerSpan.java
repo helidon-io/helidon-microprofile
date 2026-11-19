@@ -23,6 +23,9 @@ import io.opentelemetry.context.Context;
 /**
  * Keeps the server span alive through send, with thread-confined activations for Jersey processing phases.
  * Each phase's terminal event runs on the thread that entered that phase, including async resumption.
+ * Phase activations are paired across Jersey callbacks, so they use an explicitly managed thread-local
+ * stack rather than a lexically bound scoped value. Closing the last activation removes its thread-local
+ * entry. The request's terminal event drains any remaining activations owned by that request.
  */
 final class HttpServerSpan {
     static final String PROPERTY = HttpServerSpan.class.getName();
@@ -102,10 +105,60 @@ final class HttpServerSpan {
 
     void deactivate(Phase phase) {
         var current = ACTIVATIONS.get();
-        if (current != null && current.owner() == this && current.phase() == phase) {
-            ACTIVATIONS.set(current.previous());
-            current.scope().close();
+        if (current == null) {
+            ACTIVATIONS.remove();
+        } else if (current.owner() == this && current.phase() == phase) {
+            closeActivation(current);
         }
+    }
+
+    void finished(boolean responseWritten, Throwable failure) {
+        Throwable cleanupFailure = null;
+        var current = ACTIVATIONS.get();
+        while (current != null && current.owner() == this) {
+            try {
+                closeActivation(current);
+            } catch (RuntimeException | Error e) {
+                cleanupFailure = addFailure(cleanupFailure, e);
+            }
+            current = ACTIVATIONS.get();
+        }
+        // A lookup of an unbound ThreadLocal installs a null entry; remove that entry as well.
+        if (current == null) {
+            ACTIVATIONS.remove();
+        }
+        try {
+            if (!responseWritten) {
+                completeResponse(failure);
+            }
+        } catch (RuntimeException | Error e) {
+            cleanupFailure = addFailure(cleanupFailure, e);
+        }
+        if (cleanupFailure instanceof RuntimeException exception) {
+            throw exception;
+        }
+        if (cleanupFailure instanceof Error error) {
+            throw error;
+        }
+    }
+
+    private static void closeActivation(Activation activation) {
+        if (activation.previous() == null) {
+            ACTIVATIONS.remove();
+        } else {
+            ACTIVATIONS.set(activation.previous());
+        }
+        activation.scope().close();
+    }
+
+    private static Throwable addFailure(Throwable primary, Throwable failure) {
+        if (primary == null) {
+            return failure;
+        }
+        if (primary != failure) {
+            primary.addSuppressed(failure);
+        }
+        return primary;
     }
 
     enum Phase {

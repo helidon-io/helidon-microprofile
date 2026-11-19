@@ -31,8 +31,8 @@ import io.opentelemetry.api.logs.Severity;
 final class TelemetryLogHandler extends Handler {
     private static final AttributeKey<String> LOGGER_NAME = AttributeKey.stringKey("log.logger");
 
-    // Only bootstrap Boolean values are retained, never a deployment, SDK, handler, or record.
-    private static final ThreadLocal<Boolean> PUBLISHING = ThreadLocal.withInitial(() -> false);
+    // The recursion guard is bound only for formatting and emitting one record, including exceptional exit.
+    private static final ScopedValue<Boolean> PUBLISHING = ScopedValue.newInstance();
 
     private final TelemetrySdk sdk;
     private final Logger logger;
@@ -51,30 +51,16 @@ final class TelemetryLogHandler extends Handler {
             return;
         }
         Severity severity = severity(record.getLevel());
-        if (!logger.isEnabled(severity) || PUBLISHING.get()) {
+        if (PUBLISHING.isBound() || !logger.isEnabled(severity)) {
             return;
         }
         var lease = sdk.acquire();
         if (lease == null) {
             return;
         }
-        PUBLISHING.set(true);
         try {
-            var builder = logger.logRecordBuilder()
-                    .setTimestamp(record.getInstant())
-                    .setObservedTimestamp(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                    .setSeverity(severity)
-                    .setSeverityText(record.getLevel().getName())
-                    .setBody(formatter.formatMessage(record));
-            if (record.getLoggerName() != null) {
-                builder.setAttribute(LOGGER_NAME, record.getLoggerName());
-            }
-            if (record.getThrown() != null) {
-                builder.setException(record.getThrown());
-            }
-            builder.emit();
+            ScopedValue.where(PUBLISHING, true).run(() -> emit(record, severity));
         } finally {
-            PUBLISHING.set(false);
             lease.close();
         }
     }
@@ -101,5 +87,21 @@ final class TelemetryLogHandler extends Handler {
             return Severity.INFO;
         }
         return value >= Level.FINE.intValue() ? Severity.DEBUG : Severity.TRACE;
+    }
+
+    private void emit(LogRecord record, Severity severity) {
+        var builder = logger.logRecordBuilder()
+                .setTimestamp(record.getInstant())
+                .setObservedTimestamp(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+                .setSeverity(severity)
+                .setSeverityText(record.getLevel().getName())
+                .setBody(formatter.formatMessage(record));
+        if (record.getLoggerName() != null) {
+            builder.setAttribute(LOGGER_NAME, record.getLoggerName());
+        }
+        if (record.getThrown() != null) {
+            builder.setException(record.getThrown());
+        }
+        builder.emit();
     }
 }

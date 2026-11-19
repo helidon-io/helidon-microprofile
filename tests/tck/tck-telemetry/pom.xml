@@ -32,6 +32,27 @@
         <telemetry.tck.application.suite>src/test/tck-suite.xml</telemetry.tck.application.suite>
     </properties>
 
+    <!-- TCK artifacts are managed here rather than in customer dependency management. -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-tracing-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-metrics-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-logs-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.jersey</groupId>

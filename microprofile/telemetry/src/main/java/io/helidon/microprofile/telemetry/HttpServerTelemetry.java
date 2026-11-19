@@ -210,12 +210,7 @@ final class HttpServerTelemetry implements RequestEventListener {
             case EXCEPTION_MAPPER_FOUND -> serverSpan.activate(HttpServerSpan.Phase.MAPPING);
             case EXCEPTION_MAPPING_FINISHED -> serverSpan.deactivate(HttpServerSpan.Phase.MAPPING);
             case ON_EXCEPTION -> serverSpan.deactivate(HttpServerSpan.Phase.MAPPING);
-            case FINISHED -> {
-                serverSpan.deactivate(HttpServerSpan.Phase.MAPPING);
-                if (!event.isResponseWritten()) {
-                    serverSpan.completeResponse(event.getException());
-                }
-            }
+            case FINISHED -> serverSpan.finished(event.isResponseWritten(), event.getException());
             default -> { }
         }
     }
