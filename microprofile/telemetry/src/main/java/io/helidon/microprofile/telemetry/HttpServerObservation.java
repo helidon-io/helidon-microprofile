@@ -58,7 +58,9 @@ final class HttpServerObservation {
     }
 
     int status() {
-        return response.status().code();
+        // A selected status is not evidence that a response was written. Include it only after
+        // transport output began, or after a complete response (including an empty response) was sent.
+        return response != null && (response.isSent() || response.bytesWritten() > 0) ? response.status().code() : 0;
     }
 
     String route() {

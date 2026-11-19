@@ -35,7 +35,12 @@ final class TelemetryResponseWriter implements ContainerResponseWriter {
 
     @Override
     public OutputStream writeResponseStatusAndHeaders(long length, ContainerResponse response) {
-        return delegate.writeResponseStatusAndHeaders(length, response);
+        try {
+            return delegate.writeResponseStatusAndHeaders(length, response);
+        } catch (RuntimeException | Error e) {
+            completeFailure(e);
+            throw e;
+        }
     }
 
     @Override

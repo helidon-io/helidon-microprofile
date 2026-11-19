@@ -15,8 +15,10 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.microprofile.testing.AddConfig;
@@ -40,6 +42,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
@@ -71,11 +74,14 @@ class HttpServerSignalIndependenceTest {
         var server = spans.stream().filter(span -> span.getKind() == SpanKind.SERVER).toList();
         assertThat(server.size(), is(1));
         assertThat(server.getFirst().getName(), is("GET /telemetry-independent/allowed"));
-        ((OpenTelemetrySdk) sdk.telemetry()).getSdkMeterProvider().forceFlush().join(5, TimeUnit.SECONDS);
-        var duration = SdkTestExporters.METRICS.stream()
-                .filter(metric -> metric.getName().equals("http.server.request.duration")).reduce((_, latest) -> latest)
-                .orElseThrow();
-        var points = duration.getHistogramData().getPoints();
+        // Client completion does not guarantee that every server response-sent callback has recorded its measurement.
+        var points = MatcherWithRetry.assertThatWithRetry("All HTTP duration measurements are available", () -> {
+            ((OpenTelemetrySdk) sdk.telemetry()).getSdkMeterProvider().forceFlush().join(5, TimeUnit.SECONDS);
+            return SdkTestExporters.METRICS.stream()
+                    .filter(metric -> metric.getName().equals("http.server.request.duration"))
+                    .reduce((_, latest) -> latest)
+                    .map(metric -> metric.getHistogramData().getPoints()).orElse(List.of());
+        }, hasSize(4), 50, 100);
         assertThat(points.stream().filter(point -> "/telemetry-independent/vetoed".equals(
                 point.getAttributes().get(HttpAttributes.HTTP_ROUTE))).count(), is(1L));
         assertThat(points.size(), is(4));

@@ -108,8 +108,10 @@ final class HttpSemantics {
                                                       String route, Throwable failure) {
         var attributes = Attributes.builder()
                 .put(HttpAttributes.HTTP_REQUEST_METHOD, method)
-                .put(UrlAttributes.URL_SCHEME, scheme)
-                .put(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, status);
+                .put(UrlAttributes.URL_SCHEME, scheme);
+        if (status != 0) {
+            attributes.put(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, status);
+        }
         if (route != null) {
             attributes.put(HttpAttributes.HTTP_ROUTE, route);
         }

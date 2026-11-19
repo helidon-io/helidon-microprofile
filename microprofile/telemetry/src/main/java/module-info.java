@@ -43,6 +43,7 @@ module io.helidon.microprofile.telemetry {
     requires io.opentelemetry.sdk.autoconfigure.spi;
     requires io.opentelemetry.sdk.autoconfigure;
     requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.sdk;
     requires io.opentelemetry.sdk.metrics;
     requires io.opentelemetry.sdk.logs;

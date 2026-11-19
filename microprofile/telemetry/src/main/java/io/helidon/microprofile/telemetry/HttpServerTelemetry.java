@@ -152,8 +152,15 @@ final class HttpServerTelemetry implements RequestEventListener {
     }
 
     void response(ContainerRequestContext request, ContainerResponseContext response) {
-        if (request.getProperty(HttpServerSpan.PROPERTY) instanceof HttpServerSpan span && span.tracing()) {
-            tracing.response(span.span(), response);
+        if (request.getProperty(HttpServerSpan.PROPERTY) instanceof HttpServerSpan span) {
+            try {
+                if (span.tracing()) {
+                    tracing.response(span.span(), response);
+                }
+            } finally {
+                // Earlier request filters regain their enclosing context before their response filters run.
+                span.deactivate(HttpServerSpan.Phase.RESPONSE_FILTERS);
+            }
         }
     }
 

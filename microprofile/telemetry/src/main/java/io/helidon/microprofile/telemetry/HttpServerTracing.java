@@ -27,6 +27,7 @@ import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.sdk.trace.ReadableSpan;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -112,8 +113,11 @@ final class HttpServerTracing {
         Context extracted = propagator.extract(Context.root(), requestContext.getHeaders(), HEADER_GETTER);
         var remote = io.opentelemetry.api.trace.Span.fromContext(extracted).getSpanContext();
         var local = io.opentelemetry.api.trace.Span.current();
-        // Preserve a live enclosing request span, but never select an ended span left on an async thread.
-        if (local.isRecording() && (!remote.isValid() || local.getSpanContext().getTraceId().equals(remote.getTraceId()))) {
+        // Non-recording spans can still be active parents, including unsampled ingress spans.
+        // Reject a span only when its implementation exposes that it has already ended.
+        boolean eligibleParent = local.getSpanContext().isValid()
+                && (local.isRecording() || !(local instanceof ReadableSpan readable) || !readable.hasEnded());
+        if (eligibleParent && (!remote.isValid() || local.getSpanContext().getTraceId().equals(remote.getTraceId()))) {
             return Optional.of(HelidonOpenTelemetry.create(Context.current()));
         }
         return Optional.of(HelidonOpenTelemetry.create(extracted));

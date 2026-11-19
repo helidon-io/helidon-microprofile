@@ -17,8 +17,10 @@ package io.helidon.microprofile.telemetry;
 
 import io.helidon.webserver.http.ServerResponse;
 
+import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ConstrainedTo;
+import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -31,8 +33,11 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * Adapts matched resources and response metadata to the shared server telemetry coordinator.
  * Kept separate from the pre-matching adapter so resource and route availability retain their timing.
+ * Runs before ordinary request filters and after ordinary response filters. Its response callback closes
+ * telemetry's response-filter activation before filters that opened an enclosing request scope run.
  */
 @Provider
+@Priority(Priorities.USER - 1)
 @ConstrainedTo(RuntimeType.SERVER)
 class HttpServerTelemetryFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private final HttpServerTelemetry telemetry;
