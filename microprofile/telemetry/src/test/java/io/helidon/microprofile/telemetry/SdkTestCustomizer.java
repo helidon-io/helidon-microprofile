@@ -15,20 +15,17 @@
  */
 package io.helidon.microprofile.telemetry;
 
-import io.helidon.microprofile.testing.AddConfig;
+import java.util.Map;
 
-import org.junit.jupiter.api.Test;
+import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizer;
+import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvider;
 
-@AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "true")
-class AutoSpanIncludesWriteTrueTest extends AutoSpanIncludesWriteTestBase {
-
-    @Test
-    void testTrueEndsSpanAfterWrite() {
-        checkSpanAtWrite(false);
-    }
-
-    @Test
-    void testTruePreservesErrorStatus() {
-        checkErrorStatus();
+public class SdkTestCustomizer implements AutoConfigurationCustomizerProvider {
+    @Override
+    public void customize(AutoConfigurationCustomizer customizer) {
+        customizer.addPropertiesCustomizer(config -> {
+            String disabled = config.getString("otel.helidon.test.sdk-disabled");
+            return disabled == null ? Map.of() : Map.of("otel.sdk.disabled", disabled);
+        });
     }
 }

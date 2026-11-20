@@ -20,13 +20,14 @@ import io.helidon.tracing.Tracer;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.RuntimeType;
 import jakarta.ws.rs.core.FeatureContext;
 import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
  * Registers telemetry filters with Jersey.
  * <p>
- * The container filter is always registered. The client filter is registered only when an active CDI container can
+ * Server adapters are registered for server runtimes. The client filter is registered only when an active CDI container can
  * provide a Helidon {@link Tracer}; otherwise, a standalone Jersey client continues without MP telemetry.
  */
 public class TelemetryAutoDiscoverable implements AutoDiscoverable {
@@ -46,7 +47,11 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
      */
     @Override
     public void configure(FeatureContext ctx) {
-        ctx.register(HelidonTelemetryContainerFilter.class);
+        if (ctx.getConfiguration().getRuntimeType() == RuntimeType.SERVER) {
+            ctx.register(HttpServerTelemetryPreMatchingFilter.class);
+            ctx.register(HttpServerTelemetryWriter.class);
+            ctx.register(HttpServerTelemetryFilter.class);
+        }
 
         try {
             Instance<Tracer> tracers = CDI.current().select(Tracer.class);
@@ -56,7 +61,7 @@ public class TelemetryAutoDiscoverable implements AutoDiscoverable {
                 return;
             }
 
-            ctx.register(HelidonTelemetryClientFilter.class);
+            ctx.register(HttpClientTelemetryFilter.class);
         } catch (IllegalStateException _) {
             LOGGER.log(System.Logger.Level.TRACE,
                        "Skipping Jersey client telemetry because no active CDI container is available");

@@ -21,9 +21,13 @@ import java.util.stream.Stream;
 import io.helidon.microprofile.testing.AddBean;
 import io.helidon.tracing.Tracing;
 
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.semconv.CodeAttributes;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -34,10 +38,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @AddBean(WithSpanTest.SeTracedBean.class)
+@AddBean(WithSpanTest.RootBean.class)
 class WithSpanTest extends WithSpanTestBase {
 
     @Inject
     SeTracedBean seTracedBean;
+    @Inject
+    RootBean rootBean;
+    @Inject
+    OpenTelemetry telemetry;
 
     static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPath() {
         return Stream.of(new SpanPathTestInfo("traced", "/traced"),
@@ -77,6 +86,28 @@ class WithSpanTest extends WithSpanTestBase {
         SpanData span = testSpanExporter.spanData(1).getFirst();
         assertThat(span.getName(), is("seTraced"));
         assertThat(span.getAttributes().get(AttributeKey.stringKey("value")), is("se-only"));
+    }
+
+    @Test
+    void testRootKindAndCodeAttribute() {
+        var parent = telemetry.getTracer("test").spanBuilder("parent").startSpan();
+        try (var _ = parent.makeCurrent()) {
+            rootBean.run();
+        } finally {
+            parent.end();
+        }
+        var root = testSpanExporter.spanData(2).stream()
+                .filter(span -> span.getName().equals("root")).findFirst().orElseThrow();
+        assertThat(root.getKind(), is(SpanKind.CLIENT));
+        assertThat(root.getParentSpanId(), is("0000000000000000"));
+        assertThat(root.getAttributes().get(CodeAttributes.CODE_FUNCTION_NAME), is(RootBean.class.getName() + ".run"));
+    }
+
+    @ApplicationScoped
+    static class RootBean {
+        @WithSpan(value = "root", kind = SpanKind.CLIENT, inheritContext = false)
+        void run() {
+        }
     }
 
     @ParameterizedTest()

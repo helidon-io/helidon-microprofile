@@ -108,7 +108,7 @@ class AutoSpanIncludesWriteTestBase {
         spanExporter.clear();
     }
 
-    void checkSpanAtWrite(boolean expectedEndedAtWrite) {
+    void checkSpanAtWrite() {
         try (Response response = webTarget.path(BASE_PATH + "/ok")
                 .request(MediaType.TEXT_PLAIN)
                 .get()) {
@@ -119,7 +119,7 @@ class AutoSpanIncludesWriteTestBase {
         Span observedSpan = writeProbe.observedSpan();
         assertThat("Writer observed a span", observedSpan, notNullValue());
         assertThat("Span scope was closed before entity serialization", writeProbe.spanClosed(), is(true));
-        assertThat("Span end state at entity serialization", writeProbe.spanEnded(), is(expectedEndedAtWrite));
+        assertThat("Span end state at entity serialization", writeProbe.spanEnded(), is(false));
         assertThat("Span eventually ended", spanListener.awaitEnded(observedSpan), is(true));
         spanExporter.spanData(2);
     }

@@ -30,7 +30,6 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.Test;
@@ -53,7 +52,7 @@ class TenantIdentificationIT {
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "host-header")
     void testHostHeaderTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String redirectUri = redirectUri(response);
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is("localhost"));
         }
@@ -69,7 +68,7 @@ class TenantIdentificationIT {
                 .request()
                 .header("test-tenant-name", expectedTenantName)
                 .get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String redirectUri = redirectUri(response);
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is(expectedTenantName));
         }
@@ -80,7 +79,7 @@ class TenantIdentificationIT {
     @AddConfig(key = "security.providers.1.oidc.tenant-id-domain-level", value = "1")
     void testDomainTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String redirectUri = redirectUri(response);
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is("localhost"));
         }
@@ -90,10 +89,18 @@ class TenantIdentificationIT {
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "none")
     void testNoneTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String redirectUri = redirectUri(response);
             URI uri = URI.create(redirectUri);
             assertThat(uri.getRawQuery(), nullValue());
         }
+    }
+
+    private String redirectUri(Response response) {
+        assertThat("OIDC authorization redirect status", response.getStatus(),
+                   is(Response.Status.TEMPORARY_REDIRECT.getStatusCode()));
+        URI location = response.getLocation();
+        assertThat("OIDC authorization redirect Location header", location, notNullValue());
+        return queryParamValue(location.toString(), "redirect_uri");
     }
 
     private String queryParamValue(String uriString, String queryName) {

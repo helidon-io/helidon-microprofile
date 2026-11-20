@@ -117,14 +117,14 @@ class TestFilterSpanNesting {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String parentSpanCheck(Request request) {
-            // The HelidonTelemetryContainerFilter should have been run to establish a new current span. Create a new child.
+            // The HttpServerTelemetryFilter should have been run to establish a new current span. Create a new child.
             return "Hello World!";
         }
     }
 
     /**
      * Filter to kind-of play the role of upstream ingress code which sets a current span before our normal filter
-     * HelidonTelemetryContainerFilter runs.
+     * HttpServerTelemetryFilter runs.
      */
     @Provider
     @Priority(Priorities.HEADER_DECORATOR)
@@ -136,7 +136,7 @@ class TestFilterSpanNesting {
         @Override
         public void filter(ContainerRequestContext requestContext) throws IOException {
             // Create a span that's a child of the span represented in the headers and make it current.
-            // Then the HelidonTelemetryContainerFilter will find this one as current and the span *it* adds should be a child
+            // Then the HttpServerTelemetryFilter will find this one as current and the span *it* adds should be a child
             // of this new pseudo-ingress span which we'll check in the test code.
 
             Optional<SpanContext> helidonSpanContext =

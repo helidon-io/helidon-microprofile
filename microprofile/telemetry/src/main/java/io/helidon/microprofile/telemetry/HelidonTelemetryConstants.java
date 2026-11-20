@@ -24,9 +24,9 @@ class HelidonTelemetryConstants {
     private HelidonTelemetryConstants() {
     }
 
-    static final String HTTP_STATUS_CODE = "http.status_code";
-    static final String HTTP_METHOD = "http.method";
-    static final String HTTP_SCHEME = "http.scheme";
+    static final String HTTP_STATUS_CODE = "http.response.status_code";
+    static final String HTTP_METHOD = "http.request.method";
+    static final String HTTP_SCHEME = "url.scheme";
 
     // The following are for maintaining compatibility with MicroProfile Telemetry 1.x.
     @Deprecated(since = "4.4.0", forRemoval = true)

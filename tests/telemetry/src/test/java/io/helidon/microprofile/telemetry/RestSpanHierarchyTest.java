@@ -52,7 +52,6 @@ import static org.hamcrest.Matchers.is;
         otel.service.name=helidon-mp-telemetry
         otel.sdk.disabled=false
         otel.traces.exporter=in-memory
-        telemetry.span.full.url=false
         """)
 public class RestSpanHierarchyTest {
 

@@ -28,7 +28,37 @@
     <artifactId>tck-telemetry</artifactId>
     <name>Helidon MicroProfile Tests TCK Telemetry</name>
 
+    <properties>
+        <telemetry.tck.application.suite>src/test/tck-suite.xml</telemetry.tck.application.suite>
+    </properties>
+
+    <!-- TCK artifacts are managed here rather than in customer dependency management. -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-tracing-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-metrics-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.microprofile.telemetry</groupId>
+                <artifactId>microprofile-telemetry-logs-tck</artifactId>
+                <version>${version.lib.microprofile-telemetry}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.jersey</groupId>
+            <artifactId>helidon-jersey-media-json-binding</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
@@ -46,7 +76,17 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.telemetry.tracing</groupId>
+            <groupId>org.eclipse.microprofile.telemetry</groupId>
+            <artifactId>microprofile-telemetry-metrics-tck</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.telemetry</groupId>
+            <artifactId>microprofile-telemetry-logs-tck</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.telemetry</groupId>
             <artifactId>microprofile-telemetry-tracing-tck</artifactId>
             <scope>test</scope>
         </dependency>
@@ -81,22 +121,42 @@
                     <argLine>
                         --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
                     </argLine>
-                    <!--
-                       @Deprecated(forRemoval = true) Remove the  systemPropertyVariable setting for name-includes-method
-                       in 5.x. The property will no longer be supported.
-                    -->
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>io.helidon.microprofile.telemetry.tck.TelemetryOutput</value>
+                        </property>
+                    </properties>
                     <systemPropertyVariables>
-                        <!--
-                            The TCK expects the current REST span names (which include the HTTP method name). But for backward
-                            compatibility Helidon 4.x defaults to use the previous REST span name format which excludes the
-                            HTTP method name. So override that default for running the TCK.
-                        -->
-                        <mp.telemetry.span.name-includes-method>true</mp.telemetry.span.name-includes-method>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <telemetry.tck.executor>io.helidon.microprofile.telemetry.tck.TelemetryExecutor</telemetry.tck.executor>
+                        <mptelemetry.tck.log.file.path>${project.build.directory}/telemetry.log</mptelemetry.tck.log.file.path>
                     </systemPropertyVariables>
                     <suiteXmlFiles>
-                        <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
+                        <suiteXmlFile>${telemetry.tck.application.suite}</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>runtime-telemetry</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <mptelemetry.tck.log.file.path>${project.build.directory}/telemetry.log</mptelemetry.tck.log.file.path>
+                                <otel.sdk.disabled>false</otel.sdk.disabled>
+                                <otel.metrics.exporter>logging</otel.metrics.exporter>
+                                <otel.traces.exporter>none</otel.traces.exporter>
+                                <otel.logs.exporter>none</otel.logs.exporter>
+                                <otel.metric.export.interval>1000</otel.metric.export.interval>
+                            </systemPropertyVariables>
+                            <suiteXmlFiles combine.self="override">
+                                <suiteXmlFile>src/test/runtime-suite.xml</suiteXmlFile>
+                            </suiteXmlFiles>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.telemetry;
 
-import io.helidon.microprofile.testing.AddConfig;
+package io.helidon.microprofile.telemetry.tck;
 
-import org.junit.jupiter.api.Test;
+import java.util.concurrent.Executor;
 
-@AddConfig(key = HelidonTelemetryContainerFilter.AUTO_SPAN_INCLUDES_RESPONSE_WRITE, value = "false")
-class AutoSpanIncludesWriteFalseTest extends AutoSpanIncludesWriteTestBase {
+import io.opentelemetry.context.Context;
 
-    @Test
-    void testFalseEndsSpanBeforeWrite() {
-        checkSpanAtWrite(true);
+/**
+ * Runs TCK asynchronous operations with the submitting OpenTelemetry context.
+ */
+public class TelemetryExecutor implements Executor {
+    @Override
+    public void execute(Runnable task) {
+        Thread.ofVirtual().start(Context.current().wrap(task));
     }
 }
