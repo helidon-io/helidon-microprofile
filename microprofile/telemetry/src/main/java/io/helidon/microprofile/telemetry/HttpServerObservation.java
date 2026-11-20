@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.time.Instant;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
@@ -25,22 +26,28 @@ import io.helidon.webserver.http.ServerResponse;
  * Owns shared HTTP completion independently of tracing and metric emission policy.
  * OPEN accepts the first completion notification; COMPLETING admits no second completion and
  * retains the SDK lease while a deferred method span drains. RELEASED means the end action
- * has been attempted and the lease has been released. Measurement still precedes method-span
- * draining, as it did before extraction. Callback failures propagate after the existing cleanup.
+ * has been attempted and the lease has been released. A shared monotonic interval supplies both
+ * the measurement and the server span's timestamps, independently of deferred draining and export.
+ * Callback failures propagate after the existing cleanup.
  */
 final class HttpServerObservation {
     // Preserve the property name used before this component was extracted from the metrics filter.
     static final String PROPERTY = "io.helidon.microprofile.telemetry.HttpMetricsFilter";
 
     private final ReentrantLock lock = new ReentrantLock();
+    private final TelemetrySdk.Lease lease;
+    private final Consumer<HttpServerObservation> measure;
+    // Anchor the monotonic duration to epoch time once, without allowing wall-clock adjustments to skew it.
+    private final Instant started = Instant.now();
+    private final long startedNanos = System.nanoTime();
     private volatile SpanLifecycle methodSpan;
     private volatile String route;
     private volatile ServerResponse response;
     private volatile Throwable failure;
+    private volatile Instant ended;
+    private volatile long elapsedNanos;
     private Runnable endSpan;
     private boolean endReady;
-    private final TelemetrySdk.Lease lease;
-    private final Consumer<HttpServerObservation> measure;
     private State state = State.OPEN;
 
     HttpServerObservation(TelemetrySdk.Lease lease, Consumer<HttpServerObservation> measure) {
@@ -50,6 +57,18 @@ final class HttpServerObservation {
 
     static HttpServerObservation from(Object property) {
         return property instanceof HttpServerObservation observation ? observation : null;
+    }
+
+    Instant startTime() {
+        return started;
+    }
+
+    Instant endTime() {
+        return ended;
+    }
+
+    double durationSeconds() {
+        return elapsedNanos / 1_000_000_000.0;
     }
 
     void observeResponse(ServerResponse response) {
@@ -115,6 +134,8 @@ final class HttpServerObservation {
                 return;
             }
             // Registration and terminal notification must agree on which span owns response completion.
+            elapsedNanos = System.nanoTime() - startedNanos;
+            ended = started.plusNanos(elapsedNanos);
             state = State.COMPLETING;
             methodSpan = this.methodSpan;
             this.failure = failure;

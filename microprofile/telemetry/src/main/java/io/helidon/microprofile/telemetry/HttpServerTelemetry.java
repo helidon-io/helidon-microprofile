@@ -73,11 +73,10 @@ final class HttpServerTelemetry implements RequestEventListener {
         if (lease == null) {
             return;
         }
-        long started = System.nanoTime();
         try {
             String method = HttpSemantics.method(request.getMethod());
             String scheme = request.getUriInfo().getRequestUri().getScheme();
-            var observation = new HttpServerObservation(lease, metrics.measurement(started, method, scheme));
+            var observation = new HttpServerObservation(lease, metrics.measurement(method, scheme));
             request.setProperty(HttpServerObservation.PROPERTY, observation);
             var jerseyRequest = (ContainerRequest) request;
             jerseyRequest.setWriter(new TelemetryResponseWriter(jerseyRequest.getResponseWriter(), observation));
@@ -120,7 +119,7 @@ final class HttpServerTelemetry implements RequestEventListener {
         HttpServerSpan lifecycle = null;
         Throwable failure = null;
         try {
-            span = tracing.start(request, route);
+            span = tracing.start(request, route, ownerObservation == null ? null : ownerObservation.startTime());
             lifecycle = new HttpServerSpan(span, lease, ownerObservation);
             request.setProperty(HttpServerSpan.PROPERTY, lifecycle);
             HttpServerSpan completion = lifecycle;

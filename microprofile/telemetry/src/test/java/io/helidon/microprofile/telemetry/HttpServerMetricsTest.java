@@ -64,7 +64,7 @@ class HttpServerMetricsTest {
     void transportFailureReportsOnlyASentStatusAndIsMeasuredOnce(String notification) {
         var failure = new IllegalStateException("Synthetic transport failure with private details");
         var observation = new HttpServerObservation(sdk.acquire(),
-                new HttpServerMetrics(sdk).measurement(System.nanoTime(), "GET", "http"));
+                new HttpServerMetrics(sdk).measurement("GET", "http"));
         var sentBytes = new AtomicLong();
         ServerResponse response = (ServerResponse) Proxy.newProxyInstance(getClass().getClassLoader(),
                 new Class<?>[] {ServerResponse.class}, (proxy, method, _) -> switch (method.getName()) {

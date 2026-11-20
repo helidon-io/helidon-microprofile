@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.time.Instant;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,6 +47,7 @@ import io.opentelemetry.context.Context;
  * </ul>
  * Failure notifications retain the first failure for span termination. Response completion can also
  * supply an action to run after span termination and lease release, allowing enclosing cleanup to follow.
+ * An explicit completion timestamp preserves the HTTP response boundary even if draining delays span termination.
  * <p>
  * All lifecycle transitions and activation admission are serialized by a lock. The lifecycle starts in
  * {@code INVOKING}, may enter {@code WAITING}, and enters {@code STOPPING} on a terminal signal.
@@ -66,6 +68,7 @@ final class SpanLifecycle {
     private int active = 1;
     private State state = State.INVOKING;
     private Throwable failure;
+    private Instant endTime;
     private Runnable afterEnd = () -> { };
 
     SpanLifecycle(Span span, TelemetrySdk.Lease lease, boolean responseBound) {
@@ -135,6 +138,10 @@ final class SpanLifecycle {
     }
 
     void responseCompleted(Throwable thrown, Runnable afterEnd) {
+        responseCompleted(null, thrown, afterEnd);
+    }
+
+    void responseCompleted(Instant endTime, Throwable thrown, Runnable afterEnd) {
         lock.lock();
         try {
             if (state == State.ENDING || state == State.CLOSED) {
@@ -142,6 +149,7 @@ final class SpanLifecycle {
             }
             recordFailure(thrown);
             this.afterEnd = afterEnd;
+            this.endTime = endTime;
             state = State.STOPPING;
             finish();
         } finally {
@@ -177,7 +185,13 @@ final class SpanLifecycle {
         // Prevent reentrant completion while callbacks execute and dependencies are still owned.
         state = State.ENDING;
         try {
-            if (failure == null) {
+            if (endTime != null) {
+                if (failure == null) {
+                    span.end(endTime);
+                } else {
+                    span.end(endTime, failure);
+                }
+            } else if (failure == null) {
                 span.end();
             } else {
                 span.end(failure);

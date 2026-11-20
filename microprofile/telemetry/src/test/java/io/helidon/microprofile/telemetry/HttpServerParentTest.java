@@ -106,7 +106,7 @@ class HttpServerParentTest {
             request.getHeaders().putSingle("traceparent", "00-" + ingress.getTraceId() + "-3333333333333333-00");
         }
         try (var _ = Context.root().with(Span.wrap(ingress)).makeCurrent()) {
-            var server = tracing.start(request, "/route");
+            var server = tracing.start(request, "/route", null);
             try {
                 assertThat("The current ingress span is the server parent", parent.get(), is(ingress));
                 assertThat(server.context().traceId(), is(ingress.getTraceId()));
@@ -123,7 +123,7 @@ class HttpServerParentTest {
         var ended = sdk.getTracer("server-parent-test").spanBuilder(name).setNoParent().startSpan();
         ended.end();
         try (var _ = ended.makeCurrent()) {
-            var server = tracing.start(request(), "/route");
+            var server = tracing.start(request(), "/route", null);
             server.end();
         }
         assertThat(parent.get().isValid(), is(false));
@@ -136,7 +136,7 @@ class HttpServerParentTest {
         var request = request();
         request.getHeaders().putSingle("traceparent", "00-44444444444444444444444444444444-5555555555555555-01");
         try (var _ = Context.root().with(Span.wrap(ingress)).makeCurrent()) {
-            var server = tracing.start(request, "/route");
+            var server = tracing.start(request, "/route", null);
             server.end();
         }
         assertThat(parent.get().getSpanId(), is("5555555555555555"));

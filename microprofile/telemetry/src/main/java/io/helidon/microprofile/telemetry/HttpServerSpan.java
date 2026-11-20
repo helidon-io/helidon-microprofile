@@ -81,7 +81,7 @@ final class HttpServerSpan {
 
     void complete(Throwable failure) {
         if (completion != null) {
-            completion.responseCompleted(failure, NO_OP);
+            completion.responseCompleted(observation == null ? null : observation.endTime(), failure, NO_OP);
         }
     }
 

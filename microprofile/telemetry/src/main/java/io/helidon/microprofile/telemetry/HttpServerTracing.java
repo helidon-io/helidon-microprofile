@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,10 +91,10 @@ final class HttpServerTracing {
         return propagator.extract(Context.root(), request.getHeaders(), HEADER_GETTER);
     }
 
-    Span start(ContainerRequestContext request, String route) {
+    Span start(ContainerRequestContext request, String route, Instant started) {
         Optional<SpanContext> parent = parentSpanContext(request);
         String method = HttpSemantics.method(request.getMethod());
-        return helidonTracer.spanBuilder(HttpSemantics.serverSpanName(method, route))
+        var spanBuilder = helidonTracer.spanBuilder(HttpSemantics.serverSpanName(method, route))
                 .kind(Span.Kind.SERVER)
                 .update(builder -> HttpSemantics.serverRequest(builder, method, request.getUriInfo().getRequestUri(),
                                                                request.getUriInfo().getBaseUri(), route))
@@ -101,7 +102,9 @@ final class HttpServerTracing {
                     parent.ifPresent(builder::parent);
                     HttpSemantics.serverQuery(builder, request.getUriInfo().getRequestUri());
                     HttpSemantics.originalMethod(builder, method, request.getMethod());
-                }).start();
+                });
+        // Matching decides whether to create a span, but its interval includes pre-matching work.
+        return started == null ? spanBuilder.start() : spanBuilder.start(started);
     }
 
     void response(Span span, ContainerResponseContext response) {

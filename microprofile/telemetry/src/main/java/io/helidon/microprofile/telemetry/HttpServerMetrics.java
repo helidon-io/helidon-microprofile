@@ -40,7 +40,7 @@ final class HttpServerMetrics {
                 .build();
     }
 
-    Consumer<HttpServerObservation> measurement(long started, String method, String scheme) {
+    Consumer<HttpServerObservation> measurement(String method, String scheme) {
         return observed -> {
             if (!duration.isEnabled()) {
                 return;
@@ -48,7 +48,7 @@ final class HttpServerMetrics {
             try {
                 var attributes = HttpSemantics.serverDurationAttributes(method, scheme, observed.status(),
                                                                          observed.route(), observed.failure());
-                duration.record((System.nanoTime() - started) / 1_000_000_000.0, attributes.build());
+                duration.record(observed.durationSeconds(), attributes.build());
             } catch (RuntimeException e) {
                 LOGGER.log(System.Logger.Level.WARNING, "Failed to record HTTP request duration", e);
             }
