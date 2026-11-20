@@ -39,4 +39,29 @@
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
+
+    <modules>
+        <module>coherence</module>
+        <module>graphql</module>
+        <module>hello-world-implicit</module>
+        <module>hello-world-explicit</module>
+        <module>static-content</module>
+        <module>security</module>
+        <module>idcs</module>
+        <module>multipart</module>
+        <module>oidc</module>
+        <module>openapi</module>
+        <module>websocket</module>
+        <module>messaging-sse</module>
+        <!-- <module>cors</module> -->
+        <module>tls</module>
+        <module>multiport</module>
+        <module>bean-validation</module>
+        <module>http-status-count-mp</module>
+        <module>telemetry</module>
+        <module>grpc</module>
+        <module>threads</module>
+        <module>json-patch</module>
+        <module>data</module>
+    </modules>
 </project>
